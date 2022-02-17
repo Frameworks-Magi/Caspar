@@ -20,23 +20,27 @@ namespace Framework.Caspar
 {
     public static class CDN
     {
-        private static IAmazonS3 S3Client { get; } = new AmazonS3Client("AKIAS3EN46735AXZGIW2", "ZWkvlfBNxnEUHJ5E/X1/xeHqg6oJVSdWuKany+J7", RegionEndpoint.APNortheast2);
-
+        public static IAmazonS3 S3Client { get; set; } = new AmazonS3Client("AKIAS3EN46735AXZGIW2", "ZWkvlfBNxnEUHJ5E/X1/xeHqg6oJVSdWuKany+J7", RegionEndpoint.APNortheast2);
+        public static string Domain { get; set; } = "";
         public static async Task<Stream> Get(string path)
         {
-            var res = await S3Client.GetObjectAsync("fortressv2.retiad.com", path);
+            var res = await S3Client.GetObjectAsync(Domain, path);
             return res.ResponseStream;
         }
 
         public static string CloudFront { get; set; } = "d3054d6heshs3v.cloudfront.net";
         public static string CFKeyId { get; set; } = "KD2PQJA6LPYM4";
-        public static string PEM { get; set; } = "Framework.Caspar.Resources.pk-CloudFront.pem";
+        public static CloudFrontPEM PEM { get; set; } = () =>
+        {
+            return typeof(global::Framework.Caspar.Api).Assembly.GetManifestResourceStream("Framework.Caspar.Resources.pk - CloudFront.pem");
+        };
 
+        public delegate Stream CloudFrontPEM();
         public static async Task<Stream> Get(string path, string dest = "", IProgress<double> progress = null)
         {
             string uri = "";
 
-            using (var stream = typeof(global::Framework.Caspar.Api).Assembly.GetManifestResourceStream(PEM))
+            using (var stream = PEM())
             {
                 using (var reader = new StreamReader(stream))
                 {
