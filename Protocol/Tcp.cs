@@ -324,7 +324,7 @@ namespace Framework.Caspar.Protocol
                     flush();
                     return true;
                 }
-                catch (Exception e)
+                catch (Exception /* e */)
                 {
                 }
             }
@@ -359,7 +359,7 @@ namespace Framework.Caspar.Protocol
                     flush();
                     return true;
                 }
-                catch (Exception e)
+                catch (Exception /* e */)
                 {
 
                 }
@@ -404,7 +404,7 @@ namespace Framework.Caspar.Protocol
 
                 return;
             }
-            catch (Exception e)
+            catch (Exception /* e */)
             {
                 //Framework.Caspar.Api.Logger.Debug(e);
                 state = (int)EState.Closed;

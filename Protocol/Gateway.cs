@@ -55,7 +55,7 @@ namespace Framework.Caspar.Protocol
                                 ms.CopyTo(stream);
                                 //stream.Write(ms.GetBuffer(), 0, (int)ms.Length);
                             }
-                            catch (Exception e)
+                            catch (Exception /* e */)
                             {
                                 Disconnect();
                             }
@@ -90,7 +90,8 @@ namespace Framework.Caspar.Protocol
         }
         private Tcp From { get; set; } = new Tcp() { UseCompress = true };
 
-        protected virtual int OnConnect(MemoryStream transferred) {
+        protected virtual int OnConnect(MemoryStream transferred)
+        {
 
             byte[] buffer = transferred.GetBuffer();
             int size = BitConverter.ToInt32(buffer, 0);
@@ -99,7 +100,8 @@ namespace Framework.Caspar.Protocol
 
             From.To = new Tcp();
             From.To.To = From;
-            From.To.OnDisconnect = () => {
+            From.To.OnDisconnect = () =>
+            {
                 From.Disconnect();
             };
 
@@ -111,7 +113,8 @@ namespace Framework.Caspar.Protocol
         public Gateway(ushort listen)
         {
             From.OnRead = OnConnect;
-            From.OnDisconnect = () => {
+            From.OnDisconnect = () =>
+            {
 
                 if (From.To != null)
                 {
@@ -125,7 +128,8 @@ namespace Framework.Caspar.Protocol
 
         public static void Run(ushort port = 5881)
         {
-            global::Framework.Caspar.Api.Listen(port, 128, () => {
+            global::Framework.Caspar.Api.Listen(port, 128, () =>
+            {
                 var gateway = new Gateway(port);
             });
         }

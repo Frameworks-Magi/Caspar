@@ -208,7 +208,7 @@ namespace Framework.Caspar
 
                     uint value = (uint)(index) << 16 | i;
 
-                    DESCryptoServiceProvider des = new DESCryptoServiceProvider();
+                    var des = System.Security.Cryptography.DES.Create();
                     des.Key = key;
                     des.IV = key;
                     ICryptoTransform desencrypt = des.CreateEncryptor();
@@ -286,7 +286,7 @@ namespace Framework.Caspar
                 var key = await getKey(prefix);
                 if (key == null) { return null; }
 
-                DESCryptoServiceProvider des = new DESCryptoServiceProvider();
+                var des = System.Security.Cryptography.DES.Create();
                 des.Key = key;
                 des.IV = key;
 
