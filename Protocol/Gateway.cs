@@ -55,7 +55,7 @@ namespace Framework.Caspar.Protocol
                                 ms.CopyTo(stream);
                                 //stream.Write(ms.GetBuffer(), 0, (int)ms.Length);
                             }
-                            catch (Exception e)
+                            catch (Exception /* e */)
                             {
                                 Disconnect();
                             }

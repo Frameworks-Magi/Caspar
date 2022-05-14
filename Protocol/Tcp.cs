@@ -460,7 +460,7 @@ namespace Framework.Caspar.Protocol
                     flush();
                     return true;
                 }
-                catch (Exception e)
+                catch (Exception /* e */)
                 {
                 }
             }
@@ -495,7 +495,7 @@ namespace Framework.Caspar.Protocol
                     flush();
                     return true;
                 }
-                catch (Exception e)
+                catch (Exception /* e */)
                 {
 
                 }

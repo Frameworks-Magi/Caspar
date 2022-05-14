@@ -860,7 +860,7 @@ namespace Framework.Caspar
             }
 
             //소스 문자열
-            DESCryptoServiceProvider des = new DESCryptoServiceProvider();
+            var des = DES.Create();
 
             des.Key = btKey;
             des.IV = btKey;
@@ -892,7 +892,7 @@ namespace Framework.Caspar
                 throw (new Exception("Invalid key. Key length must be 8 byte."));
             }
 
-            DESCryptoServiceProvider des = new DESCryptoServiceProvider();
+            var des = DES.Create();
 
             des.Key = btKey;
             des.IV = btKey;

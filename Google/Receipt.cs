@@ -47,7 +47,7 @@ namespace Framework.Caspar.Google
                 provider.FromXmlString(cryptoServiceProviderXml);
 
                 byte[] signature = Convert.FromBase64String(base64Signature);
-                SHA1Managed sha = new SHA1Managed();
+                var sha = SHA1.Create();
                 byte[] data = Encoding.UTF8.GetBytes(message);
 
                 bool result = provider.VerifyData(data, sha, signature);
@@ -59,7 +59,7 @@ namespace Framework.Caspar.Google
             }
         }
 
-       
+
         public static Result VerifyFromUnreal(string validation)
         {
             dynamic info = JsonConvert.DeserializeObject(validation);
@@ -70,7 +70,7 @@ namespace Framework.Caspar.Google
                 provider.FromXmlString(cryptoServiceProviderXml);
 
                 byte[] signature = Convert.FromBase64String((string)info.signature);
-                SHA1Managed sha = new SHA1Managed();
+                var sha = SHA1.Create();
                 byte[] data = ((string)info.receiptData).FromBase64String();
                 if (provider.VerifyData(data, sha, signature) == false)
                 {

@@ -54,7 +54,7 @@ namespace Framework.Caspar.Platform
                     }
 
                 }
-                catch (Exception e)
+                catch (Exception /* e */)
                 {
 
                 }
