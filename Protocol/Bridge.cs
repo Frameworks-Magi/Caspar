@@ -17,7 +17,7 @@ namespace Framework.Caspar.Protocol
         }
 
         public IPAddress Gateway { get; set; }
-        private class Tcp : global::Framework.Caspar.Protocol.Tcp
+        private class Tcp : global::Framework.Caspar.Protocol.OldTcp
         {
             public Tcp To { get; set; }
             protected override void Defragment(MemoryStream transferred)
@@ -96,7 +96,8 @@ namespace Framework.Caspar.Protocol
 
             From.To = new Tcp();
             From.To.To = From;
-            From.To.OnDisconnect = () => {
+            From.To.OnDisconnect = () =>
+            {
 
                 From.To.To.Disconnect();
                 From.To.To = null;
@@ -110,7 +111,8 @@ namespace Framework.Caspar.Protocol
 
         public Bridge(ushort listen)
         {
-            From.OnDisconnect = () => {
+            From.OnDisconnect = () =>
+            {
 
                 if (From.To != null)
                 {
@@ -120,7 +122,8 @@ namespace Framework.Caspar.Protocol
                 }
             };
 
-            From.OnAccept = (ret) => {
+            From.OnAccept = (ret) =>
+            {
 
                 if (ret == true)
                 {
@@ -138,7 +141,8 @@ namespace Framework.Caspar.Protocol
 
         public static void Run(ushort port, IPAddress gateway)
         {
-            global::Framework.Caspar.Api.Listen(port, 128, () => {
+            global::Framework.Caspar.Api.Listen(port, 128, () =>
+            {
                 var bridge = new Bridge(port) { Gateway = gateway };
             });
         }

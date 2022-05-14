@@ -208,7 +208,7 @@ namespace Framework.Caspar.Protocol
             return Protocol.IsClosed();
         }
 
-        protected Tcp Protocol = new Tcp() { UseCompress = true };
+        protected OldTcp Protocol = new OldTcp() { UseCompress = true };
         new public long UID { get { return base.UID; } set { base.UID = value; } }
         private static ConcurrentDictionary<long, Delegator<D>> delegators = new ConcurrentDictionary<long, Delegator<D>>();
         public long Id { get; private set; }

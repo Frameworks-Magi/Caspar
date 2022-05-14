@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Net.Sockets;
 using System.Collections.Generic;
 using System.IO;
@@ -10,144 +10,11 @@ using System.Security.Cryptography;
 using System.IO.Compression;
 using System.Threading.Tasks;
 using Amazon.Runtime.Internal.Util;
-using Microsoft.Extensions.ObjectPool;
-using System.Buffers;
 
 namespace Framework.Caspar.Protocol
 {
-
-    public class Tcp
+    public class OldTcp
     {
-        public class PoolableSocketAsyncEventArgs<T> : SocketAsyncEventArgs where T : class, new()
-        {
-            ~PoolableSocketAsyncEventArgs()
-            {
-                Framework.Caspar.Api.Logger.Warning($"{typeof(T)} is GC");
-            }
-            protected static DefaultObjectPool<T> pool = new(new DefaultPooledObjectPolicy<T>());
-            public static T Instantiate
-            {
-                get
-                {
-                    //return new T(); //pool.Get();
-                    return pool.Get();
-                }
-            }
-
-            public new void Dispose()
-            {
-                pool.Return(this as T);
-            }
-
-        }
-
-        public class AcceptSocketAsyncEventArgs : PoolableSocketAsyncEventArgs<AcceptSocketAsyncEventArgs>
-        {
-            public int Index { get; set; }
-            protected override void OnCompleted(SocketAsyncEventArgs e)
-            {
-                try
-                {
-                    var protocol = e.UserToken as Tcp;
-                    protocol.onAcceptComplete(e);
-                }
-                catch
-                {
-
-                }
-                finally
-                {
-                    e.AcceptSocket = null;
-                    e.UserToken = null;
-                    Dispose();
-                }
-            }
-        }
-
-        public class RecvSocketAsyncEventArgs : PoolableSocketAsyncEventArgs<RecvSocketAsyncEventArgs>
-        {
-            public void Recv(Tcp protocol)
-            {
-                try
-                {
-                    UserToken = protocol;
-                    SetBuffer(protocol.recvBuffer, protocol.Offset, protocol.recvBuffer.Length - protocol.Offset);
-                    if (protocol.socket.ReceiveAsync(this) == false)
-                    {
-                        OnCompleted(this);
-                    }
-                }
-                catch
-                {
-                    this.SocketError = SocketError.SocketError;
-                    OnCompleted(this);
-                }
-
-            }
-
-            protected override void OnCompleted(SocketAsyncEventArgs e)
-            {
-                try
-                {
-                    var protocol = e.UserToken as Tcp;
-                    if (e.SocketError != SocketError.Success || e.BytesTransferred == 0)
-                    {
-                        protocol.Disconnect();
-                        return;
-                    }
-
-                    protocol.onRecvComplete(e);
-                }
-                catch
-                {
-
-                }
-                finally
-                {
-                    Dispose();
-                }
-            }
-        }
-
-        public class SendSocketAsyncEventArgs : PoolableSocketAsyncEventArgs<SendSocketAsyncEventArgs>
-        {
-            protected override void OnCompleted(SocketAsyncEventArgs e)
-            {
-                try
-                {
-                    var protocol = e.UserToken as Tcp;
-                    protocol.onSendComplete(e);
-                }
-                catch
-                {
-
-                }
-                finally
-                {
-                    Dispose();
-                }
-            }
-            public void Write(Tcp protocol, byte[] buffer, int length)
-            {
-                try
-                {
-                    UserToken = protocol;
-                    SetBuffer(buffer, 0, length);
-                    if (protocol.socket.SendAsync(this) == false)
-                    {
-                        OnCompleted(this);
-                    }
-                }
-                catch
-                {
-                    this.SocketError = SocketError.SocketError;
-                    OnCompleted(this);
-                }
-
-            }
-
-        }
-
         public Aes aesAlg = null;
         public bool UseCompress { get; set; } = false;
         public delegate int AsyncReadCallback(MemoryStream stream);
@@ -190,7 +57,7 @@ namespace Framework.Caspar.Protocol
             set
             {
                 recvBufferSize = value;
-                recvBuffer = new byte[value];
+                recvstream = new byte[value];
             }
         }
 
@@ -208,7 +75,7 @@ namespace Framework.Caspar.Protocol
 
 
         protected int state = (int)EState.Idle;
-        public virtual bool Accept(ushort port)
+        public bool Accept(ushort port)
         {
             if (socket != null)
             {
@@ -228,19 +95,16 @@ namespace Framework.Caspar.Protocol
 
             try
             {
-                var args = AcceptSocketAsyncEventArgs.Instantiate;
-                args.UserToken = this;
-                listen.AcceptAsync(args);
+                listen.BeginAccept(ListenComplete, listen);
                 return true;
             }
             catch (Exception e)
             {
-                global::Framework.Caspar.Api.Logger.Info($"{port}  Accept Listen Fail ex");
                 global::Framework.Caspar.Api.Logger.Info("!!!!!!!!!!!!!!! Accept Listen Fail !!!!!!!!!!!!!!\n" + e);
             }
             return false;
         }
-        public virtual bool Connect(string ip, ushort port)
+        public bool Connect(string ip, ushort port)
         {
             if (global::Framework.Caspar.Api.IsOpen == false) return false;
             try
@@ -313,15 +177,13 @@ namespace Framework.Caspar.Protocol
         }
 
         protected Queue<object> pendings = new Queue<object>();
-
         public bool Write(global::Framework.Caspar.ISerializable msg)
         {
+
+
             lock (this)
             {
-                if (IsClosed())
-                {
-                    return false;
-                }
+                if (IsClosed()) return false;
                 pendings.Enqueue(msg);
                 if (sendBuffer != null) { return true; }
                 try
@@ -329,8 +191,9 @@ namespace Framework.Caspar.Protocol
                     flush();
                     return true;
                 }
-                catch (Exception e)
+                catch (Exception)
                 {
+                    //Framework.Caspar.Api.Logger.Error(e);
                     //Framework.Caspar.Api.Logger.Verbose($"Ip = {IP}, Port = {Port}");
                 }
 
@@ -410,6 +273,9 @@ namespace Framework.Caspar.Protocol
                 csEncrypt.FlushFinalBlock();
             }
 
+
+
+
             if (output.Length == 2)
             {
                 return;
@@ -434,9 +300,7 @@ namespace Framework.Caspar.Protocol
                 return;
             }
 
-            var args = PoolableSocketAsyncEventArgs<SendSocketAsyncEventArgs>.Instantiate;
-            args.Write(this, sendBuffer, sendBuffer.Length);
-            //socket.BeginSend(sendBuffer, 0, (int)sendBuffer.Length, SocketFlags.None, SendComplete, null);
+            socket.BeginSend(sendBuffer, 0, (int)sendBuffer.Length, SocketFlags.None, SendComplete, null);
         }
         public bool Write(MemoryStream stream)
         {
@@ -522,75 +386,39 @@ namespace Framework.Caspar.Protocol
             return 0;
         }
 
-        protected virtual void onAcceptComplete(SocketAsyncEventArgs e)
+        private void ListenComplete(IAsyncResult ar)
         {
+
+            Socket listen = (Socket)ar.AsyncState;
 
             try
             {
-                if (e.SocketError != SocketError.Success)
+
+                lock (this)
                 {
-                    state = (int)EState.Closed;
-                    try
-                    {
-                        var invoker = OnAccept;
-                        OnAccept = null;
-                        invoker?.Invoke(false);
-                    }
-                    catch
-                    {
-
-                    }
-
-                    try
-                    {
-                        Disconnect();
-                    }
-                    catch
-                    {
-
-                    }
+                    socket = listen.EndAccept(ar);
+                    state = (int)EState.Establish;
                 }
-                else
-                {
-                    lock (this)
-                    {
-                        state = (int)EState.Establish;
-                        socket = e.AcceptSocket;
-                    }
-                    Offset = 0;
-                    try
-                    {
-                        var invoker = OnAccept;
-                        OnAccept = null;
-                        invoker?.Invoke(true);
-                    }
-                    catch
-                    {
+                OnAccept(true);
+                socket.BeginReceive(recvstream, 0, RecvBufferSize, SocketFlags.None, RecvComplete, null);
 
-                    }
-                    var recv = PoolableSocketAsyncEventArgs<RecvSocketAsyncEventArgs>.Instantiate;
-                    recv.Recv(this);
-                }
-
+                return;
             }
-            catch
+            catch (Exception e)
             {
+                //Framework.Caspar.Api.Logger.Debug(e);
+                state = (int)EState.Closed;
                 try
                 {
-                    OnAccept?.Invoke(false);
+                    OnAccept(false);
                 }
                 catch
                 {
 
                 }
-
-                try
+                finally
                 {
                     Disconnect();
-                }
-                catch
-                {
-
                 }
             }
             finally
@@ -598,8 +426,10 @@ namespace Framework.Caspar.Protocol
                 global::Framework.Caspar.Api.Listen(port);
             }
 
-        }
 
+
+
+        }
         private void ConnectComplete(IAsyncResult ar)
         {
 
@@ -610,16 +440,19 @@ namespace Framework.Caspar.Protocol
                 {
                     socket.EndConnect(ar);
                     state = (int)EState.Establish;
+
                 }
+
                 OnConnect(true);
-                Offset = 0;
-                var recv = PoolableSocketAsyncEventArgs<RecvSocketAsyncEventArgs>.Instantiate;
-                recv.Recv(this);
 
                 lock (this)
                 {
                     if (sendBuffer == null) { flush(); }
                 }
+
+                offset = 0;
+                socket.BeginReceive(recvstream, 0, RecvBufferSize, SocketFlags.None, RecvComplete, null);
+
                 return;
             }
             catch (Exception e)
@@ -632,7 +465,7 @@ namespace Framework.Caspar.Protocol
 
         }
 
-        protected virtual void defragmentation(MemoryStream transferred)
+        protected virtual void Defragment(MemoryStream transferred)
         {
             var buffer = transferred.GetBuffer();
 
@@ -654,6 +487,23 @@ namespace Framework.Caspar.Protocol
 
                 Stream stream = new MemoryStream(buffer, readBytes + 4, blockSize - 4, true, true);
                 readBytes += blockSize;
+
+                // //BitConverter.ToInt32()
+
+
+                // Memory<byte> fsdf = null;
+
+                // //fsdf.non
+
+                // //ArraySegment<byte> sdfsadf = (ArraySegment<byte>)fsdf;
+
+                // System.Runtime.InteropServices.MemoryMarshal.TryGetArray((ReadOnlyMemory<byte>)fsdf, out var seg);
+
+                // var arr = seg.Array;
+
+                // new MemoryStream(arr, false);
+
+
 
                 CryptoStream csEncrypt = null;
                 if (aesAlg != null)
@@ -692,8 +542,104 @@ namespace Framework.Caspar.Protocol
 
         }
 
-        protected virtual void onRecvComplete(SocketAsyncEventArgs args)
+        //internal void Merge(MemoryStream force, Tcp protocol)
+        //{
+        //    if (protocol == this)
+        //    {
+        //        lock (this)
+        //        {
+        //            while (pendings.Count > 0)
+        //            {
+        //                sendings.Enqueue(pendings.Dequeue());
+        //            }
+
+        //            pendings.Enqueue(force);
+
+        //            while (sendings.Count > 0)
+        //            {
+        //                pendings.Enqueue(sendings.Dequeue());
+        //            }
+        //        }
+        //        return;
+        //    }
+
+        //    Queue<object> sending = null;
+        //    lock (protocol)
+        //    {
+        //        sendings = protocol.sendings;
+        //        protocol.sendings = null;
+
+        //        while (protocol.pendings.Count > 0)
+        //        {
+        //            sendings.Enqueue(protocol.pendings.Dequeue());
+        //        }
+        //    }
+        //    lock (this)
+        //    {
+        //        if (sendings != null)
+        //        {
+        //            while (sendings.Count > 0)
+        //            {
+        //                pendings.Enqueue(sending.Dequeue());
+        //            }
+        //        }
+        //    }
+        //}
+
+        //internal void Merge(Tcp protocol)
+        //{
+        //    if (protocol == null) { return; }
+        //    if (protocol == this)
+        //    {
+        //        lock (this)
+        //        {
+        //            while(pendings.Count > 0)
+        //            {
+        //                sendings.Enqueue(pendings.Dequeue());
+        //            }
+
+        //            while (sendings.Count > 0)
+        //            {
+        //                pendings.Enqueue(sendings.Dequeue());
+        //            }
+        //        }
+        //        return;
+        //    }
+
+        //    Queue<object> preSendings = null;
+        //    lock (protocol)
+        //    {
+        //        preSendings = protocol.sendings;
+        //        protocol.sendings = new Queue<object>();
+
+
+        //        while (protocol.pendings.Count > 0)
+        //        {
+        //            preSendings.Enqueue(protocol.pendings.Dequeue());
+        //        }
+        //    }
+        //    lock (this)
+        //    {
+        //        if (preSendings != null && preSendings.Count > 0)
+        //        {
+        //            var prePending = pendings;
+        //            pendings = new Queue<object>();
+        //            while(preSendings.Count > 0)
+        //            {
+        //                pendings.Enqueue(preSendings.Dequeue());
+        //            }
+
+        //            while (prePending.Count > 0)
+        //            {
+        //                pendings.Enqueue(prePending.Dequeue());
+        //            }
+        //        }
+        //    }
+        //}
+
+        private void RecvComplete(IAsyncResult ar)
         {
+            SocketError error;
             try
             {
                 if (socket == null)
@@ -701,48 +647,69 @@ namespace Framework.Caspar.Protocol
                     Disconnect();
                     return;
                 }
-                int len = args.BytesTransferred + args.Offset;
-
-                MemoryStream transferred = new MemoryStream(recvBuffer, 0, len, true, true);
-                defragmentation(transferred);
-                Offset = (int)len - (int)transferred.Position;
-                if (Offset < 0)
+                int len = (int)socket.EndReceive(ar, out error);
+                if (len == 0)
                 {
                     Disconnect();
                     return;
                 }
 
-                if (Offset > 0)
+                len = offset + len;
+
+                MemoryStream transferred = new MemoryStream(recvstream, 0, len, true, true);
+                Defragment(transferred);
+                offset = (int)len - (int)transferred.Position;
+                if (offset < 0)
                 {
-                    Array.Copy(recvBuffer, transferred.Position, recvBuffer, 0, Offset);
+                    Disconnect();
+                    return;
                 }
 
-                var recv = PoolableSocketAsyncEventArgs<RecvSocketAsyncEventArgs>.Instantiate;
-                recv.Recv(this);
+                Array.Copy(recvstream, transferred.Position, recvstream, 0, offset);
+                socket.BeginReceive(recvstream, offset, RecvBufferSize - offset, SocketFlags.None, RecvComplete, null);
+
+
+
+
+
+                // new MemoryStream()
+
+
+                // var r = System.Buffers.MemoryPool<byte>.Shared.Rent(1024);
+
+                // r.Memory
+
+
+                Span<byte> fff = null;
+                var ff = fff.Slice(0);
+                //socket.ReceiveAsync()
                 return;
+
             }
             catch (Exception e)
             {
                 global::Framework.Caspar.Api.Logger.Debug(e);
             }
+
             Disconnect();
+
+
+
         }
 
-        protected internal virtual void onSendComplete(SocketAsyncEventArgs e)
+        protected void SendComplete(IAsyncResult ar)
         {
-
             lock (this)
             {
-                //ArrayPool<byte>.Shared.Return(sendBuffer);
-                sendBuffer = null;
-                if (e.SocketError != SocketError.Success || e.BytesTransferred == 0)
-                {
-                    Disconnect();
-                    return;
-                }
-
                 try
                 {
+                    int len = socket.EndSend(ar);
+                    if (len == 0)
+                    {
+                        Disconnect();
+                        return;
+                    }
+                    sendBuffer = null;
                     if (pendings.Count > 0)
                     {
                         flush();
@@ -759,8 +726,8 @@ namespace Framework.Caspar.Protocol
         }
 
         protected Socket socket = null;
-        protected int Offset = 0;
-        protected byte[] recvBuffer = new byte[65535];
+        int offset = 0;
+        private byte[] recvstream = new byte[65535];
 
         public EndPoint RemoteEndPoint
         {

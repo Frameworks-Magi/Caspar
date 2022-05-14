@@ -155,7 +155,7 @@ namespace Framework.Caspar.Protocol
         //    return true;
         //}
 
-        Protocol.Tcp protocol = new Protocol.Tcp();
+        Protocol.OldTcp protocol = new Protocol.OldTcp();
         public void Response<T>(T msg)
         {
             Message data = msg as Message;

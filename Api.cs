@@ -2097,6 +2097,10 @@ namespace Framework.Caspar
             if (isOpen == true)
                 return;
 
+            Logger.Initialize();
+            Logger.Info("StartUp Framework...");
+
+
             // ip setting
             {
                 PublicIp = string.Empty;
@@ -2175,7 +2179,6 @@ namespace Framework.Caspar
             global::Framework.Protobuf.Api.StartUp();
             Idx = (long)IPAddressToUInt32(PublicIp) << 32 | IPAddressToUInt32(PrivateIp);
 
-            Logger.Initialize();
 
 
             args ??= new string[] { "" };
