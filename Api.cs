@@ -2169,7 +2169,9 @@ namespace Framework.Caspar
                 {
                     foreach (var e in privates)
                     {
-                        if (e == PublicIp) { continue; }
+                        // if (e == PublicIp) { continue; }
+                        // if (e == "127.0.0.1") { continue; }
+                        // if (e == "localhost") { continue; }
                         PrivateIp = e;
                         break;
                     }
@@ -2178,7 +2180,7 @@ namespace Framework.Caspar
 
             global::Framework.Protobuf.Api.StartUp();
             Idx = (long)IPAddressToUInt32(PublicIp) << 32 | IPAddressToUInt32(PrivateIp);
-
+            Logger.Debug($"Idx: {Idx}");
 
 
             args ??= new string[] { "" };
