@@ -10,6 +10,7 @@ using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.IdentityModel.Tokens;
+using static Framework.Caspar.Api;
 
 namespace Framework.Caspar.Google
 {
@@ -62,8 +63,10 @@ namespace Framework.Caspar.Google
                         return validatedToken as System.IdentityModel.Tokens.Jwt.JwtSecurityToken;
 
                     }
-                    catch
+                    catch (Exception e)
                     {
+                        //Logger.Info(e);
+                        Console.WriteLine(e);
                         JWK.Value = null;
                         continue;
                     }

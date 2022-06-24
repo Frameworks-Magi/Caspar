@@ -630,6 +630,10 @@ namespace Framework.Caspar
         public static string PublicIp { get; private set; }
         public static string PrivateIp { get; private set; }
 
+        public static string ServiceIp
+        {
+            get { return StandAlone == true ? PrivateIp : PublicIp; }
+        }
         private static int uniqueKey = 1;
 
         static public int ThreadCount { get; set; } = Math.Min(16, Math.Max(4, Convert.ToInt32(Math.Ceiling((Environment.ProcessorCount * 0.75) * 1.0))));
@@ -2291,6 +2295,7 @@ namespace Framework.Caspar
             global::Framework.Caspar.Api.Logger.Silence = (bool)Config.Silence;
             Logger.Info($"Public Ip : {PublicIp}");
             Logger.Info($"PrivateIp Ip : {PrivateIp}");
+            Logger.Info($"ServiceIp Ip : {ServiceIp}");
 
             try
             {

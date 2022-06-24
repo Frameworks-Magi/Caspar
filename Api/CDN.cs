@@ -28,11 +28,11 @@ namespace Framework.Caspar
             return res.ResponseStream;
         }
 
-        public static string CloudFront { get; set; } = "d3054d6heshs3v.cloudfront.net";
+        public static string CloudFront { get; set; } = "d2mcamx1uto7j2.cloudfront.net";
         public static string CFKeyId { get; set; } = "KD2PQJA6LPYM4";
         public static CloudFrontPEM PEM { get; set; } = () =>
         {
-            return typeof(global::Framework.Caspar.Api).Assembly.GetManifestResourceStream("Framework.Caspar.Resources.pk - CloudFront.pem");
+            return typeof(global::Framework.Caspar.Api).Assembly.GetManifestResourceStream("Framework.Caspar.Resources.pk-CloudFront.pem");
         };
 
         public delegate Stream CloudFrontPEM();
