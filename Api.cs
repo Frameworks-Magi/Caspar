@@ -2085,8 +2085,9 @@ namespace Framework.Caspar
 
                     if (Deploy.PPRT != 0) { break; }
                 }
-                catch (Exception)
+                catch (Exception e)
                 {
+                    Logger.Error(e);
 
                 }
             }
