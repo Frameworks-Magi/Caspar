@@ -8,7 +8,9 @@ using Org.BouncyCastle.Ocsp;
 using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.IO;
+using System.IO.Compression;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
@@ -242,5 +244,54 @@ namespace Framework.Caspar.Platform
             }
         }
 
+        public class Lambda
+        {
+            public static async Task<bool> Deploy(string function, string path, string profile)
+            {
+                try
+                {
+                    File.Delete($"{function}.zip");
+                    ZipFile.CreateFromDirectory(path, $"{function}.zip");
+
+                    string process = "aws";
+
+                    if (Environment.OSVersion.Platform == PlatformID.Win32S ||
+                                Environment.OSVersion.Platform == PlatformID.Win32Windows ||
+                                Environment.OSVersion.Platform == PlatformID.Win32NT ||
+                                Environment.OSVersion.Platform == PlatformID.WinCE)
+                    {
+                        process = "C:/Program Files/Amazon/AWSCLIV2/aws.exe";
+                    }
+
+                    string args = $"lambda update-function-code --function-name {function} --zip-file {"fileb://"}{Path.Combine(Directory.GetCurrentDirectory(), function)}.zip --profile {profile}";
+
+                    var ps = Process.Start(new ProcessStartInfo()
+                    {
+                        UseShellExecute = false,
+                        CreateNoWindow = true,
+                        FileName = process,
+                        Arguments = args,
+                        RedirectStandardOutput = true,
+                    });
+
+
+                    ps.WaitForExit(15000);
+                    Process.GetProcessById(ps.Id).Kill();
+
+                }
+                catch (System.Exception)
+                {
+
+                    throw;
+                }
+                finally
+                {
+                    File.Delete($"{function}.zip");
+                }
+
+                await Task.CompletedTask;
+                return true;
+            }
+        }
     }
 }
