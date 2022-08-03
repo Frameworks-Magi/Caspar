@@ -1,4 +1,5 @@
 ﻿using Amazon.Runtime.Internal.Util;
+using Framework.Caspar.Container;
 using System;
 using System.Collections;
 using System.Collections.Generic;
@@ -25,7 +26,32 @@ namespace Framework.Caspar
 
         static private Dictionary<global::System.Type, Metadata> tables = new Dictionary<global::System.Type, Metadata>();
         private Dictionary<object, object> metadatas = new Dictionary<object, object>();
+        private Dictionary<object, long> expires = new Dictionary<object, long>();
         private ArrayList array = new ArrayList();
+
+        static public T GetElement<T>(object key, int Type) where T : class
+        {
+            Metadata table = null;
+
+
+            if (tables.TryGetValue(typeof(T), out table) == false)
+            {
+                table = new Metadata();
+                tables.Add(typeof(T), table);
+            }
+
+            long expire = table.expires.Get(key);
+            if (expire != default(long) && expire < DateTime.UtcNow.Ticks)
+            {
+                table.expires.Remove(key);
+            }
+
+            if (table.metadatas.TryGetValue(key, out object metadata) == false)
+            {
+                // read from redis;
+            }
+            return metadata as T;
+        }
         static public T GetElement<T>(object key) where T : class
         {
 
