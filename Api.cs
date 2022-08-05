@@ -2233,6 +2233,7 @@ namespace Framework.Caspar
 
 
 
+
             try
             {
 
@@ -2242,6 +2243,12 @@ namespace Framework.Caspar
                     {
                         Config.CloudPlatform = e.Split('=')[1];
                         break;
+                    }
+
+                    if (e.ToLower().StartsWith("standalone"))
+                    {
+                        Config.Silence = false;
+                        StandAlone = true;
                     }
                 }
 
