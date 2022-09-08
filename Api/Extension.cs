@@ -165,7 +165,7 @@ namespace Framework.Caspar
             return s.ToString();
         }
 
-        
+
 
         public static string FromBase64UrlDecode(this string value)
         {
@@ -203,9 +203,10 @@ namespace Framework.Caspar
         }
 
 
+
         public static string ToJson(this global::Google.Protobuf.IMessage value)
         {
-            return global::Google.Protobuf.JsonFormatter.Default.Format(value);
+            return Framework.Caspar.Api.JsonFormatter.Format(value);
         }
 
         public static global::Google.Protobuf.CodedInputStream ToCodedInputStream(this global::Google.Protobuf.IMessage msg)
@@ -316,7 +317,7 @@ namespace Framework.Caspar
             return global::Framework.Caspar.Id<T>.Value;
         }
 
-        
+
 
         public static bool IsNullOrEmpty(this string str)
         {

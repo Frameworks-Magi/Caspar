@@ -265,6 +265,7 @@ namespace Framework.Caspar
             }
         }
 
+        public static global::Google.Protobuf.JsonFormatter JsonFormatter { get; private set; }
     }
 
     public static partial class Api
@@ -2101,6 +2102,10 @@ namespace Framework.Caspar
 
             if (isOpen == true)
                 return;
+
+            var setting = new global::Google.Protobuf.JsonFormatter.Settings(true);
+            setting = setting.WithFormatEnumsAsIntegers(true);
+            JsonFormatter = new global::Google.Protobuf.JsonFormatter(setting);
 
             Logger.Initialize();
             Logger.Info("StartUp Framework...");
