@@ -28,6 +28,7 @@ using Amazon;
 using Amazon.DynamoDBv2.DataModel;
 using Amazon.DynamoDBv2.DocumentModel;
 using Framework.Caspar.Container;
+using Amazon.S3;
 
 namespace Framework.Caspar
 {
@@ -2100,8 +2101,25 @@ namespace Framework.Caspar
         public static async Task StartUp(string[] args, string config = "Caspar/Config/DEV.json", bool seed = false)
         {
 
+
+
             if (isOpen == true)
                 return;
+
+            try
+            {
+                var caspar = File.OpenText("Caspar.json");
+                Config = JObject.Parse(caspar.ReadToEnd());
+                Framework.Caspar.Api.ServerType = Config.ServerType;
+                var field = typeof(RegionEndpoint).GetField((string)Config.AWS.S3.RegionEndpoint);
+                RegionEndpoint endpoint = (RegionEndpoint)field?.GetValue(null) ?? throw new Exception();
+                global::Framework.Caspar.CDN.S3Client = new AmazonS3Client((string)Config.AWS.S3.Key, (string)Config.AWS.S3.Secret, endpoint);
+                Framework.Caspar.CDN.Domain = (string)Config.AWS.S3.Domain;
+            }
+            catch
+            {
+
+            }
 
             var setting = new global::Google.Protobuf.JsonFormatter.Settings(true);
             setting = setting.WithFormatEnumsAsIntegers(true);

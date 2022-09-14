@@ -50,6 +50,7 @@ namespace Framework.Caspar.Platform
                 return;
             }
 
+
             public async Task<Stream> Download(string key)
             {
                 using var obj = await S3Client.GetObjectAsync(Domain, key);
