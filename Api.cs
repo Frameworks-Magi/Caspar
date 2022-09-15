@@ -1032,7 +1032,6 @@ namespace Framework.Caspar
                 }
                 catch (OperationCanceledException)
                 {
-
                 }
                 catch (Exception e)
                 {

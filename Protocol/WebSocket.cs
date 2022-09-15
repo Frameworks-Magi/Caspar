@@ -79,7 +79,7 @@ namespace Framework.Caspar.Protocol
             }
             catch (Exception e)
             {
-                Logger.Debug(e);
+                //  Logger.Debug(e);
                 await Disconnect();
             }
             finally
