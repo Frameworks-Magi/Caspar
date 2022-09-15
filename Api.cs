@@ -996,7 +996,7 @@ namespace Framework.Caspar
                 try
                 {
                     using var cts = new CancellationTokenSource();
-                    cts.CancelAfter(1000);
+                    cts.CancelAfter(10000);
 
                     var layer = Layer.Layers.Take(cts.Token);
                     if (layer.ToRun() == true)
@@ -1988,7 +1988,7 @@ namespace Framework.Caspar
             connectionString.CheckParameters = false;
             connectionString.UseCompression = true;
             connectionString.ConnectionTimeout = 30;
-            connectionString.SslMode = MySql.Data.MySqlClient.MySqlSslMode.None;
+            connectionString.SslMode = MySql.Data.MySqlClient.MySqlSslMode.Required;
 
             if (db.Crypt == true)
             {

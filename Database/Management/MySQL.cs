@@ -218,7 +218,7 @@ namespace Framework.Caspar.Database.Management.Relational
             connectionString.ConnectionTimeout = 10;
             connectionString.MinimumPoolSize = 1;
             connectionString.MaximumPoolSize = (uint)Api.MaxSession;
-            connectionString.SslMode = MySqlSslMode.None;
+            connectionString.SslMode = MySqlSslMode.Required;
             connectionStringValue = connectionString.GetConnectionString(true);
 
         }
