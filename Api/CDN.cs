@@ -24,8 +24,17 @@ namespace Framework.Caspar
         public static string Domain { get; set; } = "";
         public static async Task<Stream> Get(string path)
         {
-            var res = await S3Client.GetObjectAsync(Domain, path);
-            return res.ResponseStream;
+            try
+            {
+                var res = await S3Client.GetObjectAsync(Domain, path);
+                return res.ResponseStream;
+            }
+            catch
+            {
+                Console.WriteLine($"{Domain}, {path}");
+                throw;
+            }
+
         }
 
         public static string CloudFront { get; set; } = "d2mcamx1uto7j2.cloudfront.net";
@@ -47,7 +56,7 @@ namespace Framework.Caspar
                     uri = AmazonCloudFrontUrlSigner.GetCannedSignedURL(
                     AmazonCloudFrontUrlSigner.Protocol.https,
                     CloudFront,
-                    new StreamReader(stream),
+                    reader,
                     $"{path}",
                     CFKeyId,
                     DateTime.UtcNow.AddMinutes(10));

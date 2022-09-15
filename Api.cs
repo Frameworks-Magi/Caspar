@@ -2106,20 +2106,24 @@ namespace Framework.Caspar
             if (isOpen == true)
                 return;
 
+            string agentIp = "13.125.156.211";
+
             try
             {
-                var caspar = File.OpenText("Caspar.json");
+                var caspar = File.OpenText(Path.Combine(Directory.GetCurrentDirectory(), "Caspar.json"));
                 Config = JObject.Parse(caspar.ReadToEnd());
+                agentIp = Config.Agent.Ip;
+
                 Framework.Caspar.Api.ServerType = Config.ServerType;
                 var field = typeof(RegionEndpoint).GetField((string)Config.AWS.S3.RegionEndpoint);
                 RegionEndpoint endpoint = (RegionEndpoint)field?.GetValue(null) ?? throw new Exception();
                 global::Framework.Caspar.CDN.S3Client = new AmazonS3Client((string)Config.AWS.S3.Key, (string)Config.AWS.S3.Secret, endpoint);
                 Framework.Caspar.CDN.Domain = (string)Config.AWS.S3.Domain;
             }
-            catch
+            catch (Exception e)
             {
-
             }
+
 
             var setting = new global::Google.Protobuf.JsonFormatter.Settings(true);
             setting = setting.WithFormatEnumsAsIntegers(true);
@@ -2128,7 +2132,7 @@ namespace Framework.Caspar
             Logger.Initialize();
             Logger.Info("StartUp Framework...");
 
-
+            agentIp = "13.125.156.211";
             // ip setting
             {
                 PublicIp = string.Empty;
@@ -2144,7 +2148,7 @@ namespace Framework.Caspar
                     try
                     {
                         HttpWebRequest request;
-                        request = WebRequest.Create($"http://{"13.125.156.211"}:5282/0/casparseed") as HttpWebRequest;
+                        request = WebRequest.Create($"http://{agentIp}:5282/0/casparseed") as HttpWebRequest;
 
                         request.Method = "GET";
                         request.ContentType = "text/plain";
@@ -2228,6 +2232,14 @@ namespace Framework.Caspar
                         json = JObject.Parse(new StreamReader(task).ReadToEnd());
                         break;
                     }
+                    else if (e.ToLower().StartsWith("json="))
+                    {
+                        var base64String = e.Split('=')[1];
+                        base64String = base64String.FromBase64UrlDecode();
+                        Logger.Info($"Merge json={base64String}");
+                        json = JObject.Parse(base64String);
+                        break;
+                    }
                 }
 
                 while (json == null)
@@ -2240,7 +2252,10 @@ namespace Framework.Caspar
                     }
                     catch (Exception e)
                     {
-                        Logger.Error(e);
+                        //Logger.Error(e);
+                        Logger.Error($"{config}");
+                        Logger.Error($"{Framework.Caspar.CDN.Domain}");
+                        await Task.Delay(1000);
                     }
                 }
             }
@@ -2282,24 +2297,24 @@ namespace Framework.Caspar
                 Logger.Error(e);
             }
 
-            try
-            {
-                foreach (var e in args)
-                {
-                    if (e.ToLower().StartsWith("json="))
-                    {
-                        var base64String = e.Split('=')[1];
-                        base64String = base64String.FromBase64UrlDecode();
-                        Logger.Info($"Merge json={base64String}");
-                        json.Merge(JObject.Parse(base64String));
-                    }
-                }
+            // try
+            // {
+            //     foreach (var e in args)
+            //     {
+            //         if (e.ToLower().StartsWith("json="))
+            //         {
+            //             var base64String = e.Split('=')[1];
+            //             base64String = base64String.FromBase64UrlDecode();
+            //             Logger.Info($"Merge json={base64String}");
+            //             json.Merge(JObject.Parse(base64String));
+            //         }
+            //     }
 
-            }
-            catch (Exception e)
-            {
-                Logger.Info(e);
-            }
+            // }
+            // catch (Exception e)
+            // {
+            //     Logger.Info(e);
+            // }
 
 
 
@@ -2375,6 +2390,25 @@ namespace Framework.Caspar
             catch (Exception e)
             {
                 Logger.Error(e);
+            }
+
+            try
+            {
+                string pem = (string)Config.AWS.CloudFront.PEM;
+                var bytes = Encoding.UTF8.GetBytes(pem);
+                Framework.Caspar.CDN.PEM = () =>
+                {
+                    return new MemoryStream(bytes);
+                };
+
+                global::Framework.Caspar.CDN.CloudFront = (string)Config.AWS.CloudFront.Domain;
+                global::Framework.Caspar.CDN.CFKeyId = (string)Config.AWS.CloudFront.Key;
+
+
+            }
+            catch
+            {
+
             }
 
 
@@ -2620,9 +2654,6 @@ namespace Framework.Caspar
 
         private static void OnChanged(object sender, FileSystemEventArgs e)
         {
-
-
-
         }
 
 

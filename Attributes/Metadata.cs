@@ -133,10 +133,8 @@ namespace Framework.Caspar.Attributes
                     (string Key, System.Reflection.MethodInfo Method, System.Reflection.MethodInfo Callback, Metadata Metadata) e = Assemblies.Dequeue();
                     string uri = "";
 
-                    var PEM = (string)Config.AWS.CloudFront.PEM;
-
-                    PEM = "Framework.Caspar.Resources.pk-CloudFront.pem";
-                    using (var stream = typeof(global::Framework.Caspar.Attributes.Metadata).Assembly.GetManifestResourceStream(PEM))
+                    var PEM = Framework.Caspar.CDN.PEM;
+                    using (var stream = PEM())
                     {
                         using (var reader = new StreamReader(stream))
                         {
