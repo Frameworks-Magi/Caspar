@@ -500,6 +500,10 @@ namespace Framework.Caspar
         {
             return value.ToString("yyyy-MM-ddTHH:mm:ss.fffZ");
         }
+        public static string ToISODateTime(this DateTime value)
+        {
+            return value.ToString("yyyy-MM-ddTHH:mm:ss.fffZ");
+        }
     }
 
 }

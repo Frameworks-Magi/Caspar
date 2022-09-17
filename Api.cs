@@ -1969,7 +1969,7 @@ namespace Framework.Caspar
             public static int PPRT { get; set; }
         }
 
-        public static void Regist()
+        public static void Registration()
         {
             var connectionString = new MySql.Data.MySqlClient.MySqlConnectionStringBuilder();
 
@@ -2296,26 +2296,6 @@ namespace Framework.Caspar
                 Logger.Error(e);
             }
 
-            // try
-            // {
-            //     foreach (var e in args)
-            //     {
-            //         if (e.ToLower().StartsWith("json="))
-            //         {
-            //             var base64String = e.Split('=')[1];
-            //             base64String = base64String.FromBase64UrlDecode();
-            //             Logger.Info($"Merge json={base64String}");
-            //             json.Merge(JObject.Parse(base64String));
-            //         }
-            //     }
-
-            // }
-            // catch (Exception e)
-            // {
-            //     Logger.Info(e);
-            // }
-
-
 
             if (StandAlone == true)
             {
@@ -2504,7 +2484,7 @@ namespace Framework.Caspar
 
             if (seed == false)
             {
-                Regist();
+                Registration();
             }
 
 
@@ -2534,45 +2514,6 @@ namespace Framework.Caspar
                 thread = new Thread(new ThreadStart(() => { _ = LayerUpdate(); }));
                 thread.IsBackground = true;
                 thread.Start();
-
-                // new Thread(() =>
-                // {
-
-                //     while (isOpen == true)
-                //     {
-                //         //var now = Framework.Caspar.Api.KST.Ticks;
-                //         Framework.Caspar.Scheduler[] entities = null;
-                //         lock (Scheduler.Elements)
-                //         {
-                //             entities = Scheduler.Elements.ToArray();
-                //             Scheduler.Elements.Clear();
-                //         }
-
-                //         var now = DateTime.UtcNow.Ticks;
-                //         foreach (var e in entities)
-                //         {
-                //             if (e == null || e.IsClose() == true || e.interval < 0) { continue; }
-
-                //             lock (Scheduler.Elements)
-                //             {
-                //                 Scheduler.Elements.Add(e);
-                //             }
-
-                //             if (e.Next > now) { continue; }
-
-                //             //e.Next = new DateTime(e.Next).AddMilliseconds(e.interval).Ticks;
-                //             e.Next = DateTime.UtcNow.AddMilliseconds(e.interval).Ticks;
-                //             if (e.Paused == true)
-                //             {
-                //                 continue;
-                //             }
-                //             // e.Pause();
-                //             e.PostMessage(() => { e.OnSchedule(); });
-                //         }
-                //         System.Threading.Thread.Sleep(33);
-                //     }
-
-                // }).Start();
             }
 
 
