@@ -25,6 +25,8 @@ namespace Framework.Caspar.Protocol
         public ushort Port { get; set; }
 
         public void Connect(string ip, ushort port) { }
+
+        public void Close() { }
         public void Delegate(long from, long to, global::Framework.Caspar.ISerializable serializable) { }
         public void Delegate<T, R>(global::Framework.Caspar.Layer.Entity task, long to, T msg, AsyncCallback<R> callback, Action fallback = null)
            where T : global::Google.Protobuf.IMessage<T>
@@ -67,7 +69,7 @@ namespace Framework.Caspar.Protocol
 
 
 
-    public class Delegator<D> : global::Framework.Caspar.Scheduler, IDelegator where D : Delegator<D>.IDelegatable, new()
+    public partial class Delegator<D> : global::Framework.Caspar.Scheduler, IDelegator where D : Delegator<D>.IDelegatable, new()
     {
         public static Delegator<D> Singleton { get; set; }
 
@@ -869,6 +871,12 @@ namespace Framework.Caspar.Protocol
             {
                 new global::Framework.Caspar.Protocol.Delegator<D>().Accept(port);
             });
+        }
+
+        public new void Close()
+        {
+            Remove(Id);
+            base.Close();
         }
 
 
