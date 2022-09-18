@@ -25,6 +25,29 @@ namespace Framework.Caspar.Protocol
         //     socket.SendAsync()
         // }
 
+        public bool Write(global::Framework.Caspar.ISerializable msg)
+        {
+            lock (this)
+            {
+                if (socket == null)
+                {
+                    return false;
+                }
+                pendings.Enqueue(msg);
+                if (sendBuffer != null) { return true; }
+                try
+                {
+                    flush();
+                    return true;
+                }
+                catch (Exception e)
+                {
+                    //Framework.Caspar.Api.Logger.Verbose($"Ip = {IP}, Port = {Port}");
+                }
+            }
+            _ = Disconnect();
+            return false;
+        }
 
         protected virtual void OnConnect()
         {
@@ -109,7 +132,6 @@ namespace Framework.Caspar.Protocol
 
             sendBuffer = ArrayPool<byte>.Shared.Rent(65536);
             MemoryStream stream = new MemoryStream(sendBuffer, 0, 65535);
-
             int length = 0;
             while (pendings.Count > 0 && length < 65535)
             {
@@ -146,7 +168,7 @@ namespace Framework.Caspar.Protocol
             {
                 try
                 {
-                    await socket.SendAsync(new ReadOnlyMemory<byte>(sendBuffer), System.Net.WebSockets.WebSocketMessageType.Binary, true, CancellationToken.None);
+                    await socket.SendAsync(new ReadOnlyMemory<byte>(sendBuffer, 0, length), System.Net.WebSockets.WebSocketMessageType.Binary, true, CancellationToken.None);
                     return;
                 }
                 catch
