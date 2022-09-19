@@ -1,8 +1,5 @@
 using System;
-using System.Collections.Generic;
 using System.Linq;
-using System.Text;
-using static Framework.Caspar.Api;
 
 namespace Framework.Caspar.Attributes
 {
@@ -40,6 +37,27 @@ namespace Framework.Caspar.Attributes
                            select type);
 
 
+            void listen(global::Framework.Caspar.Attributes.Delegatable delegatable, Type c)
+            {
+                {
+                    var type = assembly.GetType($"Framework.Caspar.Protocol.Delegator`1[[{c.FullName}, {c.Assembly.FullName}]]");
+                    var method = type.GetMethod("Listen", System.Reflection.BindingFlags.Static | System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.NonPublic, null, new Type[] { typeof(ushort) }, null);
+                    method.Invoke(null, new object[] { delegatable.Port });
+
+                }
+
+
+                if (Framework.Caspar.Api.StandAlone == true) { return; }
+                {
+                    var type = assembly.GetType($"Framework.Caspar.Protocol.Delegator`1+Listener[[{c.FullName}, {c.Assembly.FullName}]]");
+                    var listener = Activator.CreateInstance(type);
+                    var method = listener.GetType().GetMethod("Run", new Type[] { });
+                    method.Invoke(listener, new object[] { });
+
+                }
+            }
+
+
             foreach (var c in classes)
             {
 
@@ -56,37 +74,15 @@ namespace Framework.Caspar.Attributes
 
                         if (delegatable.RemoteType == string.Empty)
                         {
-
-                            // registration delegator and listen;
-                            // registration and health
-
-
-                            // listen
-                            {
-                                var type = assembly.GetType($"Framework.Caspar.Protocol.Delegator`1[[{c.FullName}, {c.Assembly.FullName}]]");
-                                var method = type.GetMethod("Listen", System.Reflection.BindingFlags.Static | System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.NonPublic, null, new Type[] { typeof(ushort) }, null);
-                                method.Invoke(null, new object[] { delegatable.Port });
-
-                            }
-
-
-                            if (Framework.Caspar.Api.StandAlone == true) { continue; }
-                            {
-                                var type = assembly.GetType($"Framework.Caspar.Protocol.Delegator`1+Listener[[{c.FullName}, {c.Assembly.FullName}]]");
-                                var listener = Activator.CreateInstance(type);
-                                var method = listener.GetType().GetMethod("Run", new Type[] { });
-                                method.Invoke(listener, new object[] { });
-
-                            }
-
-
-                            // var connector = new Framework.Caspar.Api.Connector();
-                            // connector.Self = false;
-                            // connector.Run();
-
+                            listen(delegatable, c);
                         }
                         else
                         {
+                            if (c.FullName == delegatable.RemoteType)
+                            {
+                                listen(delegatable, c);
+                            }
+
                             if (Framework.Caspar.Api.StandAlone == true)
                             {
                                 var type = assembly.GetType($"Framework.Caspar.Protocol.Delegator`1[[{c.FullName}, {c.Assembly.FullName}]]");
@@ -111,6 +107,8 @@ namespace Framework.Caspar.Attributes
                                 method.Invoke(connector, new object[] { });
                             }
                         }
+
+
                     }
                 }
                 catch
