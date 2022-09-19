@@ -1,4 +1,5 @@
 ﻿using Framework.Caspar.Container;
+using Newtonsoft.Json.Linq;
 using System;
 using System.Collections;
 using System.Collections.Generic;
@@ -296,10 +297,9 @@ namespace Framework.Caspar
             }
         }
 
-        internal class JsonRow<T>
-        {
-            public T[] records = null;
-        }
+        public delegate JArray CustomCallbackFunc(string json);
+
+        public static CustomCallbackFunc CustomJsonParser { get; set; } = null;
 
         static public void LoadJson<T>(StreamReader reader) where T : class, new()
         {
@@ -327,7 +327,15 @@ namespace Framework.Caspar
             {
                 try
                 {
-                    array = Newtonsoft.Json.JsonConvert.DeserializeObject<T[]>(reader.ReadToEnd());
+                    if (CustomJsonParser != null)
+                    {
+                        array = CustomJsonParser(reader.ReadToEnd()).ToObject<T[]>();
+                    }
+                    else
+                    {
+                        array = Newtonsoft.Json.JsonConvert.DeserializeObject<T[]>(reader.ReadToEnd());
+                    }
+
                     if (array == null) { return; }
                 }
                 catch (Exception e)
