@@ -1,5 +1,4 @@
-﻿using Amazon.Runtime.Internal.Util;
-using Framework.Caspar.Container;
+﻿using Framework.Caspar.Container;
 using System;
 using System.Collections;
 using System.Collections.Generic;
@@ -9,11 +8,39 @@ using System.Reflection;
 using System.Text;
 using System.Threading.Tasks;
 using System.Xml;
+using static Framework.Caspar.Api;
 
 namespace Framework.Caspar
 {
     public class Metadata
     {
+        public static string LocalPath
+        {
+            set
+            {
+                string path = Directory.GetCurrentDirectory();
+                try
+                {
+                    while (true)
+                    {
+                        if (Directory.Exists(Path.Combine(path, value)) == true)
+                        {
+                            localPath = Path.Combine(path, value);
+                            Console.WriteLine($"Set LocalPath {path}");
+                            return;
+                        }
+                        path = Path.Combine(path, "..");
+                    }
+                }
+                catch (Exception e)
+                {
+                    Logger.Error(e);
+                    return;
+                }
+            }
+            get { return localPath; }
+        }
+        private static string localPath = "";
         //static System.Threading.ReaderWriterLock rwl = new();
         [Serializable]
         public class Element

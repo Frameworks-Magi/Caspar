@@ -133,6 +133,37 @@ namespace Framework.Caspar.Attributes
                     (string Key, System.Reflection.MethodInfo Method, System.Reflection.MethodInfo Callback, Metadata Metadata) e = Assemblies.Dequeue();
                     string uri = "";
 
+                    if (Framework.Caspar.Metadata.LocalPath.IsNullOrEmpty() == false)
+                    {
+                        var filename = global::System.IO.Path.GetFileName(e.Key);
+                        var fullpath = global::System.IO.Path.Combine(Framework.Caspar.Metadata.LocalPath, filename);
+                        if (File.Exists(fullpath) == true)
+                        {
+                            try
+                            {
+                                using var fs = File.OpenRead(fullpath);
+                                byte[] data = null;
+                                using (var ms = new MemoryStream())
+                                {
+                                    fs.CopyTo(ms);
+                                    data = ms.ToArray();
+                                }
+
+                                Metadatas.Enqueue((e.Key, e.Method, e.Callback, e.Metadata, data));
+                            }
+                            catch
+                            {
+                                Assemblies.Enqueue(e);
+                            }
+                            finally
+                            {
+
+                            }
+                            continue;
+                        }
+
+                    }
+
                     var PEM = Framework.Caspar.CDN.PEM;
                     using (var stream = PEM())
                     {
