@@ -370,14 +370,14 @@ namespace Framework.Caspar.Protocol
         {
             public virtual void Response<T>(T msg)
             {
-                if (Responsable == 0)
+                if (Responsible == 0)
                 {
-                    Logger.Error($"Delegator Notifier Response But Responsable == {Responsable}, {typeof(T)}");
+                    Logger.Error($"Delegator Notifier Response But Responsible == {Responsible}, {typeof(T)}");
                     return;
                 }
                 //     lock (Delegator)
                 {
-                    Delegator.Delegate(To, From, new Serializer<T>() { Message = msg, From = To, To = From, Sequence = 0, Responsable = Responsable } as ISerializable);
+                    Delegator.Delegate(To, From, new Serializer<T>() { Message = msg, From = To, To = From, Sequence = 0, Responsable = Responsible } as ISerializable);
                 }
 
             }
@@ -392,16 +392,17 @@ namespace Framework.Caspar.Protocol
 
             public void Response(int code, Stream stream)
             {
+                if (Responsible == 0) { return; }
                 //        lock (Delegator)
                 {
-                    Delegator.Delegate(To, From, new Serializer() { Message = stream, From = To, To = From, Code = code, Sequence = 0, Responsable = Responsable });
+                    Delegator.Delegate(To, From, new Serializer() { Message = stream, From = To, To = From, Code = code, Sequence = 0, Responsable = Responsible });
                 }
             }
 
 
             public IDelegator Delegator;
             public long UID;
-            internal protected long Responsable;
+            internal protected long Responsible;
             public long From;
             public long To;
         }
@@ -803,7 +804,7 @@ namespace Framework.Caspar.Protocol
             notifier.UID = UID;
             notifier.From = from;
             notifier.To = to;
-            notifier.Responsable = res;
+            notifier.Responsible = res;
             global::Framework.Caspar.Layer.FromDelegateUID.Value = from;
             Singleton<D>.Instance.OnDelegate(notifier, code, stream);
 
