@@ -2299,6 +2299,8 @@ namespace Framework.Caspar
 
             if (StandAlone == true)
             {
+                Config.Silence = false;
+                Config.Service = false;
                 global::Framework.Caspar.Api.Config.Provider = $"{PublicIp}";
                 foreach (NetworkInterface ni in NetworkInterface.GetAllNetworkInterfaces())
                 {
