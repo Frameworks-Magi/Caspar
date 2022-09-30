@@ -2105,14 +2105,20 @@ namespace Framework.Caspar
             if (isOpen == true)
                 return;
 
-            string agentIp = "13.125.156.211";
+            var setting = new global::Google.Protobuf.JsonFormatter.Settings(true);
+            setting = setting.WithFormatEnumsAsIntegers(true);
+            JsonFormatter = new global::Google.Protobuf.JsonFormatter(setting);
+
+            Logger.Initialize();
+            Logger.Info("StartUp Framework...");
+
+
+            args ??= new string[] { "" };
 
             try
             {
                 var caspar = File.OpenText(Path.Combine(Directory.GetCurrentDirectory(), "Caspar.json"));
                 Config = JObject.Parse(caspar.ReadToEnd());
-                agentIp = Config.Agent.Ip;
-
                 Framework.Caspar.Api.ServerType = Config.ServerType;
                 var field = typeof(RegionEndpoint).GetField((string)Config.AWS.S3.RegionEndpoint);
                 RegionEndpoint endpoint = (RegionEndpoint)field?.GetValue(null) ?? throw new Exception();
@@ -2123,98 +2129,6 @@ namespace Framework.Caspar
             {
             }
 
-
-            var setting = new global::Google.Protobuf.JsonFormatter.Settings(true);
-            setting = setting.WithFormatEnumsAsIntegers(true);
-            JsonFormatter = new global::Google.Protobuf.JsonFormatter(setting);
-
-            Logger.Initialize();
-            Logger.Info("StartUp Framework...");
-
-            agentIp = "13.125.156.211";
-            // ip setting
-            {
-                PublicIp = string.Empty;
-
-                if (seed == true)
-                {
-                    PublicIp = "127.0.0.1";
-                    Offset = DateTime.UtcNow.ToUnixTime();
-                }
-
-                while (PublicIp.IsNullOrEmpty() == true)
-                {
-                    try
-                    {
-                        HttpWebRequest request;
-                        request = WebRequest.Create($"http://{agentIp}:5282/0/casparseed") as HttpWebRequest;
-
-                        request.Method = "GET";
-                        request.ContentType = "text/plain";
-
-                        using (WebResponse r = request.GetResponse())
-                        {
-                            using (System.IO.StreamReader sr = new System.IO.StreamReader(r.GetResponseStream()))
-                            {
-                                var ret = JObject.Parse(sr.ReadToEnd());
-                                Offset = (int)ret.GetValue("Offset");
-                                PublicIp = (string)ret.GetValue("RemoteIp");
-                            }
-                        }
-                    }
-                    catch
-                    {
-                        Offset = DateTime.UtcNow.ToUnixTime();
-                    }
-
-                    if (seed == true)
-                    {
-                        PublicIp = "127.0.0.1";
-                    }
-                }
-
-
-
-
-                PrivateIp = "127.0.0.1";
-                List<string> privates = new();
-                foreach (NetworkInterface ni in NetworkInterface.GetAllNetworkInterfaces())
-                {
-                    if (ni.NetworkInterfaceType == NetworkInterfaceType.Wireless80211 || ni.NetworkInterfaceType == NetworkInterfaceType.Ethernet)
-                    {
-                        foreach (UnicastIPAddressInformation ip in ni.GetIPProperties().UnicastAddresses)
-                        {
-                            if (ip.Address.AddressFamily == System.Net.Sockets.AddressFamily.InterNetwork && ni.OperationalStatus == OperationalStatus.Up)
-                            {
-                                privates.Add(ip.Address.ToString());
-                            }
-                        }
-                    }
-                }
-
-                if (privates.Count == 0)
-                {
-                    PrivateIp = PublicIp;
-                }
-                else
-                {
-                    foreach (var e in privates)
-                    {
-                        // if (e == PublicIp) { continue; }
-                        // if (e == "127.0.0.1") { continue; }
-                        // if (e == "localhost") { continue; }
-                        PrivateIp = e;
-                        break;
-                    }
-                }
-            }
-
-            global::Framework.Protobuf.Api.StartUp();
-            Idx = (long)IPAddressToUInt32(PublicIp) << 32 | IPAddressToUInt32(PrivateIp);
-            Logger.Debug($"Idx: {Idx}");
-
-
-            args ??= new string[] { "" };
 
             //cdn.Container = "hal";
             global::Framework.Caspar.Api.Config = null;
@@ -2297,11 +2211,50 @@ namespace Framework.Caspar
             }
 
 
-            if (StandAlone == true)
+            // ip setting
             {
-                Config.Silence = false;
-                Config.Service = false;
-                global::Framework.Caspar.Api.Config.Provider = $"{PublicIp}";
+                PublicIp = string.Empty;
+
+                if (seed == true)
+                {
+                    PublicIp = "127.0.0.1";
+                    Offset = DateTime.UtcNow.ToUnixTime();
+                }
+
+                while (PublicIp.IsNullOrEmpty() == true)
+                {
+                    try
+                    {
+                        HttpWebRequest request;
+                        request = WebRequest.Create($"http://{(string)Config.Agent.Ip}:5282/0/casparseed") as HttpWebRequest;
+
+                        request.Method = "GET";
+                        request.ContentType = "text/plain";
+
+                        using (WebResponse r = request.GetResponse())
+                        {
+                            using (System.IO.StreamReader sr = new System.IO.StreamReader(r.GetResponseStream()))
+                            {
+                                var ret = JObject.Parse(sr.ReadToEnd());
+                                Offset = (int)ret.GetValue("Offset");
+                                PublicIp = (string)ret.GetValue("RemoteIp");
+                            }
+                        }
+                    }
+                    catch
+                    {
+                        Offset = DateTime.UtcNow.ToUnixTime();
+                    }
+
+                    if (seed == true)
+                    {
+                        PublicIp = "127.0.0.1";
+                    }
+                }
+
+
+                PrivateIp = "127.0.0.1";
+                List<string> privates = new();
                 foreach (NetworkInterface ni in NetworkInterface.GetAllNetworkInterfaces())
                 {
                     if (ni.NetworkInterfaceType == NetworkInterfaceType.Wireless80211 || ni.NetworkInterfaceType == NetworkInterfaceType.Ethernet)
@@ -2310,19 +2263,28 @@ namespace Framework.Caspar
                         {
                             if (ip.Address.AddressFamily == System.Net.Sockets.AddressFamily.InterNetwork && ni.OperationalStatus == OperationalStatus.Up)
                             {
-                                global::Framework.Caspar.Api.Config.Publish = $"{ip.Address.ToString()}"; ;
+                                privates.Add(ip.Address.ToString());
                             }
                         }
                     }
                 }
-                global::Framework.Caspar.Api.Config.Region = "KR";
-                global::Framework.Caspar.Api.ServerType = "StandAlone";
-            }
 
-            global::Framework.Caspar.Api.Logger.Silence = (bool)Config.Silence;
-            Logger.Info($"Public Ip : {PublicIp}");
-            Logger.Info($"PrivateIp Ip : {PrivateIp}");
-            Logger.Info($"ServiceIp Ip : {ServiceIp}");
+                if (privates.Count == 0)
+                {
+                    PrivateIp = PublicIp;
+                }
+                else
+                {
+                    foreach (var e in privates)
+                    {
+                        // if (e == PublicIp) { continue; }
+                        // if (e == "127.0.0.1") { continue; }
+                        // if (e == "localhost") { continue; }
+                        PrivateIp = e;
+                        break;
+                    }
+                }
+            }
 
             try
             {
@@ -2404,6 +2366,40 @@ namespace Framework.Caspar
             {
 
             }
+
+
+
+
+            if (StandAlone == true)
+            {
+                Config.Silence = false;
+                Config.Service = false;
+                global::Framework.Caspar.Api.Config.Provider = $"{PublicIp}";
+                foreach (NetworkInterface ni in NetworkInterface.GetAllNetworkInterfaces())
+                {
+                    if (ni.NetworkInterfaceType == NetworkInterfaceType.Wireless80211 || ni.NetworkInterfaceType == NetworkInterfaceType.Ethernet)
+                    {
+                        foreach (UnicastIPAddressInformation ip in ni.GetIPProperties().UnicastAddresses)
+                        {
+                            if (ip.Address.AddressFamily == System.Net.Sockets.AddressFamily.InterNetwork && ni.OperationalStatus == OperationalStatus.Up)
+                            {
+                                global::Framework.Caspar.Api.Config.Publish = $"{ip.Address.ToString()}"; ;
+                            }
+                        }
+                    }
+                }
+                global::Framework.Caspar.Api.Config.Region = "KR";
+                global::Framework.Caspar.Api.ServerType = "StandAlone";
+            }
+
+            global::Framework.Caspar.Api.Logger.Silence = (bool)Config.Silence;
+            Logger.Info($"Public Ip : {PublicIp}");
+            Logger.Info($"PrivateIp Ip : {PrivateIp}");
+            Logger.Info($"ServiceIp Ip : {ServiceIp}");
+
+            global::Framework.Protobuf.Api.StartUp();
+            Idx = (long)IPAddressToUInt32(PublicIp) << 32 | IPAddressToUInt32(PrivateIp);
+            Logger.Debug($"Idx: {Idx}");
 
 
             try
