@@ -91,6 +91,8 @@ namespace Framework.Caspar
 
             dynamic config = global::Framework.Caspar.Api.Config;
 
+            Logger.Info($"Database Session Max = {Framework.Caspar.Api.Config.Databases.MaxSession}");
+
             try
             {
                 Newtonsoft.Json.Linq.JObject mysqls = config.Databases.MySql;
@@ -116,7 +118,7 @@ namespace Framework.Caspar
                             driver.Id = global::Framework.Caspar.Api.DesDecrypt(driver.Id, "magimagi");
                             driver.Pw = global::Framework.Caspar.Api.DesDecrypt(driver.Pw, "magimagi");
                         }
-
+                        Logger.Info($"Database Session Add {driver.Ip}");
                         Database.Driver.AddDatabase(driver.Name, driver);
                     }
                 }
