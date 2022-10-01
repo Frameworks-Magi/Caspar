@@ -88,7 +88,7 @@ namespace Framework.Caspar.Attributes
                                 var type = assembly.GetType($"Framework.Caspar.Protocol.Delegator`1[[{c.FullName}, {c.Assembly.FullName}]]");
                                 var remoteType = c.Assembly.GetType(delegatable.RemoteType);
                                 var method = type.GetMethod("Create", System.Reflection.BindingFlags.Static | System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.NonPublic, null, new Type[] { typeof(long), typeof(bool) }, null);
-                                var delegator = method.Invoke(null, new object[] { (long)0, remoteType != null });
+                                var delegator = method.Invoke(null, new object[] { (long)Framework.Caspar.Api.Idx, remoteType != null });
                                 (delegator as Framework.Caspar.Protocol.IDelegator).UID = Framework.Caspar.Api.Idx;
                                 (delegator as Framework.Caspar.Protocol.IDelegator).Connect("127.0.0.1", delegatable.Port);
                             }

@@ -176,14 +176,6 @@ namespace Framework.Caspar.Attributes
                             $"{e.Key}",
                             (string)Config.AWS.CloudFront.Key,
                             DateTime.UtcNow.AddMinutes(10));
-                            //  uri = Amazon.CloudFront.AmazonCloudFrontUrlSigner.GetCustomSignedURL(
-                            // AmazonCloudFrontUrlSigner.Protocol.https,
-                            // (string)Config.AWS.CloudFront.Domain,
-                            // new StreamReader(stream),
-                            // $"{e.Key}",
-                            // (string)Config.AWS.CloudFront.Key,
-                            // DateTime.UtcNow.AddMinutes(10),
-                            // DateTime.UtcNow.AddMinutes(-1), "0.0.0.0/0");
                         }
                     }
 

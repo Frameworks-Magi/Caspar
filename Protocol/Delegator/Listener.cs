@@ -39,7 +39,7 @@ namespace Framework.Caspar.Protocol
                     command.Parameters.AddWithValue("@state", 1);
                     command.Parameters.AddWithValue("@publicip", Framework.Caspar.Api.PublicIp);
                     command.Parameters.AddWithValue("@privateip", Framework.Caspar.Api.PrivateIp);
-                    command.Parameters.AddWithValue("@heartbeat", DateTime.UtcNow);
+                    command.Parameters.AddWithValue("@heartbeat", DateTime.UtcNow.AddMinutes(1));
                     command.Parameters.AddWithValue("@latitude", 0.0);
                     command.Parameters.AddWithValue("@longitude", 0.0);
 
