@@ -2376,7 +2376,7 @@ namespace Framework.Caspar
             {
                 Config.Silence = false;
                 Config.Service = false;
-                global::Framework.Caspar.Api.Config.Provider = $"{PublicIp}";
+                global::Framework.Caspar.Api.Config.Provider = $"{PublicIp}-{PrivateIp}";
                 foreach (NetworkInterface ni in NetworkInterface.GetAllNetworkInterfaces())
                 {
                     if (ni.NetworkInterfaceType == NetworkInterfaceType.Wireless80211 || ni.NetworkInterfaceType == NetworkInterfaceType.Ethernet)
