@@ -277,13 +277,14 @@ namespace Framework.Caspar
                     return false;
                 }
 
-                if (CurrentEntity.Value == this)
-                {
-                    Logger.Error($"Deadlock detected. {this.GetType()} PostMessage self. this action going to deadlock. message enqueue continuations");
-                    Logger.Verbose(new StackTrace());
-                    continuations.Enqueue(callback);
-                }
-                else if (FromDelegateUID.Value == UID)
+                // if (CurrentEntity.Value == this)
+                // {
+                //     Logger.Error($"Deadlock detected. {this.GetType()} PostMessage self. this action going to deadlock. message enqueue continuations");
+                //     Logger.Verbose(new StackTrace());
+                //     continuations.Enqueue(callback);
+                // }
+                // else 
+                if (FromDelegateUID.Value == UID)
                 {
                     continuations.Enqueue(callback);
                 }
@@ -329,16 +330,6 @@ namespace Framework.Caspar
                     layer.Post(this);
                 }
 
-                // Action aa = async () =>
-                // {
-                //     await callback();
-                // };
-
-                //asynchronouslies.Enqueue(aa);
-                // if (ToWait())
-                // {
-                //     layer.Post(this);
-                // }
                 return await TCS.Task;
             }
 
@@ -351,12 +342,6 @@ namespace Framework.Caspar
                     global::Framework.Caspar.Api.Logger.Warning($"PostMessage To CLOSE Entity {this.GetType()} {new StackTrace()}");
                     return default(T);
                 }
-
-
-                Action aa = async () =>
-                {
-                    await callback();
-                };
 
                 global::System.Threading.Tasks.TaskCompletionSource<T> TCS = new TaskCompletionSource<T>();
                 asynchronouslies.Enqueue(async () =>

@@ -14,6 +14,9 @@ namespace Framework.Caspar
 {
     public partial class Layer
     {
+
+        //public static int MaxLoop { get; set; } = 1000000;
+        public static int MaxLoop { get; set; } = 15;
         public static long CurrentStrand { get => CurrentEntity.Value.UID; }
 
         internal ConcurrentDictionary<int, ConcurrentQueue<Entity>> waitProcessEntities = new ConcurrentDictionary<int, ConcurrentQueue<Entity>>();
@@ -103,7 +106,7 @@ namespace Framework.Caspar
                         try
                         {
                             sw.Restart();
-                            for (int c = 0; entity.continuations.Count > 0 && c < 5 && entity.interrupted == false && entity.Strand == kv.Key; ++c)
+                            for (int c = 0; entity.continuations.Count > 0 && c < MaxLoop && entity.interrupted == false && entity.Strand == kv.Key; ++c)
                             {
                                 Action callback = null;
                                 if (entity.continuations.TryDequeue(out callback) == false) { break; }
@@ -129,7 +132,7 @@ namespace Framework.Caspar
                                 }
                             }
                             sw.Restart();
-                            for (int c = 0; entity.messages.Count > 0 && c < 5 && entity.interrupted == false && entity.Strand == kv.Key && entity.locks.Count == 0 && entity.continuations.Count == 0; ++c)
+                            for (int c = 0; entity.messages.Count > 0 && c < MaxLoop && entity.interrupted == false && entity.Strand == kv.Key && entity.locks.Count == 0 && entity.continuations.Count == 0; ++c)
                             {
                                 Action callback = null;
                                 if (entity.messages.TryDequeue(out callback) == false) { break; }
@@ -137,17 +140,17 @@ namespace Framework.Caspar
                                 try
                                 {
                                     //    System.Threading.SynchronizationContext.SetSynchronizationContext(new Entity.SynchronizationContext() { Entity = entity });
-                                    fn.Restart();
+                                    //          fn.Restart();
                                     callback();
-                                    if (fn.ElapsedMilliseconds > 300)
-                                    {
-                                        Logger.Warning($"too long method. messages {fn.ElapsedMilliseconds}ms");
-                                    }
+                                    // if (fn.ElapsedMilliseconds > 300)
+                                    // {
+                                    //     Logger.Warning($"too long method. messages {fn.ElapsedMilliseconds}ms");
+                                    // }
 
-                                    if (sw.ElapsedMilliseconds > 99)
-                                    {
-                                        entity.interrupted = true;
-                                    }
+                                    // if (sw.ElapsedMilliseconds > 99)
+                                    // {
+                                    //     entity.interrupted = true;
+                                    // }
                                 }
                                 catch (Exception e)
                                 {
@@ -157,7 +160,7 @@ namespace Framework.Caspar
                             }
                             sw.Restart();
 
-                            for (int c = 0; entity.asynchronouslies.Count > 0 && c < 5 && entity.interrupted == false && entity.Strand == kv.Key; ++c)
+                            for (int c = 0; entity.asynchronouslies.Count > 0 && c < MaxLoop && entity.interrupted == false && entity.Strand == kv.Key; ++c)
                             {
                                 if (entity.asynchronouslies.TryDequeue(out var callback) == false) { break; }
 
