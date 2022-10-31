@@ -1003,18 +1003,20 @@ namespace Framework.Caspar
                     var layer = Layer.Layers.Take(cts.Token);
                     if (layer.ToRun() == true)
                     {
-                        var wait = (long)((DateTime.UtcNow - layer.WaitAt).TotalMilliseconds);
-                        if (wait > 1000)
+                        var wait = ((DateTime.UtcNow - layer.WaitAt).TotalMilliseconds);
+                        Logger.Warning($"Layer Wait {wait}ms : {layer.GetType()}");
+                        //       if (wait > 3)
                         {
-                            Logger.Warning($"Layer Wait too long {wait}ms : {layer.GetType()}");
+                            //        Logger.Warning($"Layer Wait {wait}ms : {layer.GetType()}");
                         }
                         //Logger.Debug($"Layer Run. {layer.GetType()}");
                         sw.Restart();
+                        DateTime now = DateTime.UtcNow;
                         bool @continue = layer.Run();
                         var elapsed = sw.ElapsedMilliseconds;
-                        if (elapsed > 1000)
+                        //if (elapsed > 100)
                         {
-                            Logger.Warning($"Layer Update over {elapsed}ms : {layer.GetType()}");
+                            //                            Logger.Warning($"Layer Update {elapsed}ms, {(DateTime.UtcNow - now).TotalMilliseconds}ms, {layer.HowLong}ms : {layer.GetType()}");
                         }
                         sw.Stop();
                         layer.ToIdle();

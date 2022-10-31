@@ -28,13 +28,16 @@ namespace Framework.Caspar
                 }
             }
 
+            private static int _strand = 0;
+
             public int strand { get; private set; }
             public int Strand
             {
                 get => strand;
                 set
                 {
-                    strand = Math.Abs((int)(value % global::Framework.Caspar.Api.ThreadCount));
+                    int s = Interlocked.Increment(ref _strand);
+                    strand = Math.Abs((int)(s % global::Framework.Caspar.Api.ThreadCount));
                 }
             }
             public Entity(Layer layer)
@@ -62,6 +65,8 @@ namespace Framework.Caspar
             //internal bool locked = false;
             //public bool IsLocked { get { return locked; } }
             internal Layer layer;
+
+            public Layer Layer { get { return layer; } }
             internal ConcurrentQueue<Action> messages = new ConcurrentQueue<Action>();
             internal ConcurrentQueue<Action> continuations = new ConcurrentQueue<Action>();
 
@@ -220,6 +225,8 @@ namespace Framework.Caspar
             internal ConcurrentDictionary<System.Threading.Tasks.Task, System.Threading.Tasks.Task> locks = new();
             public bool IsLocked { get { return locks.Count > 0; } }
 
+            public DateTime PostAt { get; private set; }
+
             public void Lock(System.Threading.Tasks.Task task)
             {
                 if (locks.TryAdd(task, task) == true)
@@ -296,6 +303,7 @@ namespace Framework.Caspar
                 if (ToWait())
                 {
                     layer.Post(this);
+                    PostAt = DateTime.UtcNow;
                 }
                 return true;
             }
