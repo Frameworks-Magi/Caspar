@@ -1004,21 +1004,26 @@ namespace Framework.Caspar
                     if (layer.ToRun() == true)
                     {
                         var wait = ((DateTime.UtcNow - layer.WaitAt).TotalMilliseconds);
-                        Logger.Warning($"Layer Wait {wait}ms : {layer.GetType()}");
+                        //   Logger.Warning($"Layer Wait {wait}ms : {layer.GetType()}");
+                        if (Layer.g_e != null)
+                        {
+                            //       Logger.Warning($"Entity Wait {(DateTime.UtcNow - Layer.g_e.PostAt).TotalMilliseconds}ms : {layer.GetType()}");
+                        }
                         //       if (wait > 3)
                         {
                             //        Logger.Warning($"Layer Wait {wait}ms : {layer.GetType()}");
                         }
-                        //Logger.Debug($"Layer Run. {layer.GetType()}");
+                        //    Logger.Debug($"Layer Run. {layer.GetType()}");
                         sw.Restart();
                         DateTime now = DateTime.UtcNow;
                         bool @continue = layer.Run();
-                        var elapsed = sw.ElapsedMilliseconds;
-                        //if (elapsed > 100)
+                        //var elapsed = sw.ElapsedMilliseconds;
+                        //    if (elapsed > 10)
                         {
-                            //                            Logger.Warning($"Layer Update {elapsed}ms, {(DateTime.UtcNow - now).TotalMilliseconds}ms, {layer.HowLong}ms : {layer.GetType()}");
+                            //    Logger.Warning($"Layer Update {(DateTime.UtcNow - now).TotalMilliseconds}ms : {layer.GetType()}");
+                            layer.MS += (DateTime.UtcNow - now).TotalMilliseconds;
                         }
-                        sw.Stop();
+                        //       sw.Stop();
                         layer.ToIdle();
                         if (@continue == true || layer.IsPost() == true)
                         {
@@ -2505,8 +2510,8 @@ namespace Framework.Caspar
 
             if (layer == true)
             {
-                ThreadPool.SetMaxThreads(64, 32);
-                ThreadPool.SetMinThreads(8, 4);
+                ThreadPool.SetMaxThreads(16, 16);
+                ThreadPool.SetMinThreads(8, 8);
 
                 global::Framework.Caspar.Attributes.Override.StartUp();
                 AppDomain.CurrentDomain.UnhandledException += App_UnhandledException;
@@ -2514,7 +2519,7 @@ namespace Framework.Caspar
                 TaskScheduler.UnobservedTaskException += OnUnobservedTaskException;
                 isOpen = true;
                 thread = new Thread(new ThreadStart(() => { _ = LayerUpdate(); }));
-                thread.IsBackground = true;
+                thread.IsBackground = false;
                 thread.Start();
             }
 

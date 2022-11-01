@@ -16,7 +16,10 @@ namespace Framework.Caspar
     {
 
         //public static int MaxLoop { get; set; } = 1000000;
-        public static int MaxLoop { get; set; } = 15;
+
+        public double MS { get; set; }
+        static public Entity g_e { get; set; }
+        public static int MaxLoop { get; set; } = 100000;
         public static long CurrentStrand { get => CurrentEntity.Value.UID; }
 
         internal ConcurrentDictionary<int, ConcurrentQueue<Entity>> waitProcessEntities = new ConcurrentDictionary<int, ConcurrentQueue<Entity>>();
@@ -24,8 +27,12 @@ namespace Framework.Caspar
         internal static System.Threading.Tasks.ParallelOptions options = new System.Threading.Tasks.ParallelOptions() { MaxDegreeOfParallelism = global::Framework.Caspar.Api.ThreadCount };
 
         internal static BlockingCollection<Layer> Layers = new();
+        internal BlockingCollection<(ConcurrentQueue<Entity>, int, DateTime)> Queued = new();
+        internal BlockingCollection<bool> Releaser = new();
+        internal int TotalQueued = 0;
         public Layer()
         {
+            global::Framework.Caspar.Api.ThreadCount = 16;
             if (options.MaxDegreeOfParallelism != global::Framework.Caspar.Api.ThreadCount)
             {
                 options = new System.Threading.Tasks.ParallelOptions() { MaxDegreeOfParallelism = global::Framework.Caspar.Api.ThreadCount };
@@ -35,6 +42,25 @@ namespace Framework.Caspar
             {
                 waitProcessEntities.TryAdd(i, new ConcurrentQueue<Entity>());
                 waitCloseEntities.TryAdd(i, new ConcurrentQueue<Entity>());
+            }
+
+            for (int i = 0; i < global::Framework.Caspar.Api.ThreadCount; ++i)
+            {
+                var t = new Thread(() =>
+                {
+
+                    while (true)
+                    {
+                        var p = Queued.Take();
+                        //    Logger.Info($"process in {(DateTime.UtcNow - p.Item3).TotalMilliseconds}ms");
+                        process(p.Item1, p.Item2);
+                    }
+
+
+                });
+                t.Start();
+                // waitProcessEntities.TryAdd(i, new ConcurrentQueue<Entity>());
+                // waitCloseEntities.TryAdd(i, new ConcurrentQueue<Entity>());
             }
 
             global::Framework.Caspar.Api.Add(this);
@@ -47,23 +73,23 @@ namespace Framework.Caspar
         {
             bool flag = false;
 
-            try
-            {
-                OnUpdate();
-            }
-            catch (Exception e)
-            {
-                Logger.Error($"{e}");
-            }
+            // try
+            // {
+            //     OnUpdate();
+            // }
+            // catch (Exception e)
+            // {
+            //     Logger.Error($"{e}");
+            // }
 
-            try
-            {
-                flag |= ProcessEntityClose();
-            }
-            catch (Exception e)
-            {
-                Logger.Error($"{e}");
-            }
+            // try
+            // {
+            //     flag |= ProcessEntityClose();
+            // }
+            // catch (Exception e)
+            // {
+            //     Logger.Error($"{e}");
+            // }
 
             try
             {
@@ -77,11 +103,211 @@ namespace Framework.Caspar
             return flag;
         }
 
+        private void process(ConcurrentQueue<Entity> container, int max)
+        {
+            for (int i = 0; i < max; ++i)
+            {
+
+                if (container.TryDequeue(out var entity) == false)
+                {
+                    // if (Interlocked.Decrement(ref TotalQueued) == 0)
+                    // {
+
+                    // };
+                    Logger.Error($"container false {container.Count}, i:{i}, max:{max}");
+                    break;
+                }
+
+                //    Logger.Info($"called after {(DateTime.UtcNow - entity.PostAt).TotalMilliseconds}ms");
+
+                entity.interrupted = false;
+                if (entity.ToRun())
+                {
+                    //Interlocked.Increment(ref totalHandled);
+                    // var sw = Stopwatch.StartNew();
+                    // var fn = Stopwatch.StartNew();
+                    CurrentEntity.Value = entity;
+                    FromDelegateUID.Value = 0;
+
+                    try
+                    {
+                        //   sw.Restart();
+                        for (int c = 0; entity.continuations.Count > 0 && c < MaxLoop && entity.interrupted == false; ++c)
+                        {
+                            Action callback = null;
+                            if (entity.continuations.TryDequeue(out callback) == false) { break; }
+
+                            try
+                            {
+                                //   System.Threading.SynchronizationContext.SetSynchronizationContext(new Entity.SynchronizationContext() { Entity = entity });
+                                //       fn.Restart();
+                                callback();
+                                // if (fn.ElapsedMilliseconds > 300)
+                                // {
+                                //     // Logger.Warning($"too long method. continuations {fn.ElapsedMilliseconds}ms");
+                                // }
+                                // if (sw.ElapsedMilliseconds > 99)
+                                // {
+                                //     entity.interrupted = true;
+                                // }
+                            }
+                            catch (Exception e)
+                            {
+                                entity.OnException(e);
+
+                            }
+                        }
+                        //        sw.Restart();
+                        for (int c = 0; entity.messages.Count > 0 && c < MaxLoop && entity.interrupted == false && entity.locks.Count == 0 && entity.continuations.Count == 0; ++c)
+                        {
+                            Action callback = null;
+                            if (entity.messages.TryDequeue(out callback) == false) { break; }
+
+                            try
+                            {
+                                //    System.Threading.SynchronizationContext.SetSynchronizationContext(new Entity.SynchronizationContext() { Entity = entity });
+                                //          fn.Restart();
+                                callback();
+                                // if (fn.ElapsedMilliseconds > 300)
+                                // {
+                                //     Logger.Warning($"too long method. messages {fn.ElapsedMilliseconds}ms");
+                                // }
+
+                                // if (sw.ElapsedMilliseconds > 99)
+                                // {
+                                //     entity.interrupted = true;
+                                // }
+                            }
+                            catch (Exception e)
+                            {
+                                entity.OnException(e);
+
+                            }
+                        }
+                        //   sw.Restart();
+
+                        for (int c = 0; entity.asynchronouslies.Count > 0 && c < MaxLoop && entity.interrupted == false; ++c)
+                        {
+                            if (entity.asynchronouslies.TryDequeue(out var callback) == false) { break; }
+
+                            try
+                            {
+                                //  System.Threading.SynchronizationContext.SetSynchronizationContext(new Entity.SynchronizationContext() { Entity = entity });
+                                //  fn.Restart();
+                                callback();
+                                // if (fn.ElapsedMilliseconds > 300)
+                                // {
+                                //     Logger.Warning($"too long method. asynchronouslies {fn.ElapsedMilliseconds}ms");
+                                // }
+                                // if (sw.ElapsedMilliseconds > 99)
+                                // {
+                                //     entity.interrupted = true;
+                                // }
+                            }
+                            catch (Exception e)
+                            {
+                                entity.OnException(e);
+
+                            }
+                        }
+                    }
+                    catch (Exception e)
+                    {
+                        Framework.Caspar.Api.Logger.Info(e);
+                    }
+                    finally
+                    {
+                        CurrentEntity.Value = null;
+                        FromDelegateUID.Value = 0;
+                    }
+
+                    entity.interrupted = false;
+                    entity.ToIdle();
+                    if (entity.IsPost())
+                    {
+                        if (entity.ToWait())
+                        {
+                            Post(entity);
+                        }
+                    }
+                }
+
+                if (Interlocked.Decrement(ref TotalQueued) == 0)
+                {
+
+                    //   Logger.Error($"Release");
+                    Releaser.Add(true);
+                    // Monitor.Exit(this);
+                };
+            }
+        }
+
 
         private bool ProcessEntityMessage()
         {
+            int totalHandled = 0;
             int remainTask = 0;
-            System.Threading.Tasks.Parallel.ForEach(waitProcessEntities, options, (kv) =>
+
+            TotalQueued = 0;
+            bool flags = false;
+
+
+            int[] maxs = new int[global::Framework.Caspar.Api.ThreadCount];
+
+            //-------------------------------------
+            for (int i = 0; i < global::Framework.Caspar.Api.ThreadCount; ++i)
+            {
+                int max = waitProcessEntities[i].Count;
+                TotalQueued += max;
+                maxs[i] = max;
+            }
+
+            totalHandled = TotalQueued;
+
+            if (TotalQueued > 0)
+            {
+                flags = true;
+            }
+
+            for (int i = 0; i < global::Framework.Caspar.Api.ThreadCount; ++i)
+            {
+                Queued.Add((waitProcessEntities[i], maxs[i], DateTime.UtcNow));
+            }
+
+            // foreach (var kv in waitProcessEntities)
+            // {
+            //     int max = kv.Value.Count;
+
+            //     if (max > 0)
+            //     {
+            //         Interlocked.Add(ref TotalQueued, max);
+            //         flags = true;
+            //         Queued.Add((kv.Value, max, DateTime.UtcNow));
+            //     }
+            // }
+
+            if (flags == true)
+            {
+                Releaser.Take();
+            }
+
+            //   Logger.Info($"TotalHandled {totalHandled}");
+
+
+            foreach (var kv in waitProcessEntities)
+            {
+                int max = kv.Value.Count;
+                if (max > 0)
+                {
+                    return true;
+                }
+            }
+
+            return false;
+            //-------------------------------------
+
+            foreach (var kv in waitProcessEntities)
+            //System.Threading.Tasks.Parallel.ForEach(waitProcessEntities, options, (kv) =>
             {
                 int max = kv.Value.Count;
                 var container = kv.Value;
@@ -98,14 +324,15 @@ namespace Framework.Caspar
                     entity.interrupted = false;
                     if (entity.ToRun())
                     {
-                        var sw = Stopwatch.StartNew();
-                        var fn = Stopwatch.StartNew();
+                        Interlocked.Increment(ref totalHandled);
+                        // var sw = Stopwatch.StartNew();
+                        // var fn = Stopwatch.StartNew();
                         CurrentEntity.Value = entity;
                         FromDelegateUID.Value = 0;
 
                         try
                         {
-                            sw.Restart();
+                            //   sw.Restart();
                             for (int c = 0; entity.continuations.Count > 0 && c < MaxLoop && entity.interrupted == false && entity.Strand == kv.Key; ++c)
                             {
                                 Action callback = null;
@@ -114,16 +341,16 @@ namespace Framework.Caspar
                                 try
                                 {
                                     //   System.Threading.SynchronizationContext.SetSynchronizationContext(new Entity.SynchronizationContext() { Entity = entity });
-                                    fn.Restart();
+                                    //       fn.Restart();
                                     callback();
-                                    if (fn.ElapsedMilliseconds > 300)
-                                    {
-                                        // Logger.Warning($"too long method. continuations {fn.ElapsedMilliseconds}ms");
-                                    }
-                                    if (sw.ElapsedMilliseconds > 99)
-                                    {
-                                        entity.interrupted = true;
-                                    }
+                                    // if (fn.ElapsedMilliseconds > 300)
+                                    // {
+                                    //     // Logger.Warning($"too long method. continuations {fn.ElapsedMilliseconds}ms");
+                                    // }
+                                    // if (sw.ElapsedMilliseconds > 99)
+                                    // {
+                                    //     entity.interrupted = true;
+                                    // }
                                 }
                                 catch (Exception e)
                                 {
@@ -131,7 +358,7 @@ namespace Framework.Caspar
 
                                 }
                             }
-                            sw.Restart();
+                            //        sw.Restart();
                             for (int c = 0; entity.messages.Count > 0 && c < MaxLoop && entity.interrupted == false && entity.Strand == kv.Key && entity.locks.Count == 0 && entity.continuations.Count == 0; ++c)
                             {
                                 Action callback = null;
@@ -158,7 +385,7 @@ namespace Framework.Caspar
 
                                 }
                             }
-                            sw.Restart();
+                            //   sw.Restart();
 
                             for (int c = 0; entity.asynchronouslies.Count > 0 && c < MaxLoop && entity.interrupted == false && entity.Strand == kv.Key; ++c)
                             {
@@ -167,16 +394,16 @@ namespace Framework.Caspar
                                 try
                                 {
                                     //  System.Threading.SynchronizationContext.SetSynchronizationContext(new Entity.SynchronizationContext() { Entity = entity });
-                                    fn.Restart();
+                                    //  fn.Restart();
                                     callback();
-                                    if (fn.ElapsedMilliseconds > 300)
-                                    {
-                                        Logger.Warning($"too long method. asynchronouslies {fn.ElapsedMilliseconds}ms");
-                                    }
-                                    if (sw.ElapsedMilliseconds > 99)
-                                    {
-                                        entity.interrupted = true;
-                                    }
+                                    // if (fn.ElapsedMilliseconds > 300)
+                                    // {
+                                    //     Logger.Warning($"too long method. asynchronouslies {fn.ElapsedMilliseconds}ms");
+                                    // }
+                                    // if (sw.ElapsedMilliseconds > 99)
+                                    // {
+                                    //     entity.interrupted = true;
+                                    // }
                                 }
                                 catch (Exception e)
                                 {
@@ -212,7 +439,8 @@ namespace Framework.Caspar
                 {
                     Interlocked.Increment(ref remainTask);
                 }
-            });
+            };
+            //Logger.Info($"TotalHandled {totalHandled}");
             return remainTask > 0;
         }
 
@@ -285,6 +513,7 @@ namespace Framework.Caspar
 
             });
 
+
             return remainTask > 0;
             //return remainTask;
         }
@@ -322,6 +551,7 @@ namespace Framework.Caspar
             if (Interlocked.CompareExchange(ref state, (int)State.WAIT, (int)State.IDLE) == (int)State.IDLE)
             {
                 WaitAt = DateTime.UtcNow;
+                //   Logger.Info("Layer ToWait -----");
                 return true;
             }
 
@@ -340,6 +570,11 @@ namespace Framework.Caspar
 
             ConcurrentQueue<Entity> tasks = null;
 
+            // if (e.Waits == null)
+            // {
+
+            // }
+
             if (waitProcessEntities.TryGetValue(e.Strand, out tasks) == false)
             {
                 return;
@@ -348,6 +583,7 @@ namespace Framework.Caspar
             tasks.Enqueue(e);
             if (ToWait())
             {
+                e.PostAt = DateTime.UtcNow;
                 Layers.Add(this);
             }
         }

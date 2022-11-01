@@ -137,6 +137,7 @@ namespace Framework.Caspar
                 Interlocked.Increment(ref post);
                 if (Interlocked.CompareExchange(ref state, (int)State.WAIT, (int)State.IDLE) == (int)State.IDLE)
                 {
+                    PostAt = DateTime.UtcNow;
                     return true;
                 }
 
@@ -225,7 +226,7 @@ namespace Framework.Caspar
             internal ConcurrentDictionary<System.Threading.Tasks.Task, System.Threading.Tasks.Task> locks = new();
             public bool IsLocked { get { return locks.Count > 0; } }
 
-            public DateTime PostAt { get; private set; }
+            public DateTime PostAt { get; set; }
 
             public void Lock(System.Threading.Tasks.Task task)
             {
@@ -303,7 +304,6 @@ namespace Framework.Caspar
                 if (ToWait())
                 {
                     layer.Post(this);
-                    PostAt = DateTime.UtcNow;
                 }
                 return true;
             }
