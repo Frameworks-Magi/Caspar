@@ -73,23 +73,23 @@ namespace Framework.Caspar
         {
             bool flag = false;
 
-            // try
-            // {
-            //     OnUpdate();
-            // }
-            // catch (Exception e)
-            // {
-            //     Logger.Error($"{e}");
-            // }
+            try
+            {
+                OnUpdate();
+            }
+            catch (Exception e)
+            {
+                Logger.Error($"{e}");
+            }
 
-            // try
-            // {
-            //     flag |= ProcessEntityClose();
-            // }
-            // catch (Exception e)
-            // {
-            //     Logger.Error($"{e}");
-            // }
+            try
+            {
+                flag |= ProcessEntityClose();
+            }
+            catch (Exception e)
+            {
+                Logger.Error($"{e}");
+            }
 
             try
             {
