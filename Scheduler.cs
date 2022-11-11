@@ -23,7 +23,7 @@ namespace Framework.Caspar
         {
             try
             {
-                //      timer?.Close();
+                timer?.Close();
                 timer?.Dispose();
                 await base.OnClose();
             }
@@ -35,39 +35,33 @@ namespace Framework.Caspar
 
         protected virtual void OnSchedule() { }
 
-        //System.Timers.Timer timer;
-        System.Threading.Timer timer;
+        System.Timers.Timer timer;
         public void Run(int millisecond)
         {
             if (Next != 0) { return; }
             if (timer != null) { return; }
 
-            timer = new((state) =>
+            timer = new(millisecond);
+            timer.Elapsed += (o, e) =>
             {
-                if (IsClose() == true) { timer.Dispose(); timer = null; }
-                PostMessage(() => { OnSchedule(); });
-            }, this, millisecond, millisecond);
-            // timer.
-            // timer.Elapsed += (o, e) =>
-            // {
-            //     try
-            //     {
-            //         if (Paused == true)
-            //         {
-            //             return;
-            //         }
-            //         if (IsClose() == true) { timer.Close(); timer.Dispose(); }
-            //         PostMessage(() => { OnSchedule(); });
+                try
+                {
+                    if (Paused == true)
+                    {
+                        return;
+                    }
+                    if (IsClose() == true) { timer.Close(); timer.Dispose(); }
+                    PostMessage(() => { OnSchedule(); });
 
-            //     }
-            //     catch
-            //     {
+                }
+                catch
+                {
 
-            //     }
+                }
 
-            // };
-            // timer.AutoReset = true;
-            // timer.Enabled = true;
+            };
+            timer.AutoReset = true;
+            timer.Enabled = true;
 
             //if (millisecond != 4000) { return; }
             // Next = Framework.Caspar.Api.KST.AddMilliseconds(millisecond).Ticks;
@@ -85,7 +79,7 @@ namespace Framework.Caspar
         {
             interval = -1;
             Paused = true;
-            //   timer?.Close();
+            timer?.Close();
             timer?.Dispose();
             timer = null;
             Next = 0;
@@ -94,15 +88,14 @@ namespace Framework.Caspar
         public void Pause()
         {
             Paused = true; if (timer == null) { return; }
-            //   timer.Change()
-            //    timer.Enabled = false;
+            timer.Enabled = false;
         }
 
         public void Resume()
         {
             Paused = false;
             if (timer == null) { return; }
-            //  timer.Enabled = true;
+            timer.Enabled = true;
         }
 
         internal int interval = -1;
