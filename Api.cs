@@ -29,6 +29,7 @@ using Amazon.DynamoDBv2.DataModel;
 using Amazon.DynamoDBv2.DocumentModel;
 using Framework.Caspar.Container;
 using Amazon.S3;
+using System.Net.Http;
 
 namespace Framework.Caspar
 {
@@ -2234,20 +2235,13 @@ namespace Framework.Caspar
                 {
                     try
                     {
-                        HttpWebRequest request;
-                        request = WebRequest.Create($"http://{(string)Config.Agent.Ip}:5282/0/casparseed") as HttpWebRequest;
-
-                        request.Method = "GET";
-                        request.ContentType = "text/plain";
-
-                        using (WebResponse r = request.GetResponse())
+                        using (var httpClient = new HttpClient())
                         {
-                            using (System.IO.StreamReader sr = new System.IO.StreamReader(r.GetResponseStream()))
-                            {
-                                var ret = JObject.Parse(sr.ReadToEnd());
-                                Offset = (int)ret.GetValue("Offset");
-                                PublicIp = (string)ret.GetValue("RemoteIp");
-                            }
+                            var res = await httpClient.GetAsync($"http://{(string)Config.Agent.Ip}:5281/Admin/Seed");
+                            var content = await res.Content.ReadAsStringAsync();
+                            var ret = JObject.Parse(content);
+                            Offset = (int)ret.GetValue("Offset");
+                            PublicIp = (string)ret.GetValue("RemoteIp");
                         }
                     }
                     catch
