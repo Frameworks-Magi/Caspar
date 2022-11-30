@@ -80,7 +80,7 @@ namespace Framework.Caspar.Database
         }
 
 
-        internal void Rollback()
+        public void Rollback()
         {
             foreach (var e in connections)
             {
@@ -95,7 +95,7 @@ namespace Framework.Caspar.Database
             }
         }
 
-        internal void Commit()
+        public void Commit()
         {
             foreach (var e in connections)
             {
