@@ -24,21 +24,16 @@ namespace Framework.Caspar
                 {
                     if (uid == value) { return; }
                     uid = value;
-                    Strand = (int)value;
+                    Strand = Math.Abs((int)(Interlocked.Increment(ref strand) % global::Framework.Caspar.Api.ThreadCount));
                 }
             }
 
-            private static int _strand = 0;
-
-            public int strand { get; private set; }
+            public static int strand;
             public int Strand
             {
-                get => strand;
-                set
-                {
-                    int s = Interlocked.Increment(ref _strand);
-                    strand = Math.Abs((int)(s % global::Framework.Caspar.Api.ThreadCount));
-                }
+                get;
+                private set;
+
             }
             public Entity(Layer layer)
             {
