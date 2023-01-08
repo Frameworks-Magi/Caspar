@@ -10,6 +10,7 @@ using System.Threading;
 using System.Data;
 using System.Collections;
 using static Framework.Caspar.Api;
+using Amazon;
 
 namespace Framework.Caspar.Database.Management.Relational
 {
@@ -205,8 +206,25 @@ namespace Framework.Caspar.Database.Management.Relational
         {
             MySqlConnectionStringBuilder connectionString = new MySqlConnectionStringBuilder();
 
+
+
             connectionString.UserID = Id;
             connectionString.Password = Pw;
+
+            try
+            {
+                if (Framework.Caspar.Api.Config.Databases.IAM == true)
+                {
+                    var pwd = Amazon.RDS.Util.RDSAuthTokenGenerator.GenerateAuthToken(RegionEndpoint.APNortheast2, Ip, 3306, Id);
+                    connectionString.Password = pwd;
+                    connectionString.SslCa = (string)Framework.Caspar.Api.Config.Databases.SslCa;
+                }
+            }
+            catch (Exception e)
+            {
+                Logger.Error(e);
+            }
+
             connectionString.Server = Ip;
             connectionString.Port = Convert.ToUInt32(Port);
             connectionString.Database = Db;
@@ -219,6 +237,7 @@ namespace Framework.Caspar.Database.Management.Relational
             connectionString.MinimumPoolSize = 1;
             connectionString.MaximumPoolSize = (uint)Api.MaxSession;
             connectionString.SslMode = MySqlSslMode.Required;
+            //connectionString.SslCa = 
             connectionStringValue = connectionString.GetConnectionString(true);
 
         }

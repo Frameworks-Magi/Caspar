@@ -1987,9 +1987,30 @@ namespace Framework.Caspar
             dynamic db = obj.First;
             db = global::Framework.Caspar.Api.Config.Databases.MySql[db.Name];
 
+
             connectionString.UserID = db.Id;
             connectionString.Password = db.Pw;
+            if (db.Crypt == true)
+            {
+                connectionString.UserID = global::Framework.Caspar.Api.DesDecrypt(connectionString.UserID, "magimagi");
+                connectionString.Password = global::Framework.Caspar.Api.DesDecrypt(connectionString.Password, "magimagi");
+            }
             connectionString.Server = db.Ip;
+
+            try
+            {
+                if (Framework.Caspar.Api.Config.Databases.IAM == true)
+                {
+                    var pwd = Amazon.RDS.Util.RDSAuthTokenGenerator.GenerateAuthToken(RegionEndpoint.APNortheast2, connectionString.Server, 3306, connectionString.UserID);
+                    connectionString.Password = pwd;
+                    connectionString.SslCa = (string)Framework.Caspar.Api.Config.Databases.SslCa;
+                }
+            }
+            catch (Exception e)
+            {
+                Logger.Error(e);
+            }
+
             connectionString.Port = Convert.ToUInt32(db.Port);
             connectionString.Database = db.Db;
             connectionString.Pooling = false;
@@ -1999,11 +2020,7 @@ namespace Framework.Caspar
             connectionString.ConnectionTimeout = 30;
             connectionString.SslMode = MySql.Data.MySqlClient.MySqlSslMode.Required;
 
-            if (db.Crypt == true)
-            {
-                connectionString.UserID = global::Framework.Caspar.Api.DesDecrypt(connectionString.UserID, "magimagi");
-                connectionString.Password = global::Framework.Caspar.Api.DesDecrypt(connectionString.Password, "magimagi");
-            }
+
 
             var connectionStringValue = connectionString.GetConnectionString(true);
 
@@ -2014,7 +2031,7 @@ namespace Framework.Caspar
                 {
 
                     using var connection = new MySql.Data.MySqlClient.MySqlConnection(connectionStringValue);
-                    Logger.Info($"Regist to {connectionString.Server}:{connectionString.Port}");
+                    Logger.Info($"Registration to {connectionString.Server}:{connectionString.Port}");
                     connection.Open();
 
                     using var command = connection.CreateCommand();
