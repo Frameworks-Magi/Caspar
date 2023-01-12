@@ -71,7 +71,7 @@ namespace Framework.Caspar.Google
 
                 byte[] signature = Convert.FromBase64String((string)info.signature);
                 var sha = SHA1.Create();
-                byte[] data = ((string)info.receiptData).FromBase64String();
+                byte[] data = ((string)info.receiptData).FromBase64ToBytes();
                 if (provider.VerifyData(data, sha, signature) == false)
                 {
                     return null;

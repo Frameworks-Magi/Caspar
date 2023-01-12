@@ -187,9 +187,13 @@ namespace Framework.Caspar
             return value.ToBytes().ToBase64String();
         }
 
-        public static byte[] FromBase64String(this string value)
+        public static byte[] FromBase64ToBytes(this string value)
         {
             return Convert.FromBase64String(value);
+        }
+        public static string FromBase64ToString(this string value)
+        {
+            return Encoding.UTF8.GetString(Convert.FromBase64String(value));
         }
 
         public static byte[] ToBytes(this string value)
@@ -269,7 +273,7 @@ namespace Framework.Caspar
 
         public static T FromBase64String<T>(this T msg, string base64) where T : global::Google.Protobuf.IMessage<T>, new()
         {
-            MemoryStream stream = new MemoryStream(base64.FromBase64String());
+            MemoryStream stream = new MemoryStream(base64.FromBase64ToBytes());
             msg.MergeFrom(stream);
             return msg;
         }
