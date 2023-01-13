@@ -257,7 +257,7 @@ namespace Framework.Caspar.Database
         public Action ResponseCallBack { get; set; }
         public virtual string Host { get; }
 
-        public Func<Task> Command { get; set; }
+        internal Func<Task> Command { get; set; }
         public int Error { get; protected set; }
         public System.Exception Exception { get; protected set; }
         public int Strand { get; set; }

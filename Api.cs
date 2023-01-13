@@ -1999,11 +1999,12 @@ namespace Framework.Caspar
 
             try
             {
-                if (Framework.Caspar.Api.Config.Databases.IAM == true)
+
+                if (Framework.Caspar.Api.Config.Databases.IAM != null)
                 {
+                    Amazon.AWSConfigs.AWSProfileName = (string)Framework.Caspar.Api.Config.Databases.IAM;
                     var pwd = Amazon.RDS.Util.RDSAuthTokenGenerator.GenerateAuthToken(RegionEndpoint.APNortheast2, connectionString.Server, 3306, connectionString.UserID);
                     connectionString.Password = pwd;
-                    connectionString.SslCa = (string)Framework.Caspar.Api.Config.Databases.SslCa;
                 }
             }
             catch (Exception e)

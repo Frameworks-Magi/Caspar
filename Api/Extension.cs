@@ -386,6 +386,25 @@ namespace Framework.Caspar
             return Convert.ToInt64((date - epoch).TotalSeconds);
         }
 
+        public static long ToUnixTime(this object value)
+        {
+            try
+            {
+                if (value is DateTime)
+                {
+                    return ((DateTime)value).ToUnixTime();
+                }
+                if (value is global::MySql.Data.Types.MySqlDateTime)
+                {
+                    return ((global::MySql.Data.Types.MySqlDateTime)value).GetDateTime().ToUnixTime();
+                }
+            }
+            catch
+            {
+            }
+            return 0;
+        }
+
         public static DateTime ToDateTime(this object value)
         {
             try
