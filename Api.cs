@@ -119,6 +119,15 @@ namespace Framework.Caspar
                             driver.Id = global::Framework.Caspar.Api.DesDecrypt(driver.Id, "magimagi");
                             driver.Pw = global::Framework.Caspar.Api.DesDecrypt(driver.Pw, "magimagi");
                         }
+
+                        try
+                        {
+                            driver.IAM = (bool)session.IAM;
+                        }
+                        catch
+                        {
+
+                        }
                         Logger.Info($"Database Session Add {driver.Ip}");
                         Database.Driver.AddDatabase(driver.Name, driver);
                     }
@@ -1999,11 +2008,10 @@ namespace Framework.Caspar
 
             try
             {
-
-                if (Framework.Caspar.Api.Config.Databases.IAM != null)
+                if (db.IAM == true)
                 {
-                    Amazon.AWSConfigs.AWSProfileName = (string)Framework.Caspar.Api.Config.Databases.IAM;
-                    var pwd = Amazon.RDS.Util.RDSAuthTokenGenerator.GenerateAuthToken(RegionEndpoint.APNortheast2, connectionString.Server, 3306, connectionString.UserID);
+                    var awsCredentials = new Amazon.Runtime.BasicAWSCredentials((string)global::Framework.Caspar.Api.Config.AWS.Access.KeyId, (string)global::Framework.Caspar.Api.Config.AWS.Access.SecretAccessKey);
+                    var pwd = Amazon.RDS.Util.RDSAuthTokenGenerator.GenerateAuthToken(awsCredentials, connectionString.Server, 3306, connectionString.UserID);
                     connectionString.Password = pwd;
                 }
             }

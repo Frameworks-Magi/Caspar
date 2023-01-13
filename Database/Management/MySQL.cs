@@ -202,6 +202,8 @@ namespace Framework.Caspar.Database.Management.Relational
             }
         }
 
+        public bool IAM { get; set; } = false;
+
         public void Initialize()
         {
             MySqlConnectionStringBuilder connectionString = new MySqlConnectionStringBuilder();
@@ -213,11 +215,11 @@ namespace Framework.Caspar.Database.Management.Relational
 
             try
             {
-                if (Framework.Caspar.Api.Config.Databases.IAM == true)
+                if (IAM == true)
                 {
-                    var pwd = Amazon.RDS.Util.RDSAuthTokenGenerator.GenerateAuthToken(RegionEndpoint.APNortheast2, Ip, 3306, Id);
+                    var awsCredentials = new Amazon.Runtime.BasicAWSCredentials((string)global::Framework.Caspar.Api.Config.AWS.Access.KeyId, (string)global::Framework.Caspar.Api.Config.AWS.Access.SecretAccessKey);
+                    var pwd = Amazon.RDS.Util.RDSAuthTokenGenerator.GenerateAuthToken(awsCredentials, connectionString.Server, 3306, connectionString.UserID);
                     connectionString.Password = pwd;
-                    connectionString.SslCa = (string)Framework.Caspar.Api.Config.Databases.SslCa;
                 }
             }
             catch (Exception e)
