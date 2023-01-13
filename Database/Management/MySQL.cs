@@ -218,7 +218,7 @@ namespace Framework.Caspar.Database.Management.Relational
                 if (IAM == true)
                 {
                     var awsCredentials = new Amazon.Runtime.BasicAWSCredentials((string)global::Framework.Caspar.Api.Config.AWS.Access.KeyId, (string)global::Framework.Caspar.Api.Config.AWS.Access.SecretAccessKey);
-                    var pwd = Amazon.RDS.Util.RDSAuthTokenGenerator.GenerateAuthToken(awsCredentials, connectionString.Server, 3306, connectionString.UserID);
+                    var pwd = Amazon.RDS.Util.RDSAuthTokenGenerator.GenerateAuthToken(awsCredentials, Ip, 3306, Id);
                     connectionString.Password = pwd;
                 }
             }
