@@ -127,6 +127,13 @@ namespace Framework.Caspar.Database.Management.Relational
         {
             var session = new MySql();
             session.connectionStringValue = connectionStringValue;
+            session.IAM = IAM;
+            session.Id = Id;
+            session.Pw = Pw;
+            session.Ip = Ip;
+            session.Port = Port;
+            session.Db = Db;
+            session.Name = Name;
             return session;
         }
 
@@ -261,48 +268,52 @@ namespace Framework.Caspar.Database.Management.Relational
         }
         public async Task<IConnection> Open(CancellationToken token = default, bool transaction = true)
         {
-            int max = 3;
-            while (true)
+            try
             {
-                try
+                if (Connection == null)
                 {
-                    if (Connection == null)
+                    await Task.Run(async () =>
                     {
-                        await Task.Run(() =>
+                        int max = 3;
+                        while (true)
                         {
-                            Connection = new MySqlConnection(connectionStringValue);
-                            Connection.Open();
-                        });
-
-                    }
-
-                    if (transaction == true)
-                    {
-                        BeginTransaction();
-                    }
-                }
-                catch
-                {
-                    await Task.Delay(100);
-                    max -= 1;
-                    Close();
-                    Dispose();
-                    try
-                    {
-                        if (IAM == true)
-                        {
-                            Initialize();
+                            try
+                            {
+                                Connection = new MySqlConnection(connectionStringValue);
+                                Connection.Open();
+                                return;
+                            }
+                            catch
+                            {
+                                max -= 1;
+                                Close();
+                                Dispose();
+                                await Task.Delay(100);
+                                try
+                                {
+                                    if (IAM == true)
+                                    {
+                                        Initialize();
+                                    }
+                                }
+                                catch (Exception e)
+                                {
+                                    Logger.Error(e);
+                                }
+                                if (max < 0) { throw; }
+                            }
                         }
-                    }
-                    catch (Exception e)
-                    {
-                        Logger.Error(e);
-                    }
-
-                    if (max < 0) { throw; }
-                    continue;
+                    });
                 }
-                break;
+
+                if (transaction == true)
+                {
+                    BeginTransaction();
+                }
+            }
+            catch
+            {
+                throw;
             }
             return this;
         }
