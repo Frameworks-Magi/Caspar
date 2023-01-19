@@ -278,7 +278,7 @@ namespace Framework.Caspar
             }
         }
 
-        public static global::Google.Protobuf.JsonFormatter JsonFormatter { get; private set; }
+        public static global::Google.Protobuf.JsonFormatter JsonFormatter { get; set; }
     }
 
     public static partial class Api

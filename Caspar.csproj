@@ -39,6 +39,7 @@
     <PackageReference Include="System.Data.SqlClient" Version="4.8.2" />
     <PackageReference Include="TimeZoneConverter" Version="3.5.0" />
     <PackageReference Include="FirebaseAdmin" Version="2.3.0" />
+    <PackageReference Include="Nethereum.Web3" Version="4.11.0" />
   </ItemGroup>
 
 </Project>

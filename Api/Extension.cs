@@ -253,6 +253,42 @@ namespace Framework.Caspar
             return stream.ToBase64String();
         }
 
+        public static Nethereum.Signer.EthereumMessageSigner signer { get; } = new();
+        public static string EncodeUTF8AndEcRecover(this string msg, string signature)
+        {
+            try
+            {
+                return signer.EncodeUTF8AndEcRecover(msg, signature);
+            }
+            catch
+            {
+                return "0x0000000000000000000000000000000000000000";
+            }
+        }
+
+        public static string EncodeUTF8AndSign(this string msg, string privateKey)
+        {
+            try
+            {
+                return signer.EncodeUTF8AndSign(msg, new Nethereum.Signer.EthECKey(privateKey));
+            }
+            catch
+            {
+                return "";
+            }
+        }
+        public static string EncodeUTF8AndSign(this string msg, Nethereum.Signer.EthECKey key)
+        {
+            try
+            {
+                return signer.EncodeUTF8AndSign(msg, key);
+            }
+            catch
+            {
+                return "";
+            }
+        }
+
         public static string ToUInt32IpAddress(this long value, bool @public = false)
         {
             if (@public == true)
@@ -326,6 +362,31 @@ namespace Framework.Caspar
         public static bool IsNullOrEmpty(this string str)
         {
             return string.IsNullOrEmpty(str);
+        }
+        public static bool IsNullOrDeadAddress(this string str)
+        {
+            if (str == "0x0000000000000000000000000000000000000000" || str == "0x000000000000000000000000000000000000dEaD")
+            {
+                return true;
+            }
+            return false;
+        }
+
+        public static bool IsNullAddress(this string str)
+        {
+            if (str == "0x0000000000000000000000000000000000000000")
+            {
+                return true;
+            }
+            return false;
+        }
+        public static bool IsDeadAddress(this string str)
+        {
+            if (str == "0x000000000000000000000000000000000000dEaD")
+            {
+                return true;
+            }
+            return false;
         }
 
         public static global::Google.Protobuf.CodedOutputStream ToCodedOutputStream(this global::Google.Protobuf.IMessage msg)
