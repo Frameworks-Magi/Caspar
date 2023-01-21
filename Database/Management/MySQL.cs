@@ -60,43 +60,65 @@ namespace Framework.Caspar.Database.Management.Relational
             {
                 return await Task.Run(() =>
                 {
-                    var sw = System.Diagnostics.Stopwatch.StartNew();
-                    var ret = Command.ExecuteNonQuery();
-                    long ms = sw.ElapsedMilliseconds;
-                    if (ms > global::Framework.Caspar.Extensions.Database.SlowQueryMilliseconds)
+                    try
                     {
-                        Logger.Info($"{Command.CommandText} - {ms}ms");
+                        var sw = System.Diagnostics.Stopwatch.StartNew();
+                        var ret = Command.ExecuteNonQuery();
+                        long ms = sw.ElapsedMilliseconds;
+                        if (ms > global::Framework.Caspar.Extensions.Database.SlowQueryMilliseconds)
+                        {
+                            Logger.Info($"{Command.CommandText} - {ms}ms");
+                        }
+                        return ret;
                     }
-                    return ret;
+                    catch
+                    {
+                        throw;
+                    }
+
                 });
             }
             public async Task<System.Data.Common.DbDataReader> ExecuteReaderAsync()
             {
                 return await Task.Run(() =>
                 {
-
-                    var sw = System.Diagnostics.Stopwatch.StartNew();
-                    var ret = Command.ExecuteReader();
-                    long ms = sw.ElapsedMilliseconds;
-                    if (ms > global::Framework.Caspar.Extensions.Database.SlowQueryMilliseconds)
+                    try
                     {
-                        Logger.Info($"{Command.CommandText} - {ms}ms");
+                        var sw = System.Diagnostics.Stopwatch.StartNew();
+                        var ret = Command.ExecuteReader();
+                        long ms = sw.ElapsedMilliseconds;
+                        if (ms > global::Framework.Caspar.Extensions.Database.SlowQueryMilliseconds)
+                        {
+                            Logger.Info($"{Command.CommandText} - {ms}ms");
+                        }
+                        return ret;
                     }
-                    return ret;
+                    catch
+                    {
+                        throw;
+                    }
                 });
             }
             public async Task<object> ExecuteScalarAsync()
             {
                 return await Task.Run(() =>
                 {
-                    var sw = System.Diagnostics.Stopwatch.StartNew();
-                    var ret = Command.ExecuteScalar();
-                    long ms = sw.ElapsedMilliseconds;
-                    if (ms > global::Framework.Caspar.Extensions.Database.SlowQueryMilliseconds)
+                    try
                     {
-                        Logger.Info($"{Command.CommandText} - {ms}ms");
+                        var sw = System.Diagnostics.Stopwatch.StartNew();
+                        var ret = Command.ExecuteScalar();
+                        long ms = sw.ElapsedMilliseconds;
+                        if (ms > global::Framework.Caspar.Extensions.Database.SlowQueryMilliseconds)
+                        {
+                            Logger.Info($"{Command.CommandText} - {ms}ms");
+                        }
+                        return ret;
                     }
-                    return ret;
+                    catch
+                    {
+                        throw;
+                    }
+
                 });
             }
             public MySqlCommand Command { get; internal set; }
