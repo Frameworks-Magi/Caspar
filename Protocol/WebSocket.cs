@@ -34,7 +34,10 @@ namespace Framework.Caspar.Protocol
                     return false;
                 }
                 pendings.Enqueue(msg);
-                if (sendBuffer != null) { return true; }
+                if (sendBuffer != null)
+                {
+                    return true;
+                }
                 try
                 {
                     flush();
@@ -116,7 +119,6 @@ namespace Framework.Caspar.Protocol
         {
             lock (this)
             {
-                pendings.Enqueue(null);
                 if (sendBuffer == null)
                 {
                     flush();

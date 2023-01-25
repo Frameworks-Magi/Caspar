@@ -265,8 +265,8 @@ namespace Framework.Caspar.Database.Management.Relational
             connectionString.CheckParameters = false;
             connectionString.UseCompression = true;
             connectionString.ConnectionTimeout = 10;
-            connectionString.MinimumPoolSize = 1;
-            connectionString.MaximumPoolSize = (uint)Api.MaxSession;
+            connectionString.MinimumPoolSize = (uint)Api.MaxSession;
+            connectionString.MaximumPoolSize = (uint)Api.MaxSession * 2;
 
             connectionString.SslMode = MySqlSslMode.Required;
             //connectionString.SslCa = 
@@ -296,17 +296,19 @@ namespace Framework.Caspar.Database.Management.Relational
                 {
                     await Task.Run(async () =>
                     {
-                        int max = 3;
+                        int max = 1;
                         while (true)
                         {
                             try
                             {
                                 Connection = new MySqlConnection(connectionStringValue);
-                                Connection.Open();
+                                //        CTS.CancelAfter(1000);
+                                await Connection.OpenAsync();
                                 return;
                             }
-                            catch
+                            catch (Exception e)
                             {
+                                //   Logger.Error(e);
                                 max -= 1;
                                 Close();
                                 Dispose();
@@ -318,9 +320,9 @@ namespace Framework.Caspar.Database.Management.Relational
                                         Initialize();
                                     }
                                 }
-                                catch (Exception e)
+                                catch (Exception ex)
                                 {
-                                    Logger.Error(e);
+                                    Logger.Error(ex);
                                 }
                                 if (max < 0) { throw; }
                             }

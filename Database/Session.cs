@@ -66,6 +66,8 @@ namespace Framework.Caspar.Database
             }
         }
 
+        protected Layer.Entity parent { get; set; } = null;
+
         public Session()
         {
             Command = async () => { await ValueTask.CompletedTask; };
@@ -153,9 +155,11 @@ namespace Framework.Caspar.Database
             }
 
         }
-
+        public bool IsValid { get; set; } = true;
         public void Dispose()
         {
+            if (IsValid == false) { return; }
+            IsValid = false;
             try
             {
                 if (AutoCommit == true)
@@ -182,10 +186,19 @@ namespace Framework.Caspar.Database
                 Logger.Error(ex);
             }
 
+            if (Db.IsNullOrEmpty() == false && Driver.Connections.TryGetValue(Db, out var queue) == true)
+            {
+
+                var session = Driver.Databases.Get(Db);
+                if (session != null)
+                {
+                    queue.Add(session);
+                }
+            }
             GC.SuppressFinalize(this);
         }
         List<IConnection> connections { get; set; } = new List<IConnection>();
-        public bool AutoCommit { get; set; } = true;
+        public bool AutoCommit { get; set; } = false;
         //static ConcurrentDictionary<string, ConcurrentBag<IConnection>> connections = new();
         static internal ConcurrentDictionary<long, Session> progresses = new();
 
@@ -214,29 +227,74 @@ namespace Framework.Caspar.Database
         //     return session;
         // }
 
-        static async internal Task<IConnection> GetConnection(string db, CancellationToken token, bool transaction = true)
-        {
-            //connections.GetOrCreate(db).Add()
-            return await Task.Run(async () =>
-            {
-                var sw = System.Diagnostics.Stopwatch.StartNew();
-                IConnection session;
-                if (Driver.Databases.TryGetValue(db, out session) == true)
-                {
-                    session = session.Create();
-                    await session.Open(token, transaction);
-                    return session;
-                }
-                return null;
-            });
-        }
+        //   public static ConcurrentDictionary<string, BlockingCollection<IConnection>> sessions = new();
+
+        // static async internal Task<IConnection> GetConnection(string db, CancellationToken token, bool transaction = true)
+        // {
+
+
+
+
+
+        //     // //connections.GetOrCreate(db).Add()
+        //     // return await Task.Run(async () =>
+        //     // {
+        //     //     var sw = System.Diagnostics.Stopwatch.StartNew();
+        //     //     IConnection session;
+        //     //     if (Driver.Databases.TryGetValue(db, out session) == true)
+        //     //     {
+        //     //         session = session.Create();
+        //     //         await session.Open(token, transaction);
+        //     //         return session;
+        //     //     }
+        //     //     return null;
+        //     // });
+        // }
+
+        public static ConcurrentQueue<Session> Timeouts = new();
 
         public async Task<IConnection> GetConnection(string name, bool open = true, bool transaction = true)
         {
+            try
+            {
+                if (IsValid == false) { return null; }
+                if (Driver.Connections.TryGetValue(name, out var queue) == false)
+                {
+                    return null;
+                }
+                //             CTS.CancelAfter(1000);
+                var session = queue.Take();
+                Db = name;
 
-            var ret = await GetConnection(name, this.CancellationToken, transaction);
-            connections.Add(ret);
-            return ret;
+                return await Task.Run(async () =>
+                {
+                    try
+                    {
+                        //        CTS.CancelAfter(1000);
+                        //     var sw = System.Diagnostics.Stopwatch.StartNew();
+                        IConnection connection;
+                        connection = session.Create();
+                        await connection.Open(this.CancellationToken, transaction);
+                        connections.Add(connection);
+                        return connection;
+                    }
+                    catch (Exception e)
+                    {
+                        Logger.Error(e);
+                        return null;
+                    }
+
+                });
+            }
+            catch (Exception e)
+            {
+                Logger.Error(e);
+                return null;
+            }
+
+            // var ret = await GetConnection(name, this.CancellationToken, transaction);
+            // connections.Add(ret);
+            // return ret;
 
         }
 
@@ -265,6 +323,8 @@ namespace Framework.Caspar.Database
         public DateTime Timeout { get; internal set; }
         internal protected System.Threading.CancellationTokenSource CTS { get; private set; } = new CancellationTokenSource();
         public System.Threading.CancellationToken CancellationToken => CTS.Token;
+
+        public string Db { get; private set; } = string.Empty;
 
         internal protected virtual void SetResult(int result)
         {

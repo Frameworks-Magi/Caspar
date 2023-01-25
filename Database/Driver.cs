@@ -30,18 +30,24 @@ namespace Framework.Caspar.Database
             IConnection session;
             if (Databases.TryGetValue(db, out session) == true)
             {
-                session.CopyFrom(value);
+                return;
+                //session.CopyFrom(value);
             }
             else
             {
                 Databases.Add(db, value);
+                var queue = new BlockingCollection<IConnection>();
+                for (int i = 0; i < Api.MaxSession; ++i)
+                {
+                    queue.Add(value);
+                }
+                Connections.Add(db, queue);
             }
 
         }
 
         static public Dictionary<string, IConnection> Databases = new Dictionary<string, IConnection>();
-
-
+        public static ConcurrentDictionary<string, BlockingCollection<IConnection>> Connections = new();
 
         public void Run()
         {

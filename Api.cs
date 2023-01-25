@@ -85,9 +85,14 @@ namespace Framework.Caspar
 
             Api.MaxSession = (uint)global::Framework.Caspar.Api.Config.Databases.MaxSession;
 
-            if (Api.MaxSession < 2)
+            if (Api.MaxSession < 16)
             {
-                global::Framework.Caspar.Api.Config.Databases.MaxSession = global::Framework.Caspar.Api.ThreadCount;
+                global::Framework.Caspar.Api.Config.Databases.MaxSession = 16;
+            }
+
+            if (global::Framework.Caspar.Api.Config.Deploy != "QA")
+            {
+                global::Framework.Caspar.Api.Config.Databases.MaxSession = 8;
             }
 
             dynamic config = global::Framework.Caspar.Api.Config;

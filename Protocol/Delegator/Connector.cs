@@ -6,6 +6,7 @@ using Framework.Caspar.Database;
 using Framework.Caspar;
 using System.Threading.Tasks;
 using static Framework.Caspar.Extensions.Database;
+using Newtonsoft.Json.Linq;
 
 namespace Framework.Caspar.Protocol
 {
@@ -73,6 +74,9 @@ namespace Framework.Caspar.Protocol
 
                     using var session = new Framework.Caspar.Database.Session();
 
+                    JObject obj = global::Framework.Caspar.Api.Config.Databases.MySql;
+                    dynamic db = obj.First;
+                    DB = db.Name;
 
                     var connection = await session.GetConnection(DB);
                     var command = connection.CreateCommand();

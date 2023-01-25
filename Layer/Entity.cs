@@ -8,6 +8,7 @@ using System.Runtime.CompilerServices;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
+using Framework.Caspar.Container;
 using static Framework.Caspar.Api;
 
 namespace Framework.Caspar
