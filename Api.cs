@@ -2035,6 +2035,7 @@ namespace Framework.Caspar
             if (db.IAM == true)
             {
                 connectionString.SslMode = MySql.Data.MySqlClient.MySqlSslMode.Required;
+                connectionString.SslCa = "rds-ca-2019-root.pem";
             }
             else
             {
