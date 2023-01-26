@@ -243,6 +243,7 @@ namespace Framework.Caspar.Database.Management.Relational
             }
             if (session != null && session is MySql)
             {
+                if ((session as MySql).InitializedAt > DateTime.UtcNow) { return; }
                 lock (session)
                 {
                     if ((session as MySql).InitializedAt < DateTime.UtcNow)
@@ -280,11 +281,12 @@ namespace Framework.Caspar.Database.Management.Relational
                         if (IAM == true)
                         {
                             connectionString.SslMode = MySqlSslMode.Required;
+                            connectionString.SslCa = "rds-ca-2019-root.pem";
                         }
 
-                        //connectionString.SslCa = 
                         connectionStringValue = connectionString.GetConnectionString(true);
-                        (session as MySql).InitializedAt = DateTime.UtcNow.AddMinutes(1);
+                        Logger.Info($"Generate new IAM Token {connectionStringValue}");
+                        (session as MySql).InitializedAt = DateTime.UtcNow.AddMinutes(10);
                     }
                 }
                 connectionStringValue = (session as MySql).connectionStringValue;
@@ -303,8 +305,7 @@ namespace Framework.Caspar.Database.Management.Relational
             Connection?.Dispose();
             Connection = null;
 
-            GC.SuppressFinalize(this);
-
+            //GC.SuppressFinalize(this);
         }
         public async Task<IConnection> Open(CancellationToken token = default, bool transaction = true)
         {
@@ -319,9 +320,15 @@ namespace Framework.Caspar.Database.Management.Relational
                         {
                             try
                             {
+                                if (IAM == true)
+                                {
+                                    Initialize();
+                                }
                                 Connection = new MySqlConnection(connectionStringValue);
-                                //        CTS.CancelAfter(1000);
                                 await Connection.OpenAsync();
+                                Logger.Info($"Opened: {connectionStringValue}");
+
+                                Session.Closer.Add(this);
                                 return;
                             }
                             catch (Exception e)

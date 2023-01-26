@@ -41,6 +41,48 @@ namespace Framework.Caspar.Database
 
     public class Session : IDisposable
     {
+
+        public class Closer : Framework.Caspar.Scheduler
+        {
+            public static Closer Singleton { get; } = Singleton<Closer>.Instance;
+
+            protected ConcurrentQueue<(IConnection, long)> Connections = new();
+
+            protected long ExpireAt { get; set; } = 0;
+
+            public static void Add(IConnection connection)
+            {
+                Singleton.Connections.Enqueue((connection, Singleton.ExpireAt));
+            }
+            protected override void OnSchedule()
+            {
+                long now = DateTime.UtcNow.Ticks;
+
+                while (Connections.Count > 0)
+                {
+                    if (Connections.TryPeek(out var item) == false)
+                    {
+                        break;
+                    }
+
+                    if (item.Item2 > now) { break; }
+
+                    if (Connections.TryDequeue(out item) == false)
+                    {
+                        break;
+                    }
+                    item.Item1.Dispose();
+                    GC.SuppressFinalize(item.Item1);
+                }
+
+            }
+
+            public void Run()
+            {
+                ExpireAt = DateTime.UtcNow.AddSeconds(5).Ticks;
+                Run(1000);
+            }
+        }
         public class RollbackException : System.Exception
         {
             public int ErrorCode { get; set; }
