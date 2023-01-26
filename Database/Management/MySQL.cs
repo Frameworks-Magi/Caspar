@@ -232,45 +232,59 @@ namespace Framework.Caspar.Database.Management.Relational
         }
 
         public bool IAM { get; set; } = false;
+        internal DateTime InitializedAt { get; set; } = DateTime.UtcNow;
 
         public void Initialize()
         {
-            MySqlConnectionStringBuilder connectionString = new MySqlConnectionStringBuilder();
 
-
-
-            connectionString.UserID = Id;
-            connectionString.Password = Pw;
-
-            try
+            if (Database.Driver.Databases.TryGetValue(Name, out var session) == false)
             {
-                if (IAM == true)
+                return;
+            }
+            if (session != null && session is MySql)
+            {
+                lock (session)
                 {
-                    var awsCredentials = new Amazon.Runtime.BasicAWSCredentials((string)global::Framework.Caspar.Api.Config.AWS.Access.KeyId, (string)global::Framework.Caspar.Api.Config.AWS.Access.SecretAccessKey);
-                    var pwd = Amazon.RDS.Util.RDSAuthTokenGenerator.GenerateAuthToken(awsCredentials, Ip, 3306, Id);
-                    connectionString.Password = pwd;
+                    if ((session as MySql).InitializedAt < DateTime.UtcNow)
+                    {
+                        var connectionString = new MySqlConnectionStringBuilder();
+                        connectionString.UserID = Id;
+                        connectionString.Password = Pw;
+
+                        try
+                        {
+                            if (IAM == true)
+                            {
+                                var awsCredentials = new Amazon.Runtime.BasicAWSCredentials((string)global::Framework.Caspar.Api.Config.AWS.Access.KeyId, (string)global::Framework.Caspar.Api.Config.AWS.Access.SecretAccessKey);
+                                var pwd = Amazon.RDS.Util.RDSAuthTokenGenerator.GenerateAuthToken(awsCredentials, Ip, 3306, Id);
+                                connectionString.Password = pwd;
+                            }
+                        }
+                        catch (Exception e)
+                        {
+                            Logger.Error(e);
+                        }
+
+                        connectionString.Server = Ip;
+                        connectionString.Port = Convert.ToUInt32(Port);
+                        connectionString.Database = Db;
+                        connectionString.Pooling = true;
+                        connectionString.AllowZeroDateTime = true;
+                        connectionString.CharacterSet = "utf8";
+                        connectionString.CheckParameters = false;
+                        connectionString.UseCompression = true;
+                        connectionString.ConnectionTimeout = 10;
+                        connectionString.MinimumPoolSize = (uint)Api.MaxSession;
+                        connectionString.MaximumPoolSize = (uint)Api.MaxSession * 2;
+
+                        connectionString.SslMode = MySqlSslMode.Required;
+                        //connectionString.SslCa = 
+                        connectionStringValue = connectionString.GetConnectionString(true);
+                        (session as MySql).InitializedAt = DateTime.UtcNow.AddMinutes(1);
+                    }
                 }
+                connectionStringValue = (session as MySql).connectionStringValue;
             }
-            catch (Exception e)
-            {
-                Logger.Error(e);
-            }
-
-            connectionString.Server = Ip;
-            connectionString.Port = Convert.ToUInt32(Port);
-            connectionString.Database = Db;
-            connectionString.Pooling = true;
-            connectionString.AllowZeroDateTime = true;
-            connectionString.CharacterSet = "utf8";
-            connectionString.CheckParameters = false;
-            connectionString.UseCompression = true;
-            connectionString.ConnectionTimeout = 10;
-            connectionString.MinimumPoolSize = (uint)Api.MaxSession;
-            connectionString.MaximumPoolSize = (uint)Api.MaxSession * 2;
-
-            connectionString.SslMode = MySqlSslMode.Required;
-            //connectionString.SslCa = 
-            connectionStringValue = connectionString.GetConnectionString(true);
 
         }
 
@@ -308,6 +322,7 @@ namespace Framework.Caspar.Database.Management.Relational
                             }
                             catch (Exception e)
                             {
+                                Logger.Info($"Error: {connectionStringValue}");
                                 //   Logger.Error(e);
                                 max -= 1;
                                 Close();
