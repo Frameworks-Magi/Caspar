@@ -90,7 +90,7 @@ namespace Framework.Caspar
                 global::Framework.Caspar.Api.Config.Databases.MaxSession = 16;
             }
 
-            if (global::Framework.Caspar.Api.Config.Deploy != "QA")
+            if (global::Framework.Caspar.Api.Config.Deploy == "QA")
             {
                 global::Framework.Caspar.Api.Config.Databases.MaxSession = 8;
             }
@@ -2032,7 +2032,10 @@ namespace Framework.Caspar
             connectionString.CheckParameters = false;
             connectionString.UseCompression = true;
             connectionString.ConnectionTimeout = 30;
-            connectionString.SslMode = MySql.Data.MySqlClient.MySqlSslMode.Required;
+            if (db.IAM == true)
+            {
+                connectionString.SslMode = MySql.Data.MySqlClient.MySqlSslMode.Required;
+            }
 
 
 

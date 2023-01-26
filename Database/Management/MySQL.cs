@@ -277,7 +277,11 @@ namespace Framework.Caspar.Database.Management.Relational
                         connectionString.MinimumPoolSize = (uint)Api.MaxSession;
                         connectionString.MaximumPoolSize = (uint)Api.MaxSession * 2;
 
-                        connectionString.SslMode = MySqlSslMode.Required;
+                        if (IAM == true)
+                        {
+                            connectionString.SslMode = MySqlSslMode.Required;
+                        }
+
                         //connectionString.SslCa = 
                         connectionStringValue = connectionString.GetConnectionString(true);
                         (session as MySql).InitializedAt = DateTime.UtcNow.AddMinutes(1);

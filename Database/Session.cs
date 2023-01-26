@@ -185,16 +185,15 @@ namespace Framework.Caspar.Database
             {
                 Logger.Error(ex);
             }
+            // if (Db.IsNullOrEmpty() == false && Driver.Connections.TryGetValue(Db, out var queue) == true)
+            // {
 
-            if (Db.IsNullOrEmpty() == false && Driver.Connections.TryGetValue(Db, out var queue) == true)
-            {
-
-                var session = Driver.Databases.Get(Db);
-                if (session != null)
-                {
-                    queue.Add(session);
-                }
-            }
+            //     var session = Driver.Databases.Get(Db);
+            //     if (session != null)
+            //     {
+            //         queue.Add(session);
+            //     }
+            // }
             GC.SuppressFinalize(this);
         }
         List<IConnection> connections { get; set; } = new List<IConnection>();
@@ -257,13 +256,18 @@ namespace Framework.Caspar.Database
         {
             try
             {
-                if (IsValid == false) { return null; }
-                if (Driver.Connections.TryGetValue(name, out var queue) == false)
+                // if (IsValid == false) { return null; }
+                // if (Driver.Connections.TryGetValue(name, out var queue) == false)
+                // {
+                //     return null;
+                // }
+
+                if (Driver.Databases.TryGetValue(name, out var session) == false)
                 {
                     return null;
                 }
-                //             CTS.CancelAfter(1000);
-                var session = queue.Take();
+                // //             CTS.CancelAfter(1000);
+                // var session = queue.Take();
                 Db = name;
 
                 return await Task.Run(async () =>
