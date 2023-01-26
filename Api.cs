@@ -2036,10 +2036,15 @@ namespace Framework.Caspar
             {
                 connectionString.SslMode = MySql.Data.MySqlClient.MySqlSslMode.Required;
             }
+            else
+            {
+                connectionString.SslMode = MySql.Data.MySqlClient.MySqlSslMode.None;
+            }
 
 
 
             var connectionStringValue = connectionString.GetConnectionString(true);
+            Logger.Info($"Registration to {connectionStringValue}");
 
 
             while (true)
