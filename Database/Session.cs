@@ -36,27 +36,62 @@ namespace Framework.Caspar.Database
         void CopyFrom(IConnection value);
         IConnection Create();
         ICommand CreateCommand() { return null; }
+        int IsPoolable() { return 0; }
+        bool Ping() { return false; }
 
     }
 
     public class Session : IDisposable
     {
-
-        public class Closer : Framework.Caspar.Scheduler
+        public class Ping
         {
-            public static Closer Singleton { get; } = Singleton<Closer>.Instance;
-
-            protected ConcurrentQueue<(IConnection, long)> Connections = new();
-
-            protected long ExpireAt { get; set; } = 0;
-
-            public static void Add(IConnection connection)
+            public static void Update()
             {
-                Singleton.Connections.Enqueue((connection, Singleton.ExpireAt));
+                try
+                {
+                    foreach (var queue in Driver.ConnectionPools.Values)
+                    {
+                        foreach (var item in queue)
+                        {
+                            try
+                            {
+                                if (item.Ping() == true)
+                                {
+                                    continue;
+                                }
+                            }
+                            catch
+                            {
+
+                            }
+
+                            Logger.Error("Ping");
+                        }
+                    }
+                }
+                catch
+                {
+
+                }
             }
-            protected override void OnSchedule()
+        }
+
+        public class Closer
+        {
+
+            protected static ConcurrentQueue<(Session, long)> Connections = new();
+
+            internal static long ExpireAt { get; set; } = DateTime.UtcNow.AddMinutes(1).Ticks;
+            internal static long Interval { get; set; } = 5;
+
+            public static void Add(Session session)
+            {
+                Connections.Enqueue((session, ExpireAt));
+            }
+            public static void Update()
             {
                 long now = DateTime.UtcNow.Ticks;
+                ExpireAt = DateTime.UtcNow.AddSeconds(Interval).Ticks;
 
                 while (Connections.Count > 0)
                 {
@@ -72,16 +107,9 @@ namespace Framework.Caspar.Database
                         break;
                     }
                     item.Item1.Dispose();
-                    GC.SuppressFinalize(item.Item1);
                 }
-
             }
 
-            public void Run()
-            {
-                ExpireAt = DateTime.UtcNow.AddSeconds(5).Ticks;
-                Run(1000);
-            }
         }
         public class RollbackException : System.Exception
         {
@@ -108,8 +136,6 @@ namespace Framework.Caspar.Database
             }
         }
 
-        protected Layer.Entity parent { get; set; } = null;
-
         public Session()
         {
             Command = async () => { await ValueTask.CompletedTask; };
@@ -121,6 +147,9 @@ namespace Framework.Caspar.Database
             {
                 UID = Layer.CurrentEntity.Value.UID;
             }
+
+            Closer.Add(this);
+
         }
 
 
@@ -184,7 +213,6 @@ namespace Framework.Caspar.Database
             {
 
             }
-            progresses.Remove(UID);
 
             try
             {
@@ -197,11 +225,9 @@ namespace Framework.Caspar.Database
             }
 
         }
-        public bool IsValid { get; set; } = true;
+        internal bool Disposed { get; set; } = false;
         public void Dispose()
         {
-            if (IsValid == false) { return; }
-            IsValid = false;
             try
             {
                 if (AutoCommit == true)
@@ -218,7 +244,6 @@ namespace Framework.Caspar.Database
                 Logger.Error(ex);
             }
 
-
             try
             {
                 Close();
@@ -227,21 +252,17 @@ namespace Framework.Caspar.Database
             {
                 Logger.Error(ex);
             }
-            // if (Db.IsNullOrEmpty() == false && Driver.Connections.TryGetValue(Db, out var queue) == true)
-            // {
 
-            //     var session = Driver.Databases.Get(Db);
-            //     if (session != null)
-            //     {
-            //         queue.Add(session);
-            //     }
-            // }
-            GC.SuppressFinalize(this);
+            //  GC.SuppressFinalize(this);
+        }
+
+        public void Finialize()
+        {
+            Dispose();
         }
         List<IConnection> connections { get; set; } = new List<IConnection>();
         public bool AutoCommit { get; set; } = false;
         //static ConcurrentDictionary<string, ConcurrentBag<IConnection>> connections = new();
-        static internal ConcurrentDictionary<long, Session> progresses = new();
 
         internal TaskCompletionSource TCS { get; set; } = null;
 
@@ -304,33 +325,47 @@ namespace Framework.Caspar.Database
                 //     return null;
                 // }
 
-                if (Driver.Databases.TryGetValue(name, out var session) == false)
+                if (Driver.Databases.TryGetValue(name, out var connection) == false)
                 {
                     return null;
                 }
-                // //             CTS.CancelAfter(1000);
-                // var session = queue.Take();
-                Db = name;
 
-                return await Task.Run(async () =>
+
+                if (connection.IsPoolable() > 0)
                 {
-                    try
+                    if (Driver.ConnectionPools[name].TryDequeue(out connection) == true)
                     {
-                        //        CTS.CancelAfter(1000);
-                        //     var sw = System.Diagnostics.Stopwatch.StartNew();
-                        IConnection connection;
-                        connection = session.Create();
-                        await connection.Open(this.CancellationToken, transaction);
                         connections.Add(connection);
                         return connection;
                     }
-                    catch (Exception e)
-                    {
-                        Logger.Error(e);
-                        return null;
-                    }
+                }
 
-                });
+                connection = connection.Create();
+                await connection.Open(this.CancellationToken, transaction);
+                connections.Add(connection);
+                return connection;
+                // // //             CTS.CancelAfter(1000);
+                // // var session = queue.Take();
+
+                // return await Task.Run(async () =>
+                // {
+                //     try
+                //     {
+                //         //        CTS.CancelAfter(1000);
+                //         //     var sw = System.Diagnostics.Stopwatch.StartNew();
+                //         IConnection connection;
+                //         connection = session.Create();
+                //         await connection.Open(this.CancellationToken, transaction);
+                //         connections.Add(connection);
+                //         return connection;
+                //     }
+                //     catch (Exception e)
+                //     {
+                //         Logger.Error(e);
+                //         return null;
+                //     }
+
+                // });
             }
             catch (Exception e)
             {
@@ -370,7 +405,6 @@ namespace Framework.Caspar.Database
         internal protected System.Threading.CancellationTokenSource CTS { get; private set; } = new CancellationTokenSource();
         public System.Threading.CancellationToken CancellationToken => CTS.Token;
 
-        public string Db { get; private set; } = string.Empty;
 
         internal protected virtual void SetResult(int result)
         {

@@ -41,6 +41,7 @@ namespace Framework.Caspar.Database
         }
 
         public static Dictionary<string, IConnection> Databases = new Dictionary<string, IConnection>();
+        public static Dictionary<string, ConcurrentQueue<IConnection>> ConnectionPools = new();
 
 
         public void Run()
@@ -53,6 +54,23 @@ namespace Framework.Caspar.Database
             {
                 e.Value.Initialize();
             }
+
+            foreach (var e in Databases)
+            {
+                if (e.Value.IsPoolable() == 0) { continue; }
+
+                var queue = new ConcurrentQueue<IConnection>();
+                ConnectionPools.Add(e.Key, queue);
+
+                for (int i = 0; i < e.Value.IsPoolable(); ++i)
+                {
+                    var connection = e.Value.Create();
+                    connection.Open().Wait();
+                    queue.Enqueue(connection);
+                }
+
+            }
+
 
             Logger.Info($"Database Driver Run. ThreadCount : {ThreadCount}");
             Logger.Verbose($"Process Count : {Environment.ProcessorCount}");
@@ -68,6 +86,43 @@ namespace Framework.Caspar.Database
                 {
                     Logger.Error(e);
                 }
+            }).Start();
+
+            new Thread(async () =>
+            {
+
+                while (IsOk())
+                {
+                    try
+                    {
+                        await Task.Delay(8000);
+                        Session.Ping.Update();
+                    }
+                    catch (Exception e)
+                    {
+                        Logger.Error(e);
+                    }
+                }
+
+            }).Start();
+
+            Session.Closer.Interval = StandAlone == true ? 60 : 5;
+            Session.Closer.ExpireAt = DateTime.UtcNow.AddSeconds(Session.Closer.Interval).Ticks;
+            new Thread(async () =>
+            {
+                while (IsOk())
+                {
+                    try
+                    {
+                        await Task.Delay(1000);
+                        Session.Closer.Update();
+                    }
+                    catch (Exception e)
+                    {
+                        Logger.Error(e);
+                    }
+                }
+
             }).Start();
         }
 

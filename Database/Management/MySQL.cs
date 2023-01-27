@@ -139,12 +139,25 @@ namespace Framework.Caspar.Database.Management.Relational
         public MySqlTransaction Transaction { get; set; }
         public MySqlCommand Command { get; set; }
         private string connectionStringValue;
+        internal int MaxSession { get; set; } = 0;
 
         //public static async Task<MySql> Session(string db)
         //{
         //    return await GetSession("Game", true, false);
         //}
 
+        public int IsPoolable() { return MaxSession; }
+        public bool Ping()
+        {
+            if (Connection == null)
+            {
+                return false;
+            }
+            else
+            {
+                return Connection.Ping();
+            }
+        }
         public IConnection Create()
         {
             var session = new MySql();
@@ -156,6 +169,7 @@ namespace Framework.Caspar.Database.Management.Relational
             session.Port = Port;
             session.Db = Db;
             session.Name = Name;
+            session.MaxSession = IsPoolable();
             return session;
         }
 
@@ -258,6 +272,7 @@ namespace Framework.Caspar.Database.Management.Relational
                             {
                                 var awsCredentials = new Amazon.Runtime.BasicAWSCredentials((string)global::Framework.Caspar.Api.Config.AWS.Access.KeyId, (string)global::Framework.Caspar.Api.Config.AWS.Access.SecretAccessKey);
                                 var pwd = Amazon.RDS.Util.RDSAuthTokenGenerator.GenerateAuthToken(awsCredentials, Ip, 3306, Id);
+                                connectionString.SslMode = MySqlSslMode.Required;
                                 connectionString.Password = pwd;
                             }
                         }
@@ -269,23 +284,12 @@ namespace Framework.Caspar.Database.Management.Relational
                         connectionString.Server = Ip;
                         connectionString.Port = Convert.ToUInt32(Port);
                         connectionString.Database = Db;
-                        connectionString.Pooling = true;
+                        connectionString.Pooling = false;
                         connectionString.AllowZeroDateTime = true;
                         connectionString.CharacterSet = "utf8";
                         connectionString.CheckParameters = false;
-                        connectionString.UseCompression = true;
-                        connectionString.ConnectionTimeout = 10;
-                        connectionString.MinimumPoolSize = (uint)Api.MaxSession;
-                        connectionString.MaximumPoolSize = (uint)Api.MaxSession * 2;
-
-                        if (IAM == true)
-                        {
-                            connectionString.SslMode = MySqlSslMode.Required;
-                            connectionString.SslCa = "rds-ca-2019-root.pem";
-                        }
 
                         connectionStringValue = connectionString.GetConnectionString(true);
-                        Logger.Info($"Generate new IAM Token {connectionStringValue}");
                         (session as MySql).InitializedAt = DateTime.UtcNow.AddMinutes(10);
                     }
                 }
@@ -296,12 +300,22 @@ namespace Framework.Caspar.Database.Management.Relational
 
         public void Dispose()
         {
+
             Command?.Dispose();
             Command = null;
 
             Transaction?.Dispose();
             Transaction = null;
 
+            // return or close
+            int max = IsPoolable();
+
+            if (Connection != null && max > 0 && Driver.ConnectionPools[Name].Count < max)
+            {
+                Driver.ConnectionPools[Name].Enqueue(this);
+                return;
+            }
+            Connection?.Close();
             Connection?.Dispose();
             Connection = null;
 
@@ -313,47 +327,45 @@ namespace Framework.Caspar.Database.Management.Relational
             {
                 if (Connection == null)
                 {
-                    await Task.Run(async () =>
-                    {
-                        int max = 1;
-                        while (true)
-                        {
-                            try
-                            {
-                                if (IAM == true)
-                                {
-                                    Initialize();
-                                }
-                                Connection = new MySqlConnection(connectionStringValue);
-                                await Connection.OpenAsync();
-                                Logger.Info($"Opened: {connectionStringValue}");
+                    Initialize();
+                    Connection = new MySqlConnection(connectionStringValue);
+                    await Connection.OpenAsync();
+                    // await Task.Run(async () =>
+                    // {
+                    //     int max = 1;
+                    //     while (true)
+                    //     {
+                    //         try
+                    //         {
 
-                                Session.Closer.Add(this);
-                                return;
-                            }
-                            catch (Exception e)
-                            {
-                                Logger.Info($"Error: {connectionStringValue}");
-                                //   Logger.Error(e);
-                                max -= 1;
-                                Close();
-                                Dispose();
-                                await Task.Delay(100);
-                                try
-                                {
-                                    if (IAM == true)
-                                    {
-                                        Initialize();
-                                    }
-                                }
-                                catch (Exception ex)
-                                {
-                                    Logger.Error(ex);
-                                }
-                                if (max < 0) { throw; }
-                            }
-                        }
-                    });
+                    //             //Logger.Info($"Opened: {connectionStringValue}");
+
+                    //             //Session.Closer.Add(this);
+                    //             return;
+                    //         }
+                    //         catch (Exception e)
+                    //         {
+                    //             Logger.Info($"Error: {connectionStringValue}");
+                    //             //   Logger.Error(e);
+                    //             max -= 1;
+                    //             Close();
+                    //             Dispose();
+                    //             await Task.Delay(100);
+                    //             try
+                    //             {
+                    //                 if (IAM == true)
+                    //                 {
+                    //                     Initialize();
+                    //                 }
+                    //             }
+                    //             catch (Exception ex)
+                    //             {
+                    //                 Logger.Error(ex);
+                    //             }
+                    //             if (max < 0) { throw; }
+                    //         }
+                    //     }
+                    // });
                 }
 
                 if (transaction == true)
@@ -363,6 +375,9 @@ namespace Framework.Caspar.Database.Management.Relational
             }
             catch
             {
+                Connection?.Close();
+                Connection?.Dispose();
+                Dispose();
                 throw;
             }
             return this;
@@ -372,7 +387,6 @@ namespace Framework.Caspar.Database.Management.Relational
             try
             {
                 Rollback();
-                Connection?.Close();
             }
             catch (Exception ex)
             {

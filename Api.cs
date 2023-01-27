@@ -118,6 +118,14 @@ namespace Framework.Caspar
                         driver.Pw = session.Pw;
                         driver.Db = session.Db;
                         driver.Name = e.Name;
+                        try
+                        {
+                            driver.MaxSession = session.MaxSession;
+                        }
+                        catch
+                        {
+
+                        }
 
                         if (session.Crypt == true)
                         {
