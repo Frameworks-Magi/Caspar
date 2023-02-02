@@ -225,9 +225,13 @@ namespace Framework.Caspar.Database
             }
 
         }
-        internal bool Disposed { get; set; } = false;
+        private int disposed = 0;
         public void Dispose()
         {
+            if (Interlocked.CompareExchange(ref disposed, 1, 0) != 0)
+            {
+                return;
+            }
             try
             {
                 if (AutoCommit == true)
@@ -252,14 +256,8 @@ namespace Framework.Caspar.Database
             {
                 Logger.Error(ex);
             }
-
-            //  GC.SuppressFinalize(this);
         }
 
-        public void Finialize()
-        {
-            Dispose();
-        }
         List<IConnection> connections { get; set; } = new List<IConnection>();
         public bool AutoCommit { get; set; } = false;
         //static ConcurrentDictionary<string, ConcurrentBag<IConnection>> connections = new();
@@ -336,6 +334,8 @@ namespace Framework.Caspar.Database
                     if (Driver.ConnectionPools[name].TryDequeue(out connection) == true)
                     {
                         connections.Add(connection);
+
+                        Logger.Info($"Connection allocate from pool {name}, {Driver.ConnectionPools[name].Count}");
                         return connection;
                     }
                 }

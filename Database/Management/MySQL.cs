@@ -290,6 +290,7 @@ namespace Framework.Caspar.Database.Management.Relational
 
                     (session as MySql).connectionStringValue = connectionString.GetConnectionString(true);
                     (session as MySql).InitializedAt = DateTime.UtcNow.AddMinutes(10);
+                    Logger.Info($"Initialize newer Credentials {Name} {(session as MySql).connectionStringValue}");
                 }
                 connectionStringValue = (session as MySql).connectionStringValue;
             }
@@ -310,14 +311,13 @@ namespace Framework.Caspar.Database.Management.Relational
 
             if (Connection != null && max > 0 && Driver.ConnectionPools[Name].Count < max)
             {
+                Logger.Info($"Connection deallocate to pool {Name}, {Driver.ConnectionPools[Name].Count}");
                 Driver.ConnectionPools[Name].Enqueue(this);
                 return;
             }
             Connection?.Close();
             Connection?.Dispose();
             Connection = null;
-
-            //GC.SuppressFinalize(this);
         }
         public async Task<IConnection> Open(CancellationToken token = default, bool transaction = true)
         {
@@ -328,6 +328,7 @@ namespace Framework.Caspar.Database.Management.Relational
                     Initialize();
                     Connection = new MySqlConnection(connectionStringValue);
                     await Connection.OpenAsync();
+                    Logger.Info($"New Mysql Connection");
                     // await Task.Run(async () =>
                     // {
                     //     int max = 1;

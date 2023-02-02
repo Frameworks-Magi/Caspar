@@ -120,7 +120,7 @@ namespace Framework.Caspar
                         driver.Name = e.Name;
                         try
                         {
-                            driver.MaxSession = session.MaxSession;
+                            driver.MaxSession = e.MaxSession;
                         }
                         catch
                         {
