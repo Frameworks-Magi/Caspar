@@ -257,41 +257,39 @@ namespace Framework.Caspar.Database.Management.Relational
             }
             if (session != null && session is MySql)
             {
+                connectionStringValue = (session as MySql).connectionStringValue;
                 if ((session as MySql).InitializedAt > DateTime.UtcNow) { return; }
                 lock (session)
                 {
-                    if ((session as MySql).InitializedAt < DateTime.UtcNow)
+                    var connectionString = new MySqlConnectionStringBuilder();
+                    connectionString.UserID = Id;
+                    connectionString.Password = Pw;
+
+                    try
                     {
-                        var connectionString = new MySqlConnectionStringBuilder();
-                        connectionString.UserID = Id;
-                        connectionString.Password = Pw;
-
-                        try
+                        if (IAM == true)
                         {
-                            if (IAM == true)
-                            {
-                                var awsCredentials = new Amazon.Runtime.BasicAWSCredentials((string)global::Framework.Caspar.Api.Config.AWS.Access.KeyId, (string)global::Framework.Caspar.Api.Config.AWS.Access.SecretAccessKey);
-                                var pwd = Amazon.RDS.Util.RDSAuthTokenGenerator.GenerateAuthToken(awsCredentials, Ip, 3306, Id);
-                                connectionString.SslMode = MySqlSslMode.Required;
-                                connectionString.Password = pwd;
-                            }
+                            var awsCredentials = new Amazon.Runtime.BasicAWSCredentials((string)global::Framework.Caspar.Api.Config.AWS.Access.KeyId, (string)global::Framework.Caspar.Api.Config.AWS.Access.SecretAccessKey);
+                            var pwd = Amazon.RDS.Util.RDSAuthTokenGenerator.GenerateAuthToken(awsCredentials, Ip, 3306, Id);
+                            connectionString.SslMode = MySqlSslMode.Required;
+                            connectionString.Password = pwd;
                         }
-                        catch (Exception e)
-                        {
-                            Logger.Error(e);
-                        }
-
-                        connectionString.Server = Ip;
-                        connectionString.Port = Convert.ToUInt32(Port);
-                        connectionString.Database = Db;
-                        connectionString.Pooling = false;
-                        connectionString.AllowZeroDateTime = true;
-                        connectionString.CharacterSet = "utf8";
-                        connectionString.CheckParameters = false;
-
-                        connectionStringValue = connectionString.GetConnectionString(true);
-                        (session as MySql).InitializedAt = DateTime.UtcNow.AddMinutes(10);
                     }
+                    catch (Exception e)
+                    {
+                        Logger.Error(e);
+                    }
+
+                    connectionString.Server = Ip;
+                    connectionString.Port = Convert.ToUInt32(Port);
+                    connectionString.Database = Db;
+                    connectionString.Pooling = false;
+                    connectionString.AllowZeroDateTime = true;
+                    connectionString.CharacterSet = "utf8";
+                    connectionString.CheckParameters = false;
+
+                    (session as MySql).connectionStringValue = connectionString.GetConnectionString(true);
+                    (session as MySql).InitializedAt = DateTime.UtcNow.AddMinutes(10);
                 }
                 connectionStringValue = (session as MySql).connectionStringValue;
             }
@@ -375,6 +373,7 @@ namespace Framework.Caspar.Database.Management.Relational
             }
             catch
             {
+                Logger.Error(connectionStringValue);
                 Connection?.Close();
                 Connection?.Dispose();
                 Dispose();
