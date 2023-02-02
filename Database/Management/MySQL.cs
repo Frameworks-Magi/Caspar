@@ -146,7 +146,7 @@ namespace Framework.Caspar.Database.Management.Relational
         //    return await GetSession("Game", true, false);
         //}
 
-        // public int IsPoolable() { return MaxSession; }
+        //public int IsPoolable() { return MaxSession; }
         public int IsPoolable() { return 0; }
         public bool Ping()
         {
@@ -285,12 +285,14 @@ namespace Framework.Caspar.Database.Management.Relational
                     connectionString.Port = Convert.ToUInt32(Port);
                     connectionString.Database = Db;
                     connectionString.Pooling = false;
+                    // connectionString.MinimumPoolSize = 16;
+                    // connectionString.MaximumPoolSize = 64;
                     connectionString.AllowZeroDateTime = true;
                     connectionString.CharacterSet = "utf8";
                     connectionString.CheckParameters = false;
 
                     (session as MySql).connectionStringValue = connectionString.GetConnectionString(true);
-                    (session as MySql).InitializedAt = DateTime.UtcNow.AddMinutes(10);
+                    (session as MySql).InitializedAt = DateTime.UtcNow.AddMinutes(1);
                     Logger.Info($"Initialize newer Credentials {Name} {(session as MySql).connectionStringValue}");
                 }
                 connectionStringValue = (session as MySql).connectionStringValue;
