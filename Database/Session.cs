@@ -55,17 +55,20 @@ namespace Framework.Caspar.Database
                         {
                             try
                             {
-                                if (item.Ping() == true)
+                                var mysql = item as MySql.Data.MySqlClient.MySqlConnection;
+                                if (mysql != null)
                                 {
-                                    continue;
+                                    if (mysql.Ping() == false)
+                                    {
+                                        mysql.Close();
+                                    }
                                 }
                             }
                             catch
                             {
 
                             }
-
-                            Logger.Error("Ping");
+                            //Logger.Error("Ping");
                         }
                     }
                 }
@@ -106,6 +109,9 @@ namespace Framework.Caspar.Database
                     {
                         break;
                     }
+                    if (item.Item1.IsDisposed == true) { continue; }
+
+                    Logger.Info("Session is not disposed.");
                     item.Item1.Dispose();
                 }
             }
@@ -191,15 +197,6 @@ namespace Framework.Caspar.Database
                 {
                     try
                     {
-                        e.Close();
-                    }
-                    catch
-                    {
-
-                    }
-
-                    try
-                    {
                         e.Dispose();
                     }
                     catch
@@ -226,6 +223,7 @@ namespace Framework.Caspar.Database
 
         }
         private int disposed = 0;
+        public bool IsDisposed => disposed == 1;
         public void Dispose()
         {
             if (Interlocked.CompareExchange(ref disposed, 1, 0) != 0)
@@ -325,20 +323,24 @@ namespace Framework.Caspar.Database
 
                 if (Driver.Databases.TryGetValue(name, out var connection) == false)
                 {
+                    Logger.Error($"Database {name} is not configuration");
                     return null;
                 }
 
-
-                if (connection.IsPoolable() > 0)
-                {
-                    if (Driver.ConnectionPools[name].TryDequeue(out connection) == true)
-                    {
-                        connections.Add(connection);
-
-                        Logger.Info($"Connection allocate from pool {name}, {Driver.ConnectionPools[name].Count}");
-                        return connection;
-                    }
-                }
+                // if (connection.IsPoolable() > 0)
+                // {
+                //     if (Driver.ConnectionPools[name].TryDequeue(out connection) == true)
+                //     {
+                //         var mysql = (connection as Framework.Caspar.Database.Management.Relational.MySql);
+                //         if (mysql != null)
+                //         {
+                //             mysql.disposed = 0;
+                //         }
+                //         connections.Add(connection);
+                //         Logger.Info($"Connection allocate from pool {name}, {Driver.ConnectionPools[name].Count}");
+                //         return connection;
+                //     }
+                // }
 
                 connection = connection.Create();
                 await connection.Open(this.CancellationToken, transaction);

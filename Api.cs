@@ -104,30 +104,30 @@ namespace Framework.Caspar
                 Newtonsoft.Json.Linq.JObject mysqls = config.Databases.MySql;
                 foreach (dynamic e in mysqls.Children())
                 {
-                    dynamic session = config.Databases.MySql[e.Name];
-                    if (session.Disable != null && session.Disable == true)
+                    dynamic json = config.Databases.MySql[e.Name];
+                    if (json.Disable != null && json.Disable == true)
                     {
 
                     }
                     else
                     {
                         var driver = new global::Framework.Caspar.Database.Management.Relational.MySql();
-                        driver.Ip = session.Ip;
-                        driver.Port = session.Port;
-                        driver.Id = session.Id;
-                        driver.Pw = session.Pw;
-                        driver.Db = session.Db;
+                        driver.Ip = json.Ip;
+                        driver.Port = json.Port;
+                        driver.Id = json.Id;
+                        driver.Pw = json.Pw;
+                        driver.Db = json.Db;
                         driver.Name = e.Name;
                         try
                         {
-                            driver.MaxSession = e.MaxSession;
+                            driver.MaxSession = json.MaxSession;
                         }
                         catch
                         {
 
                         }
 
-                        if (session.Crypt == true)
+                        if (json.Crypt == true)
                         {
                             driver.Id = global::Framework.Caspar.Api.DesDecrypt(driver.Id, "magimagi");
                             driver.Pw = global::Framework.Caspar.Api.DesDecrypt(driver.Pw, "magimagi");
@@ -135,7 +135,7 @@ namespace Framework.Caspar
 
                         try
                         {
-                            driver.IAM = (bool)session.IAM;
+                            driver.IAM = (bool)json.IAM;
                         }
                         catch
                         {

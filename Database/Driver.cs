@@ -41,7 +41,7 @@ namespace Framework.Caspar.Database
         }
 
         public static Dictionary<string, IConnection> Databases = new Dictionary<string, IConnection>();
-        public static Dictionary<string, ConcurrentQueue<IConnection>> ConnectionPools = new();
+        public static Dictionary<string, ConcurrentQueue<object>> ConnectionPools = new();
 
 
         public void Run()
@@ -59,15 +59,15 @@ namespace Framework.Caspar.Database
             {
                 if (e.Value.IsPoolable() == 0) { continue; }
 
-                var queue = new ConcurrentQueue<IConnection>();
+                var queue = new ConcurrentQueue<object>();
                 ConnectionPools.Add(e.Key, queue);
 
-                for (int i = 0; i < e.Value.IsPoolable(); ++i)
-                {
-                    var connection = e.Value.Create();
-                    connection.Open().Wait();
-                    queue.Enqueue(connection);
-                }
+                // for (int i = 0; i < e.Value.IsPoolable(); ++i)
+                // {
+                //     var connection = e.Value.Create();
+                //     connection.Open().Wait();
+                //     queue.Enqueue(connection);
+                // }
 
             }
 

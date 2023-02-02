@@ -146,7 +146,8 @@ namespace Framework.Caspar.Database.Management.Relational
         //    return await GetSession("Game", true, false);
         //}
 
-        public int IsPoolable() { return MaxSession; }
+        // public int IsPoolable() { return MaxSession; }
+        public int IsPoolable() { return 0; }
         public bool Ping()
         {
             if (Connection == null)
@@ -297,91 +298,43 @@ namespace Framework.Caspar.Database.Management.Relational
 
         }
 
-        public void Dispose()
-        {
 
-            Command?.Dispose();
-            Command = null;
-
-            Transaction?.Dispose();
-            Transaction = null;
-
-            // return or close
-            int max = IsPoolable();
-
-            if (Connection != null && max > 0 && Driver.ConnectionPools[Name].Count < max)
-            {
-                Logger.Info($"Connection deallocate to pool {Name}, {Driver.ConnectionPools[Name].Count}");
-                Driver.ConnectionPools[Name].Enqueue(this);
-                return;
-            }
-            Connection?.Close();
-            Connection?.Dispose();
-            Connection = null;
-        }
         public async Task<IConnection> Open(CancellationToken token = default, bool transaction = true)
         {
             try
             {
                 if (Connection == null)
                 {
-                    Initialize();
-                    Connection = new MySqlConnection(connectionStringValue);
-                    await Connection.OpenAsync();
-                    Logger.Info($"New Mysql Connection");
-                    // await Task.Run(async () =>
-                    // {
-                    //     int max = 1;
-                    //     while (true)
-                    //     {
-                    //         try
-                    //         {
-
-                    //             //Logger.Info($"Opened: {connectionStringValue}");
-
-                    //             //Session.Closer.Add(this);
-                    //             return;
-                    //         }
-                    //         catch (Exception e)
-                    //         {
-                    //             Logger.Info($"Error: {connectionStringValue}");
-                    //             //   Logger.Error(e);
-                    //             max -= 1;
-                    //             Close();
-                    //             Dispose();
-                    //             await Task.Delay(100);
-                    //             try
-                    //             {
-                    //                 if (IAM == true)
-                    //                 {
-                    //                     Initialize();
-                    //                 }
-                    //             }
-                    //             catch (Exception ex)
-                    //             {
-                    //                 Logger.Error(ex);
-                    //             }
-                    //             if (max < 0) { throw; }
-                    //         }
-                    //     }
-                    // });
+                    if (IsPoolable() > 0 && Driver.ConnectionPools[Name].TryDequeue(out var connection) == true)
+                    {
+                        Connection = connection as MySqlConnection;
+                    }
+                    else
+                    {
+                        Initialize();
+                        Logger.Info($"New Mysql Connection");
+                        Connection = new MySqlConnection(connectionStringValue);
+                        await Connection.OpenAsync();
+                    }
                 }
-
                 if (transaction == true)
                 {
                     BeginTransaction();
                 }
             }
-            catch
+            catch (Exception e)
             {
+                Logger.Error(e);
                 Logger.Error(connectionStringValue);
                 Connection?.Close();
                 Connection?.Dispose();
+                Connection = null;
                 Dispose();
                 throw;
             }
             return this;
         }
+
         public void Close()
         {
             try
@@ -394,6 +347,36 @@ namespace Framework.Caspar.Database.Management.Relational
             }
 
         }
+        private int disposed = 0;
+        public void Dispose()
+        {
+            if (Interlocked.CompareExchange(ref disposed, 1, 0) != 0)
+            {
+                return;
+            }
+            Close();
+
+            Command?.Dispose();
+            Command = null;
+
+            Transaction?.Dispose();
+            Transaction = null;
+
+            // return or close
+            int max = IsPoolable();
+
+            if (Connection != null && Connection.State == ConnectionState.Open && max > 0 && Driver.ConnectionPools[Name].Count < max)
+            {
+                Logger.Info($"Connection deallocate to pool {Name}, {Driver.ConnectionPools[Name].Count}");
+                Driver.ConnectionPools[Name].Enqueue(Connection);
+                Connection = null;
+                return;
+            }
+            Connection?.Close();
+            Connection?.Dispose();
+            Connection = null;
+        }
+
 
         public void CopyFrom(IConnection value)
         {
