@@ -314,7 +314,7 @@ namespace Framework.Caspar.Database.Management.Relational
                     else
                     {
                         Initialize();
-                        Logger.Info($"New Mysql Connection");
+                        //        Logger.Info($"New Mysql Connection");
                         Connection = new MySqlConnection(connectionStringValue);
                         await Connection.OpenAsync();
                     }
