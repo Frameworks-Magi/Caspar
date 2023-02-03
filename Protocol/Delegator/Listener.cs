@@ -7,6 +7,7 @@ using Framework.Caspar;
 using System.Threading.Tasks;
 using static Framework.Caspar.Extensions.Database;
 using Newtonsoft.Json.Linq;
+using static Framework.Caspar.Api;
 
 namespace Framework.Caspar.Protocol
 {
@@ -49,6 +50,7 @@ namespace Framework.Caspar.Protocol
                     command.Parameters.AddWithValue("@longitude", 0.0);
 
                     await command.ExecuteNonQueryAsync();
+                    session.Commit();
                 }
                 catch (Exception e)
                 {

@@ -257,7 +257,7 @@ namespace Framework.Caspar.Database
         }
 
         List<IConnection> connections { get; set; } = new List<IConnection>();
-        public bool AutoCommit { get; set; } = false;
+        public bool AutoCommit { get; set; } = true;
         //static ConcurrentDictionary<string, ConcurrentBag<IConnection>> connections = new();
 
         internal TaskCompletionSource TCS { get; set; } = null;
