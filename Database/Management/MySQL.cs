@@ -284,9 +284,20 @@ namespace Framework.Caspar.Database.Management.Relational
                     connectionString.Server = Ip;
                     connectionString.Port = Convert.ToUInt32(Port);
                     connectionString.Database = Db;
-                    connectionString.Pooling = false;
-                    // connectionString.MinimumPoolSize = 16;
-                    // connectionString.MaximumPoolSize = 64;
+
+                    if (Framework.Caspar.Api.ServerType == "Agent")
+                    {
+                        connectionString.Pooling = false;
+                        // connectionString.MinimumPoolSize = 16;
+                        // connectionString.MaximumPoolSize = 64;
+                    }
+                    else
+                    {
+                        connectionString.Pooling = false;
+                        // connectionString.MinimumPoolSize = 16;
+                        // connectionString.MaximumPoolSize = 64;
+                    }
+
                     connectionString.AllowZeroDateTime = true;
                     connectionString.CharacterSet = "utf8";
                     connectionString.CheckParameters = false;
