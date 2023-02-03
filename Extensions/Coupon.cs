@@ -350,7 +350,7 @@ namespace Framework.Caspar
             }
 
 
-            public static int Consume(Database.ICommand command, long idx, string coupon, Info metadata)
+            public static int Consume(Database.IQueryable command, long idx, string coupon, Info metadata)
             {
 
                 int prefix = 0;

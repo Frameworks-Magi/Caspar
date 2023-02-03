@@ -14,12 +14,73 @@ using Amazon;
 
 namespace Framework.Caspar.Database.Management.Relational
 {
-
-
     public sealed class MySql : IConnection
     {
-        public sealed class Commandable : ICommand
+
+
+        public interface IQuery
         {
+            void Execute() { }
+        }
+
+        public class OpenConnection : IQuery
+        {
+            public void Execute()
+            {
+
+            }
+        }
+
+        public class ExecuteNonQuery : IQuery
+        {
+            internal global::System.Threading.Tasks.TaskCompletionSource<int> TCS = new();
+            internal MySqlCommand command { get; set; }
+            public void Execute()
+            {
+                try
+                {
+                    var ret = command.ExecuteNonQuery();
+                    TCS.SetResult(ret);
+                }
+                catch (Exception e)
+                {
+                    TCS.SetException(e);
+                }
+
+            }
+        }
+
+
+        internal System.Collections.Concurrent.BlockingCollection<IQuery> Queries;
+        public void Poll()
+        {
+            Queries = new System.Collections.Concurrent.BlockingCollection<IQuery>();
+            for (int i = 0; i < 8; ++i)
+            {
+                new Thread(() =>
+                {
+                    while (true)
+                    {
+                        try
+                        {
+                            if (Queries.TryTake(out var action, 100000) == true)
+                            {
+                                action.Execute();
+                            }
+                        }
+                        catch (Exception e)
+                        {
+                            Logger.Error(e);
+                        }
+                    }
+
+                }).Start();
+            }
+
+        }
+        public sealed class Queryable : IQueryable
+        {
+            internal System.Collections.Concurrent.BlockingCollection<IQuery> Queries;
             public int ExecuteNonQuery()
             {
 
@@ -56,27 +117,17 @@ namespace Framework.Caspar.Database.Management.Relational
                 }
                 return ret;
             }
+
+
+
             public async Task<int> ExecuteNonQueryAsync()
             {
-                return await Task.Run(() =>
-                {
-                    try
-                    {
-                        var sw = System.Diagnostics.Stopwatch.StartNew();
-                        var ret = Command.ExecuteNonQuery();
-                        long ms = sw.ElapsedMilliseconds;
-                        if (ms > global::Framework.Caspar.Extensions.Database.SlowQueryMilliseconds)
-                        {
-                            Logger.Info($"{Command.CommandText} - {ms}ms");
-                        }
-                        return ret;
-                    }
-                    catch
-                    {
-                        throw;
-                    }
+                var query = new ExecuteNonQuery();
+                query.command = Command;
+                Queries.Add(query);
+                return await query.TCS.Task;
 
-                });
+                // return await Command.ExecuteNonQueryAsync();
             }
             public async Task<System.Data.Common.DbDataReader> ExecuteReaderAsync()
             {
@@ -162,6 +213,7 @@ namespace Framework.Caspar.Database.Management.Relational
         public IConnection Create()
         {
             var session = new MySql();
+            session.Queries = Queries;
             session.connectionStringValue = connectionStringValue;
             session.IAM = IAM;
             session.Id = Id;
@@ -175,40 +227,17 @@ namespace Framework.Caspar.Database.Management.Relational
         }
 
 
-        //      public async Task<MySqlCommand> CreateCommand(string text, CommandType type, CancellationToken token = default)
-        //{
-        //          if (Connection == null)
-        //          {
-        //              await Open(token);
-        //          }
-
-        //          if (Command == null)
-        //          {
-        //              Command = Connection.CreateCommand();
-        //              Command.Transaction = Transaction;
-        //          }
-
-        //          Command.CommandText = text;
-        //          Command.CommandType = type;
-        //          Command.Parameters.Clear();
-
-
-
-        //          return Command;
-        //}
-
-        public ICommand CreateCommand()
+        public IQueryable CreateCommand()
         {
             if (Command == null)
             {
                 Command = Connection.CreateCommand();
                 Command.Transaction = Transaction;
             }
-
             Command.CommandType = CommandType.Text;
             Command.CommandText = "";
             Command.Parameters.Clear();
-            return new Commandable() { Command = Command };
+            return new Queryable() { Command = Command, Queries = Queries };
         }
 
 
@@ -312,17 +341,10 @@ namespace Framework.Caspar.Database.Management.Relational
             {
                 if (Connection == null)
                 {
-                    if (IsPoolable() > 0 && Driver.ConnectionPools[Name].TryDequeue(out var connection) == true)
-                    {
-                        Connection = connection as MySqlConnection;
-                    }
-                    else
-                    {
-                        Initialize();
-                        //        Logger.Info($"New Mysql Connection");
-                        Connection = new MySqlConnection(connectionStringValue);
-                        await Connection.OpenAsync();
-                    }
+                    Initialize();
+                    //        Logger.Info($"New Mysql Connection");
+                    Connection = new MySqlConnection(connectionStringValue);
+                    await Connection.OpenAsync();
                 }
                 if (transaction == true)
                 {
@@ -369,16 +391,6 @@ namespace Framework.Caspar.Database.Management.Relational
             Transaction?.Dispose();
             Transaction = null;
 
-            // return or close
-            int max = IsPoolable();
-
-            if (Connection != null && Connection.State == ConnectionState.Open && max > 0 && Driver.ConnectionPools[Name].Count < max)
-            {
-                Logger.Info($"Connection deallocate to pool {Name}, {Driver.ConnectionPools[Name].Count}");
-                Driver.ConnectionPools[Name].Enqueue(Connection);
-                Connection = null;
-                return;
-            }
             Connection?.Close();
             Connection?.Dispose();
             Connection = null;

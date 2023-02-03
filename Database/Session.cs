@@ -10,7 +10,7 @@ using Framework.Caspar.Container;
 
 namespace Framework.Caspar.Database
 {
-    public interface ICommand
+    public interface IQueryable
     {
         int ExecuteNonQuery() { return 0; }
         async Task<int> ExecuteNonQueryAsync() { await Task.CompletedTask; return 0; }
@@ -35,7 +35,7 @@ namespace Framework.Caspar.Database
         void Close();
         void CopyFrom(IConnection value);
         IConnection Create();
-        ICommand CreateCommand() { return null; }
+        IQueryable CreateCommand() { return null; }
         int IsPoolable() { return 0; }
         bool Ping() { return false; }
 
@@ -43,41 +43,6 @@ namespace Framework.Caspar.Database
 
     public class Session : IDisposable
     {
-        public class Ping
-        {
-            public static void Update()
-            {
-                try
-                {
-                    foreach (var queue in Driver.ConnectionPools.Values)
-                    {
-                        foreach (var item in queue)
-                        {
-                            try
-                            {
-                                var mysql = item as MySql.Data.MySqlClient.MySqlConnection;
-                                if (mysql != null)
-                                {
-                                    if (mysql.Ping() == false)
-                                    {
-                                        mysql.Close();
-                                    }
-                                }
-                            }
-                            catch
-                            {
-
-                            }
-                            //Logger.Error("Ping");
-                        }
-                    }
-                }
-                catch
-                {
-
-                }
-            }
-        }
 
         public class Closer
         {

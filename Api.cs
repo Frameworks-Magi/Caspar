@@ -141,6 +141,7 @@ namespace Framework.Caspar
                         {
 
                         }
+                        driver.Poll();
                         Logger.Info($"Database Session Add {driver.Ip}");
                         Database.Driver.AddDatabase(driver.Name, driver);
                     }
@@ -2552,7 +2553,7 @@ namespace Framework.Caspar
 
             if (layer == true)
             {
-                ThreadPool.SetMaxThreads(16, 16);
+                ThreadPool.SetMaxThreads(64, 64);
                 ThreadPool.SetMinThreads(8, 8);
 
                 global::Framework.Caspar.Attributes.Override.StartUp();
