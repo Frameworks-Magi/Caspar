@@ -84,26 +84,26 @@ namespace Framework.Caspar.Database.Management.Relational
             public int ExecuteNonQuery()
             {
 
-                var sw = System.Diagnostics.Stopwatch.StartNew();
-                var ret = Command.ExecuteNonQuery();
-                long ms = sw.ElapsedMilliseconds;
-                if (ms > global::Framework.Caspar.Extensions.Database.SlowQueryMilliseconds)
-                {
-                    Logger.Info($"{Command.CommandText} - {ms}ms");
-                }
-                return ret;
-            }
-            public System.Data.Common.DbDataReader ExecuteReader()
-            {
+				var sw = System.Diagnostics.Stopwatch.StartNew();
+				var ret = Command.ExecuteNonQuery();
+				long ms = sw.ElapsedMilliseconds;
+				if (ms > global::Framework.Caspar.Extensions.Database.SlowQueryMilliseconds)
+				{
+					Logger.Info($"{Command.CommandText} - {ms}ms");
+				}
+				return ret;
+			}
+			public System.Data.Common.DbDataReader ExecuteReader()
+			{
 
-                var sw = System.Diagnostics.Stopwatch.StartNew();
-                var ret = Command.ExecuteReader();
-                long ms = sw.ElapsedMilliseconds;
-                if (ms > global::Framework.Caspar.Extensions.Database.SlowQueryMilliseconds)
-                {
-                    Logger.Info($"{Command.CommandText} - {ms}ms");
-                }
-                return ret;
+				var sw = System.Diagnostics.Stopwatch.StartNew();
+				var ret = Command.ExecuteReader();
+				long ms = sw.ElapsedMilliseconds;
+				if (ms > global::Framework.Caspar.Extensions.Database.SlowQueryMilliseconds)
+				{
+					Logger.Info($"{Command.CommandText} - {ms}ms");
+				}
+				return ret;
 
             }
             public object ExecuteScalar()
@@ -170,32 +170,32 @@ namespace Framework.Caspar.Database.Management.Relational
                         throw;
                     }
 
-                });
-            }
-            public MySqlCommand Command { get; internal set; }
-            public global::MySql.Data.MySqlClient.MySqlParameterCollection Parameters => Command.Parameters;
-            public void Prepare() { Command.Prepare(); }
-            public string CommandText { get { return Command.CommandText; } set { Command.CommandText = value; } }
-            public System.Data.CommandType CommandType { get { return Command.CommandType; } set { Command.CommandType = value; } }
-        }
+				});
+			}
+			public MySqlCommand Command { get; internal set; }
+			public global::MySql.Data.MySqlClient.MySqlParameterCollection Parameters => Command.Parameters;
+			public void Prepare() { Command.Prepare(); }
+			public string CommandText { get { return Command.CommandText; } set { Command.CommandText = value; } }
+			public System.Data.CommandType CommandType { get { return Command.CommandType; } set { Command.CommandType = value; } }
+		}
 
-        //  public class Session : Driver.Session {
-        public string Name { get; set; }
-        public string Id { get; set; }
-        public string Pw { get; set; }
-        public string Ip { get; set; }
-        public string Port { get; set; }
-        public string Db { get; set; }
-        public MySqlConnection Connection { get; set; }
-        public MySqlTransaction Transaction { get; set; }
-        public MySqlCommand Command { get; set; }
-        private string connectionStringValue;
-        internal int MaxSession { get; set; } = 0;
+		//  public class Session : Driver.Session {
+		public string Name { get; set; }
+		public string Id { get; set; }
+		public string Pw { get; set; }
+		public string Ip { get; set; }
+		public string Port { get; set; }
+		public string Db { get; set; }
+		public MySqlConnection Connection { get; set; }
+		public MySqlTransaction Transaction { get; set; }
+		public MySqlCommand Command { get; set; }
+		private string connectionStringValue;
+		internal int MaxSession { get; set; } = 0;
 
-        //public static async Task<MySql> Session(string db)
-        //{
-        //    return await GetSession("Game", true, false);
-        //}
+		//public static async Task<MySql> Session(string db)
+		//{
+		//    return await GetSession("Game", true, false);
+		//}
 
         //public int IsPoolable() { return MaxSession; }
         public int IsPoolable() { return 0; }
@@ -241,98 +241,97 @@ namespace Framework.Caspar.Database.Management.Relational
         }
 
 
-        public void BeginTransaction()
-        {
-            if (Transaction == null)
-            {
-                Transaction = Connection.BeginTransaction();
+		public void BeginTransaction()
+		{
+			if (Transaction == null)
+			{
+				Transaction = Connection.BeginTransaction();
 
-            }
+			}
 
-            if (Command != null)
-            {
-                Command.Transaction = Transaction;
-            }
-        }
+			if (Command != null)
+			{
+				Command.Transaction = Transaction;
+			}
+		}
 
-        public void Commit()
-        {
-            Transaction?.Commit();
-            Transaction = null;
-            if (Command != null)
-            {
-                Command.Transaction = null;
-            }
-        }
+		public void Commit()
+		{
+			Transaction?.Commit();
+			Transaction = null;
+			if (Command != null)
+			{
+				Command.Transaction = null;
+			}
+		}
 
-        public void Rollback()
-        {
-            Transaction?.Rollback();
-            Transaction = null;
-            if (Command != null)
-            {
-                Command.Transaction = null;
-            }
-        }
+		public void Rollback()
+		{
+			Transaction?.Rollback();
+			Transaction = null;
+			if (Command != null)
+			{
+				Command.Transaction = null;
+			}
+		}
 
-        public bool IAM { get; set; } = false;
-        internal DateTime InitializedAt { get; set; } = DateTime.UtcNow;
+		public bool IAM { get; set; } = false;
+		internal DateTime InitializedAt { get; set; } = DateTime.UtcNow;
 
-        public void Initialize()
-        {
+		public void Initialize()
+		{
 
-            if (Database.Driver.Databases.TryGetValue(Name, out var session) == false)
-            {
-                return;
-            }
-            if (session != null && session is MySql)
-            {
-                connectionStringValue = (session as MySql).connectionStringValue;
-                if ((session as MySql).InitializedAt > DateTime.UtcNow) { return; }
-                lock (session)
-                {
-                    var connectionString = new MySqlConnectionStringBuilder();
-                    connectionString.UserID = Id;
-                    connectionString.Password = Pw;
+			if (Database.Driver.Databases.TryGetValue(Name, out var session) == false)
+			{
+				return;
+			}
+			if (session != null && session is MySql)
+			{
+				connectionStringValue = (session as MySql).connectionStringValue;
+				if ((session as MySql).InitializedAt > DateTime.UtcNow) { return; }
+				lock (session)
+				{
+					var connectionString = new MySqlConnectionStringBuilder();
+					connectionString.UserID = Id;
+					connectionString.Password = Pw;
 
-                    try
-                    {
-                        if (IAM == true)
-                        {
-                            var awsCredentials = new Amazon.Runtime.BasicAWSCredentials((string)global::Framework.Caspar.Api.Config.AWS.Access.KeyId, (string)global::Framework.Caspar.Api.Config.AWS.Access.SecretAccessKey);
-                            var pwd = Amazon.RDS.Util.RDSAuthTokenGenerator.GenerateAuthToken(awsCredentials, Ip, 3306, Id);
-                            connectionString.SslMode = MySqlSslMode.Required;
-                            connectionString.Password = pwd;
-                        }
-                    }
-                    catch (Exception e)
-                    {
-                        Logger.Error(e);
-                    }
+					try
+					{
+						if (IAM == true)
+						{
+							var awsCredentials = new Amazon.Runtime.BasicAWSCredentials((string)global::Framework.Caspar.Api.Config.AWS.Access.KeyId, (string)global::Framework.Caspar.Api.Config.AWS.Access.SecretAccessKey);
+							var pwd = Amazon.RDS.Util.RDSAuthTokenGenerator.GenerateAuthToken(awsCredentials, Ip, 3306, Id);
+							connectionString.SslMode = MySqlSslMode.Required;
+							connectionString.Password = pwd;
+						}
+					}
+					catch (Exception e)
+					{
+						Logger.Error(e);
+					}
 
-                    connectionString.Server = Ip;
-                    connectionString.Port = Convert.ToUInt32(Port);
-                    connectionString.Database = Db;
+					connectionString.Server = Ip;
+					connectionString.Port = Convert.ToUInt32(Port);
+					connectionString.Database = Db;
 
-                    connectionString.Pooling = false;
-                    if (IAM == false && IsPoolable() > 0 && Framework.Caspar.Api.ServerType != "Agent")
+					connectionString.Pooling = false;
+					if (IAM == false && IsPoolable() > 0 && Framework.Caspar.Api.ServerType != "Agent")
                     {
                         connectionString.Pooling = true;
                         connectionString.MinimumPoolSize = (uint)IsPoolable();
-                        connectionString.MaximumPoolSize = connectionString.MinimumPoolSize * 3;
+					    connectionString.MaximumPoolSize = connectionString.MinimumPoolSize * 3;
                     }
-                    connectionString.AllowZeroDateTime = true;
-                    connectionString.CharacterSet = "utf8";
-                    connectionString.CheckParameters = false;
+					connectionString.AllowZeroDateTime = true;
+					connectionString.CharacterSet = "utf8";
+					connectionString.CheckParameters = false;
 
-                    (session as MySql).connectionStringValue = connectionString.GetConnectionString(true);
-                    (session as MySql).InitializedAt = DateTime.UtcNow.AddMinutes(10);
-                    Logger.Info($"Initialize newer Credentials {Name} {(session as MySql).connectionStringValue}");
-                }
-                connectionStringValue = (session as MySql).connectionStringValue;
-            }
+					(session as MySql).connectionStringValue = connectionString.GetConnectionString(true);
+					(session as MySql).InitializedAt = DateTime.UtcNow.AddMinutes(10);
+				}
+				connectionStringValue = (session as MySql).connectionStringValue;
+			}
 
-        }
+		}
 
 
         public async Task<IConnection> Open(CancellationToken token = default, bool transaction = true)
@@ -364,32 +363,32 @@ namespace Framework.Caspar.Database.Management.Relational
             return this;
         }
 
-        public void Close()
-        {
-            try
-            {
-                Rollback();
-            }
-            catch (Exception ex)
-            {
-                global::Framework.Caspar.Api.Logger.Info("Driver Level Rollback Exception " + ex);
-            }
+		public void Close()
+		{
+			try
+			{
+				Rollback();
+			}
+			catch (Exception ex)
+			{
+				global::Framework.Caspar.Api.Logger.Info("Driver Level Rollback Exception " + ex);
+			}
 
-        }
-        private int disposed = 0;
-        public void Dispose()
-        {
-            if (Interlocked.CompareExchange(ref disposed, 1, 0) != 0)
-            {
-                return;
-            }
-            Close();
+		}
+		private int disposed = 0;
+		public void Dispose()
+		{
+			if (Interlocked.CompareExchange(ref disposed, 1, 0) != 0)
+			{
+				return;
+			}
+			Close();
 
-            Command?.Dispose();
-            Command = null;
+			Command?.Dispose();
+			Command = null;
 
-            Transaction?.Dispose();
-            Transaction = null;
+			Transaction?.Dispose();
+			Transaction = null;
 
             Connection?.Close();
             Connection?.Dispose();
@@ -397,20 +396,20 @@ namespace Framework.Caspar.Database.Management.Relational
         }
 
 
-        public void CopyFrom(IConnection value)
-        {
+		public void CopyFrom(IConnection value)
+		{
 
-            var rhs = value as MySql;
-            if (rhs == null) { return; }
+			var rhs = value as MySql;
+			if (rhs == null) { return; }
 
-            Name = rhs.Name;
-            Id = rhs.Id;
-            Pw = rhs.Pw;
-            Ip = rhs.Ip;
-            Port = rhs.Port;
-            Db = rhs.Db;
+			Name = rhs.Name;
+			Id = rhs.Id;
+			Pw = rhs.Pw;
+			Ip = rhs.Ip;
+			Port = rhs.Port;
+			Db = rhs.Db;
 
-        }
+		}
 
-    }
+	}
 }
