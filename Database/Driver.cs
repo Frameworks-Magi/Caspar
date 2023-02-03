@@ -88,23 +88,23 @@ namespace Framework.Caspar.Database
                 }
             }).Start();
 
-            new Thread(async () =>
-            {
+            // new Thread(async () =>
+            // {
 
-                while (IsOk())
-                {
-                    try
-                    {
-                        await Task.Delay(8000);
-                        Session.Ping.Update();
-                    }
-                    catch (Exception e)
-                    {
-                        Logger.Error(e);
-                    }
-                }
+            //     while (IsOk())
+            //     {
+            //         try
+            //         {
+            //             await Task.Delay(8000);
+            //             Session.Ping.Update();
+            //         }
+            //         catch (Exception e)
+            //         {
+            //             Logger.Error(e);
+            //         }
+            //     }
 
-            }).Start();
+            // }).Start();
 
             Session.Closer.Interval = StandAlone == true ? 60 : 5;
             Session.Closer.ExpireAt = DateTime.UtcNow.AddSeconds(Session.Closer.Interval).Ticks;
