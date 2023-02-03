@@ -284,15 +284,20 @@ namespace Framework.Caspar.Database.Management.Relational
 					connectionString.Server = Ip;
 					connectionString.Port = Convert.ToUInt32(Port);
 					connectionString.Database = Db;
+
 					connectionString.Pooling = false;
-					// connectionString.MinimumPoolSize = 16;
-					// connectionString.MaximumPoolSize = 64;
+					if (IAM == false && IsPoolable() > 0 && Framework.Caspar.Api.ServerType != "Agent")
+                    {
+                        connectionString.Pooling = true;
+                        connectionString.MinimumPoolSize = (uint)IsPoolable();
+					    connectionString.MaximumPoolSize = connectionString.MinimumPoolSize * 3;
+                    }
 					connectionString.AllowZeroDateTime = true;
 					connectionString.CharacterSet = "utf8";
 					connectionString.CheckParameters = false;
 
 					(session as MySql).connectionStringValue = connectionString.GetConnectionString(true);
-					(session as MySql).InitializedAt = DateTime.UtcNow.AddMinutes(1);
+					(session as MySql).InitializedAt = DateTime.UtcNow.AddMinutes(10);
 				}
 				connectionStringValue = (session as MySql).connectionStringValue;
 			}
