@@ -141,7 +141,6 @@ namespace Framework.Caspar
                         {
 
                         }
-                        driver.Poll();
                         Logger.Info($"Database Session Add {driver.Ip}");
                         Database.Driver.AddDatabase(driver.Name, driver);
                     }

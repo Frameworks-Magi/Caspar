@@ -1,26 +1,87 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using System.IO;
 using MySql.Data;
-using MySqlConnector;
-//using MySql.Data.MySqlClient;
 using System.Threading;
 using System.Data;
 using System.Collections;
 using static Framework.Caspar.Api;
-using Amazon;
-using System.Data.SqlClient;
-using System.Data.Odbc;
+using MySqlConnector;
 
 namespace Framework.Caspar.Database.Management.Relational
 {
-    public sealed class MySql : IConnection
+    public sealed class Odbc : IConnection
     {
+
+
+        public interface IQuery
+        {
+            void Execute() { }
+        }
+
+        public class OpenConnection : IQuery
+        {
+            public void Execute()
+            {
+
+            }
+        }
+
+        public class ExecuteNonQuery : IQuery
+        {
+            internal global::System.Threading.Tasks.TaskCompletionSource<int> TCS = new();
+            internal MySqlConnector.MySqlCommand command { get; set; }
+            public void Execute()
+            {
+                try
+                {
+                    var ret = command.ExecuteNonQueryAsync();
+
+
+                    //    TCS.SetResult(ret);
+                }
+                catch (Exception e)
+                {
+                    //                    TCS.SetException(e);
+                }
+
+            }
+        }
+
+
+        internal System.Collections.Concurrent.BlockingCollection<IQuery> Queries;
+        public void Poll()
+        {
+            Queries = new System.Collections.Concurrent.BlockingCollection<IQuery>();
+            for (int i = 0; i < 16; ++i)
+            {
+                new Thread(() =>
+                {
+                    while (true)
+                    {
+                        try
+                        {
+                            if (Queries.TryTake(out var action, 10000) == true)
+                            {
+                                action.Execute();
+                            }
+                        }
+                        catch (Exception e)
+                        {
+                            Logger.Error(e);
+                        }
+                    }
+
+                }).Start();
+            }
+
+        }
         public sealed class Queryable : IQueryable
         {
+            internal System.Collections.Concurrent.BlockingCollection<IQuery> Queries;
             public int ExecuteNonQuery()
             {
 
@@ -62,61 +123,62 @@ namespace Framework.Caspar.Database.Management.Relational
 
             public async Task<int> ExecuteNonQueryAsync()
             {
+                return await Command.ExecuteNonQueryAsync();
                 // var query = new ExecuteNonQuery();
                 // query.command = Command;
                 // Queries.Add(query);
                 // return await query.TCS.Task;
-                return await Command.ExecuteNonQueryAsync();
+
+                // return await Command.ExecuteNonQueryAsync();
             }
             public async Task<System.Data.Common.DbDataReader> ExecuteReaderAsync()
             {
-                return await Command.ExecuteReaderAsync();
-
-                // return await Task.Run(() =>
-                // {
-                //     try
-                //     {
-                //         var sw = System.Diagnostics.Stopwatch.StartNew();
-                //         var ret = Command.ExecuteReader();
-                //         long ms = sw.ElapsedMilliseconds;
-                //         if (ms > global::Framework.Caspar.Extensions.Database.SlowQueryMilliseconds)
-                //         {
-                //             Logger.Info($"{Command.CommandText} - {ms}ms");
-                //         }
-                //         return ret;
-                //     }
-                //     catch
-                //     {
-                //         throw;
-                //     }
-                // });
+                return await Task.Run(() =>
+                {
+                    try
+                    {
+                        var sw = System.Diagnostics.Stopwatch.StartNew();
+                        var ret = Command.ExecuteReader();
+                        long ms = sw.ElapsedMilliseconds;
+                        if (ms > global::Framework.Caspar.Extensions.Database.SlowQueryMilliseconds)
+                        {
+                            Logger.Info($"{Command.CommandText} - {ms}ms");
+                        }
+                        return ret;
+                    }
+                    catch
+                    {
+                        throw;
+                    }
+                });
             }
             public async Task<object> ExecuteScalarAsync()
             {
-                return await Command.ExecuteScalarAsync();
+                return await Task.Run(() =>
+                {
+                    try
+                    {
+                        var sw = System.Diagnostics.Stopwatch.StartNew();
+                        var ret = Command.ExecuteScalar();
+                        long ms = sw.ElapsedMilliseconds;
+                        if (ms > global::Framework.Caspar.Extensions.Database.SlowQueryMilliseconds)
+                        {
+                            Logger.Info($"{Command.CommandText} - {ms}ms");
+                        }
+                        return ret;
+                    }
+                    catch
+                    {
+                        throw;
+                    }
 
-                // return await Task.Run(() =>
-                // {
-                //     try
-                //     {
-                //         var sw = System.Diagnostics.Stopwatch.StartNew();
-                //         var ret = Command.ExecuteScalar();
-                //         long ms = sw.ElapsedMilliseconds;
-                //         if (ms > global::Framework.Caspar.Extensions.Database.SlowQueryMilliseconds)
-                //         {
-                //             Logger.Info($"{Command.CommandText} - {ms}ms");
-                //         }
-                //         return ret;
-                //     }
-                //     catch
-                //     {
-                //         throw;
-                //     }
-
-                // });
+                });
             }
-            public MySqlCommand Command { get; internal set; }
+            public MySqlConnector.MySqlCommand Command { get; internal set; }
+            //     public System.Data.Odbc.OdbcParameterCollection Parameters => Command.Parameters;
+
             public MySqlParameterCollection Parameters => Command.Parameters;
+
             public void Prepare() { Command.Prepare(); }
             public string CommandText { get { return Command.CommandText; } set { Command.CommandText = value; } }
             public System.Data.CommandType CommandType { get { return Command.CommandType; } set { Command.CommandType = value; } }
@@ -129,9 +191,9 @@ namespace Framework.Caspar.Database.Management.Relational
         public string Ip { get; set; }
         public string Port { get; set; }
         public string Db { get; set; }
-        public MySqlConnection Connection { get; set; }
-        public MySqlTransaction Transaction { get; set; }
-        public MySqlCommand Command { get; set; }
+        public MySqlConnector.MySqlConnection Connection { get; set; }
+        public MySqlConnector.MySqlTransaction Transaction { get; set; }
+        public MySqlConnector.MySqlCommand Command { get; set; }
         private string connectionStringValue;
         internal int MaxSession { get; set; } = 0;
 
@@ -144,18 +206,20 @@ namespace Framework.Caspar.Database.Management.Relational
         public int IsPoolable() { return 0; }
         public bool Ping()
         {
-            if (Connection == null)
-            {
-                return false;
-            }
-            else
-            {
-                return Connection.Ping();
-            }
+            // if (Connection == null)
+            // {
+            //     return false;
+            // }
+            // else
+            // {
+            //     return Connection.Ping();
+            // }
+            return true;
         }
         public IConnection Create()
         {
-            var session = new MySql();
+            var session = new Odbc();
+            session.Queries = Queries;
             session.connectionStringValue = connectionStringValue;
             session.IAM = IAM;
             session.Id = Id;
@@ -179,7 +243,7 @@ namespace Framework.Caspar.Database.Management.Relational
             Command.CommandType = CommandType.Text;
             Command.CommandText = "";
             Command.Parameters.Clear();
-            return new Queryable() { Command = Command };
+            return new Queryable() { Command = Command, Queries = Queries };
         }
 
 
@@ -227,52 +291,53 @@ namespace Framework.Caspar.Database.Management.Relational
             {
                 return;
             }
-            if (session != null && session is MySql)
+            if (session != null && session is Odbc)
             {
-                connectionStringValue = (session as MySql).connectionStringValue;
-                if ((session as MySql).InitializedAt > DateTime.UtcNow) { return; }
+                connectionStringValue = (session as Odbc).connectionStringValue;
+                if ((session as Odbc).InitializedAt > DateTime.UtcNow) { return; }
                 lock (session)
                 {
-                    var connectionString = new MySqlConnectionStringBuilder();
-                    //SqlConnectionStringBuilder connectionString = new SqlConnectionStringBuilder();
-                    connectionString.UserID = Id;
-                    connectionString.Password = Pw;
 
-                    try
-                    {
-                        if (IAM == true)
-                        {
-                            var awsCredentials = new Amazon.Runtime.BasicAWSCredentials((string)global::Framework.Caspar.Api.Config.AWS.Access.KeyId, (string)global::Framework.Caspar.Api.Config.AWS.Access.SecretAccessKey);
-                            var pwd = Amazon.RDS.Util.RDSAuthTokenGenerator.GenerateAuthToken(awsCredentials, Ip, 3306, Id);
-                            connectionString.SslMode = MySqlSslMode.Required;
-                            connectionString.Password = pwd;
-                        }
-                    }
-                    catch (Exception e)
-                    {
-                        Logger.Error(e);
-                    }
+                    var connectionString = new System.Data.Odbc.OdbcConnectionStringBuilder();
+                    // //    connectionString.ConnectionString
+                    // //SqlConnectionStringBuilder connectionString = new SqlConnectionStringBuilder();
+                    // connectionString.UserID = Id;
+                    // connectionString.Password = Pw;
 
-                    connectionString.Server = Ip;
-                    connectionString.Port = Convert.ToUInt32(Port);
-                    connectionString.Database = Db;
-
-                    connectionString.Pooling = false;
-                    //   if (IAM == false && IsPoolable() > 0 && Framework.Caspar.Api.ServerType != "Agent")
+                    // try
                     // {
-                    //     connectionString.Pooling = true;
-                    //     connectionString.MinimumPoolSize = 8;
-                    //     connectionString.MaximumPoolSize = 16;
+                    //     if (IAM == true)
+                    //     {
+                    //         var awsCredentials = new Amazon.Runtime.BasicAWSCredentials((string)global::Framework.Caspar.Api.Config.AWS.Access.KeyId, (string)global::Framework.Caspar.Api.Config.AWS.Access.SecretAccessKey);
+                    //         var pwd = Amazon.RDS.Util.RDSAuthTokenGenerator.GenerateAuthToken(awsCredentials, Ip, 3306, Id);
+                    //         connectionString.SslMode = MySqlSslMode.Required;
+                    //         connectionString.Password = pwd;
+                    //     }
                     // }
-                    connectionString.AllowZeroDateTime = true;
-                    connectionString.CharacterSet = "utf8";
-                    //    connectionString.CheckParameters = false;
+                    // catch (Exception e)
+                    // {
+                    //     Logger.Error(e);
+                    // }
 
-                    (session as MySql).connectionStringValue = connectionString.ToString();//.GetConnectionString(true);
-                    Logger.Info((session as MySql).connectionStringValue);
-                    (session as MySql).InitializedAt = DateTime.UtcNow.AddMinutes(10);
+                    // connectionString.Server = Ip;
+                    // connectionString.Port = Convert.ToUInt32(Port);
+                    // connectionString.Database = Db;
+
+                    // connectionString.Pooling = false;
+                    // //   if (IAM == false && IsPoolable() > 0 && Framework.Caspar.Api.ServerType != "Agent")
+                    // // {
+                    // //     connectionString.Pooling = true;
+                    // //     connectionString.MinimumPoolSize = 8;
+                    // //     connectionString.MaximumPoolSize = 16;
+                    // // }
+                    // connectionString.AllowZeroDateTime = true;
+                    // connectionString.CharacterSet = "utf8";
+                    // connectionString.CheckParameters = false;
+
+                    (session as Odbc).connectionStringValue = "user id=admin;password=zmffpdltlxl123;server=qa-klaycity-cluster.cluster-cdxduq5q4jxp.ap-northeast-2.rds.amazonaws.com;port=3306;database=orbcity;pooling=False;allowzerodatetime=True;characterset=utf8";
+                    (session as Odbc).InitializedAt = DateTime.UtcNow.AddMinutes(10);
                 }
-                connectionStringValue = (session as MySql).connectionStringValue;
+                connectionStringValue = (session as Odbc).connectionStringValue;
             }
 
         }
@@ -286,9 +351,6 @@ namespace Framework.Caspar.Database.Management.Relational
                 {
                     Initialize();
 
-                    //   System.Data.Odbc.OdbcConnection MyConnection = new System.Data.Odbc.OdbcConnection("MyConString");
-
-                    //        Logger.Info($"New Mysql Connection");
                     Connection = new MySqlConnection(connectionStringValue);
                     await Connection.OpenAsync();
                 }
@@ -300,6 +362,7 @@ namespace Framework.Caspar.Database.Management.Relational
             catch (Exception e)
             {
                 Logger.Error(e);
+                Logger.Error(connectionStringValue);
                 Connection?.Close();
                 Connection?.Dispose();
                 Connection = null;
@@ -345,7 +408,7 @@ namespace Framework.Caspar.Database.Management.Relational
         public void CopyFrom(IConnection value)
         {
 
-            var rhs = value as MySql;
+            var rhs = value as Odbc;
             if (rhs == null) { return; }
 
             Name = rhs.Name;

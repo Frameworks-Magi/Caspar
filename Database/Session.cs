@@ -7,6 +7,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using static Framework.Caspar.Api;
 using Framework.Caspar.Container;
+using MySqlConnector;
 
 namespace Framework.Caspar.Database
 {
@@ -18,7 +19,7 @@ namespace Framework.Caspar.Database
         async Task<System.Data.Common.DbDataReader> ExecuteReaderAsync() { await Task.CompletedTask; return null; }
         object ExecuteScalar() { return null; }
         async Task<object> ExecuteScalarAsync() { await Task.CompletedTask; return null; }
-        MySql.Data.MySqlClient.MySqlParameterCollection Parameters { get; }
+        MySqlParameterCollection Parameters { get; }
         void Prepare() { }
         string CommandText { get; set; }
         System.Data.CommandType CommandType { get; set; }

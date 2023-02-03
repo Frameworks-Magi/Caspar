@@ -21,6 +21,8 @@
 
   <ItemGroup>
     <PackageReference Include="Microsoft.Extensions.ObjectPool" Version="6.0.1" />
+    <PackageReference Include="MySqlConnector" Version="2.2.5" />
+    <PackageReference Include="System.Data.Odbc" Version="7.0.0" />
     <PackageReference Include="System.IdentityModel.Tokens.Jwt" Version="6.8.0" />
     <PackageReference Include="aliyun-net-sdk-cdn" Version="3.4.1" />
     <PackageReference Include="aliyun-net-sdk-core" Version="1.5.6" />

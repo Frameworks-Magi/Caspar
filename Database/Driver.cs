@@ -12,6 +12,7 @@ using static Framework.Caspar.Api;
 using System.Diagnostics;
 using Framework.Caspar.Container;
 
+
 namespace Framework.Caspar.Database
 {
     public class Driver
@@ -50,13 +51,6 @@ namespace Framework.Caspar.Database
             foreach (var e in Databases)
             {
                 e.Value.Initialize();
-            }
-
-            foreach (var e in Databases)
-            {
-                if (e.Value.IsPoolable() == 0) { continue; }
-
-                var queue = new ConcurrentQueue<object>();
             }
 
 
