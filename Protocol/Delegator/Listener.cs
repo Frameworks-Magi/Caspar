@@ -37,9 +37,9 @@ namespace Framework.Caspar.Protocol
                     command.CommandText += $"ON DUPLICATE KEY ";
                     command.CommandText += $"UPDATE Platform = @platform, HeartBeat = @heartbeat, Latitude = @latitude, Longitude = @longitude;";
 
-                    command.Parameters.AddWithValue("@provider", Framework.Caspar.Api.Config.Provider);
-                    command.Parameters.AddWithValue("@publish", Framework.Caspar.Api.Config.Publish);
-                    command.Parameters.AddWithValue("@region", Framework.Caspar.Api.Config.Region);
+                    command.Parameters.AddWithValue("@provider", (string)Framework.Caspar.Api.Config.Provider);
+                    command.Parameters.AddWithValue("@publish", (string)Framework.Caspar.Api.Config.Publish);
+                    command.Parameters.AddWithValue("@region", (string)Framework.Caspar.Api.Config.Region);
                     command.Parameters.AddWithValue("@type", Type);
                     command.Parameters.AddWithValue("@platform", Framework.Caspar.Api.Config.CloudPlatform.ToString());
                     command.Parameters.AddWithValue("@state", 1);
