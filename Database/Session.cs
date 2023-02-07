@@ -7,7 +7,8 @@ using System.Threading;
 using System.Threading.Tasks;
 using static Framework.Caspar.Api;
 using Framework.Caspar.Container;
-using MySqlConnector;
+//using MySqlConnector;
+using MySql.Data.MySqlClient;
 
 namespace Framework.Caspar.Database
 {
