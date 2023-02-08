@@ -459,6 +459,10 @@ namespace Framework.Caspar
                 {
                     return ((global::MySql.Data.Types.MySqlDateTime)value).GetDateTime().ToUnixTime();
                 }
+                if (value is MySqlConnector.MySqlDateTime)
+                {
+                    return ((MySqlConnector.MySqlDateTime)value).GetDateTime().ToUnixTime();
+                }
             }
             catch
             {
@@ -478,6 +482,10 @@ namespace Framework.Caspar
                 if (value is global::MySql.Data.Types.MySqlDateTime)
                 {
                     return ((global::MySql.Data.Types.MySqlDateTime)value).GetDateTime();
+                }
+                if (value is MySqlConnector.MySqlDateTime)
+                {
+                    return ((MySqlConnector.MySqlDateTime)value).GetDateTime();
                 }
 
                 if (value is string)
