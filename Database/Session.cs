@@ -65,21 +65,30 @@ namespace Framework.Caspar.Database
 
                 while (Connections.Count > 0)
                 {
-                    if (Connections.TryPeek(out var item) == false)
+                    try
                     {
-                        break;
+                        if (Connections.TryPeek(out var item) == false)
+                        {
+                            break;
+                        }
+
+                        if (item.Item2 > now) { break; }
+
+                        if (Connections.TryDequeue(out item) == false)
+                        {
+                            break;
+                        }
+                        if (item.Item1.IsDisposed == true) { continue; }
+
+                        Logger.Info("Session is not disposed.");
+                        item.Item1.Rollback();
+                        item.Item1.Dispose();
+                    }
+                    catch
+                    {
+
                     }
 
-                    if (item.Item2 > now) { break; }
-
-                    if (Connections.TryDequeue(out item) == false)
-                    {
-                        break;
-                    }
-                    if (item.Item1.IsDisposed == true) { continue; }
-
-                    Logger.Info("Session is not disposed.");
-                    item.Item1.Dispose();
                 }
             }
 
@@ -199,14 +208,7 @@ namespace Framework.Caspar.Database
             }
             try
             {
-                if (AutoCommit == true)
-                {
-                    Commit();
-                }
-                else
-                {
-                    Rollback();
-                }
+                Rollback();
             }
             catch (Exception ex)
             {
@@ -224,7 +226,6 @@ namespace Framework.Caspar.Database
         }
 
         List<IConnection> connections { get; set; } = new List<IConnection>();
-        public bool AutoCommit { get; set; } = true;
         //static ConcurrentDictionary<string, ConcurrentBag<IConnection>> connections = new();
 
         internal TaskCompletionSource TCS { get; set; } = null;
