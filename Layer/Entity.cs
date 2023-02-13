@@ -75,7 +75,32 @@ namespace Framework.Caspar
 
             internal protected virtual async Task OnClose()
             {
+                var temp = sessions;
+                sessions = null;
+                foreach (var item in sessions.Values)
+                {
+                    try
+                    {
+                        item.Dispose();
+                    }
+                    catch
+                    {
+
+                    }
+                }
                 await Task.CompletedTask;
+            }
+
+            private ConcurrentHashSet<Framework.Caspar.Database.Session> sessions = new();
+
+            internal void Add(Framework.Caspar.Database.Session session)
+            {
+                sessions.AddOrUpdate(session);
+            }
+
+            internal void Remove(Framework.Caspar.Database.Session session)
+            {
+                sessions?.Remove(session);
             }
 
             public virtual bool IsClose()
@@ -106,7 +131,12 @@ namespace Framework.Caspar
             {
 
                 if (Interlocked.Exchange(ref state, (int)State.CLOSE) == (int)State.CLOSE) { return; }
+
+
                 this.Interrupt();
+
+
+
                 layer.Close(this);
 
                 //Framework.Caspar.Layers.Entity.Close(this);

@@ -124,13 +124,25 @@ namespace Framework.Caspar.Database
             if (Layer.CurrentEntity.Value == null)
             {
                 UID = global::Framework.Caspar.Api.UniqueKey;
+                Closer.Add(this);
             }
             else
             {
                 UID = Layer.CurrentEntity.Value.UID;
+                owner = Layer.CurrentEntity.Value;
+                Layer.CurrentEntity.Value.Add(this);
             }
 
-            Closer.Add(this);
+        }
+
+        internal Layer.Entity owner { get; set; }
+
+        public Session(Layer.Entity entity)
+        {
+            Command = async () => { await ValueTask.CompletedTask; };
+            UID = entity.UID;
+            owner = entity;
+            entity.Add(this);
 
         }
 
@@ -206,6 +218,18 @@ namespace Framework.Caspar.Database
             {
                 return;
             }
+
+            try
+            {
+                owner?.Remove(this);
+            }
+            catch
+            {
+
+            }
+
+            owner = null;
+
             try
             {
                 Rollback();
