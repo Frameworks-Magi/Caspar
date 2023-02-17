@@ -11,6 +11,7 @@ namespace Framework.Caspar
 	{
 		static public int Roll(int from, int to)
 		{
+			if (from == to) { return roll(); }
 			return random.Value.Next(from, to);
 		}
 
@@ -19,7 +20,7 @@ namespace Framework.Caspar
 			return random.Value.NextDouble() * (to - from) + from;
 		}
 
-		static public int Roll()
+		static protected int roll()
 		{
 			return random.Value.Next();
 		}
@@ -31,7 +32,7 @@ namespace Framework.Caspar
 
 		static private ThreadLocal<Random> random = new ThreadLocal<Random>(() => { return new Random(); });
 
-		public static double ThrowDouble()
+		public static double Roll()
 		{
 			return random.Value.NextDouble();
 		}
