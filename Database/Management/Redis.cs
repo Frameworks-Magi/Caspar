@@ -130,6 +130,8 @@ namespace Framework.Caspar.Database.NoSql
                     config.EndPoints.Add(e.Item1, e.Item2);
                 }
 
+                Logger.Info("Try Connect Redis... If connection fail check aws security.");
+
                 redis = ConnectionMultiplexer.Connect(config);
 
 
@@ -154,9 +156,9 @@ namespace Framework.Caspar.Database.NoSql
                 }
 
             }
-            catch
+            catch (Exception e)
             {
-
+                Logger.Error(e);
             }
 
         }
