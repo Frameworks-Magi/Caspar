@@ -8,24 +8,24 @@ using System;
 
 namespace Framework.Caspar.Platform.Firebase
 {
-    public static class Auth
-    {
-        public static FirebaseAdmin.FirebaseApp App { get; set; }
+	public static class Auth
+	{
+		public static FirebaseAdmin.FirebaseApp App { get; set; }
 
-        public static async Task<FirebaseAdmin.Auth.UserRecord> Verify(string idToken)
-        {
-            try
-            {
-                var ret = await FirebaseAuth.GetAuth(App).VerifyIdTokenAsync(idToken);
-                var user = await FirebaseAuth.GetAuth(App).GetUserAsync(ret.Uid);
+		public static async Task<FirebaseAdmin.Auth.UserRecord> Verify(string idToken)
+		{
+			try
+			{
+				var ret = await FirebaseAuth.GetAuth(App).VerifyIdTokenAsync(idToken);
+				var user = await FirebaseAuth.GetAuth(App).GetUserAsync(ret.Uid);
 
-                return user;
-            }
-            catch (Exception e)
-            {
-                //  Logger.Debug(e);
-            }
-            return null;
-        }
-    }
+				return user;
+			}
+			catch (Exception e)
+			{
+				//  Logger.Debug(e);
+			}
+			return null;
+		}
+	}
 }
