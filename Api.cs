@@ -1812,9 +1812,8 @@ namespace Framework.Caspar
                     {
                         Debug = (object msg) =>
                         {
-
                             Interlocked.Increment(ref validate);
-                            tw.Write($"{Api.Deploy.PPRT}\\,{ip}\\,{KST.ToString("yyyy-MM-ddTHH:mm:ss.fff")}\\,{Interlocked.Increment(ref sequence)}\\,{(int)Type.Debug}\\,0\\,{msg}\\;");
+                            tw.WriteLine($"{Api.Deploy.PPRT}\\,{ip}\\,{KST.ToString("yyyy-MM-ddTHH:mm:ss.fff")}\\,{Interlocked.Increment(ref sequence)}\\,{(int)Type.Debug}\\,0\\,{msg}\\;");
                         };
                     }
                     else
@@ -1837,14 +1836,12 @@ namespace Framework.Caspar
 
                     Info = (object msg) =>
                     {
-
                         Interlocked.Increment(ref validate);
                         tw.WriteLine($"{Api.Deploy.PPRT}\\,{ip}\\,{KST.ToString("yyyy-MM-ddTHH:mm:ss.fff")}\\,{Interlocked.Increment(ref sequence)}\\,{(int)Type.Info}\\,0\\,{msg}\\;");
                     };
 
                     Verbose = (object msg) =>
                     {
-
                         Interlocked.Increment(ref validate);
                         tw.WriteLine($"{Api.Deploy.PPRT}\\,{ip}\\,{KST.ToString("yyyy-MM-ddTHH:mm:ss.fff")}\\,{Interlocked.Increment(ref sequence)}\\,{(int)Type.Verbose}\\,0\\,{msg}\\;");
                     };
@@ -1852,7 +1849,6 @@ namespace Framework.Caspar
                     if (Config.Deploy == "PD")
                     {
                         Stage = (long idx, object msg, object tags) => { };
-
                     }
                     else
                     {

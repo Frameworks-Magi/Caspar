@@ -17,345 +17,345 @@ using System.Data.Odbc;
 
 namespace Framework.Caspar.Database.Management.Relational
 {
-	public sealed class MySql : IConnection
-	{
-		public sealed class Queryable : ICommandable
-		{
-			public int ExecuteNonQuery()
-			{
+    public sealed class MySql : IConnection
+    {
+        public sealed class Queryable : ICommandable
+        {
+            public int ExecuteNonQuery()
+            {
 
-				var sw = System.Diagnostics.Stopwatch.StartNew();
-				var ret = Command.ExecuteNonQuery();
-				long ms = sw.ElapsedMilliseconds;
-				if (ms > global::Framework.Caspar.Extensions.Database.SlowQueryMilliseconds)
-				{
-					Logger.Info($"{Command.CommandText} - {ms}ms");
-				}
-				return ret;
-			}
-			public System.Data.Common.DbDataReader ExecuteReader()
-			{
+                var sw = System.Diagnostics.Stopwatch.StartNew();
+                var ret = Command.ExecuteNonQuery();
+                long ms = sw.ElapsedMilliseconds;
+                if (ms > global::Framework.Caspar.Extensions.Database.SlowQueryMilliseconds)
+                {
+                    Logger.Info($"{Command.CommandText} - {ms}ms");
+                }
+                return ret;
+            }
+            public System.Data.Common.DbDataReader ExecuteReader()
+            {
 
-				var sw = System.Diagnostics.Stopwatch.StartNew();
-				var ret = Command.ExecuteReader();
-				long ms = sw.ElapsedMilliseconds;
-				if (ms > global::Framework.Caspar.Extensions.Database.SlowQueryMilliseconds)
-				{
-					Logger.Info($"{Command.CommandText} - {ms}ms");
-				}
-				return ret;
+                var sw = System.Diagnostics.Stopwatch.StartNew();
+                var ret = Command.ExecuteReader();
+                long ms = sw.ElapsedMilliseconds;
+                if (ms > global::Framework.Caspar.Extensions.Database.SlowQueryMilliseconds)
+                {
+                    Logger.Info($"{Command.CommandText} - {ms}ms");
+                }
+                return ret;
 
-			}
-			public object ExecuteScalar()
-			{
-				var sw = System.Diagnostics.Stopwatch.StartNew();
-				var ret = Command.ExecuteScalar();
-				long ms = sw.ElapsedMilliseconds;
-				if (ms > global::Framework.Caspar.Extensions.Database.SlowQueryMilliseconds)
-				{
-					Logger.Info($"{Command.CommandText} - {ms}ms");
-				}
-				return ret;
-			}
-
-
-
-			public async Task<int> ExecuteNonQueryAsync()
-			{
-				// var query = new ExecuteNonQuery();
-				// query.command = Command;
-				// Queries.Add(query);
-				// return await query.TCS.Task;
-				return await Command.ExecuteNonQueryAsync();
-			}
-			public async Task<System.Data.Common.DbDataReader> ExecuteReaderAsync()
-			{
-				return await Command.ExecuteReaderAsync();
-
-				// return await Task.Run(() =>
-				// {
-				//     try
-				//     {
-				//         var sw = System.Diagnostics.Stopwatch.StartNew();
-				//         var ret = Command.ExecuteReader();
-				//         long ms = sw.ElapsedMilliseconds;
-				//         if (ms > global::Framework.Caspar.Extensions.Database.SlowQueryMilliseconds)
-				//         {
-				//             Logger.Info($"{Command.CommandText} - {ms}ms");
-				//         }
-				//         return ret;
-				//     }
-				//     catch
-				//     {
-				//         throw;
-				//     }
-				// });
-			}
-			public async Task<object> ExecuteScalarAsync()
-			{
-				return await Command.ExecuteScalarAsync();
-
-				// return await Task.Run(() =>
-				// {
-				//     try
-				//     {
-				//         var sw = System.Diagnostics.Stopwatch.StartNew();
-				//         var ret = Command.ExecuteScalar();
-				//         long ms = sw.ElapsedMilliseconds;
-				//         if (ms > global::Framework.Caspar.Extensions.Database.SlowQueryMilliseconds)
-				//         {
-				//             Logger.Info($"{Command.CommandText} - {ms}ms");
-				//         }
-				//         return ret;
-				//     }
-				//     catch
-				//     {
-				//         throw;
-				//     }
-
-				// });
-			}
-			public MySqlCommand Command { get; internal set; }
-			public MySqlParameterCollection Parameters => Command.Parameters;
-			public void Prepare() { Command.Prepare(); }
-			public string CommandText { get { return Command.CommandText; } set { Command.CommandText = value; } }
-			public System.Data.CommandType CommandType { get { return Command.CommandType; } set { Command.CommandType = value; } }
-		}
-
-		//  public class Session : Driver.Session {
-		public string Name { get; set; }
-		public string Id { get; set; }
-		public string Pw { get; set; }
-		public string Ip { get; set; }
-		public string Port { get; set; }
-		public string Db { get; set; }
-		public MySqlConnection Connection { get; set; }
-		public MySqlTransaction Transaction { get; set; }
-		public MySqlCommand Command { get; set; }
-		private string connectionStringValue;
-		internal int MaxSession { get; set; } = 0;
-
-		//public static async Task<MySql> Session(string db)
-		//{
-		//    return await GetSession("Game", true, false);
-		//}
-
-		//public int IsPoolable() { return MaxSession; }
-		public int IsPoolable() { return 0; }
-		public bool Ping()
-		{
-			if (Connection == null)
-			{
-				return false;
-			}
-			else
-			{
-				return Connection.Ping();
-			}
-		}
-		public IConnection Create()
-		{
-			var session = new MySql();
-			session.connectionStringValue = connectionStringValue;
-			session.IAM = IAM;
-			session.Id = Id;
-			session.Pw = Pw;
-			session.Ip = Ip;
-			session.Port = Port;
-			session.Db = Db;
-			session.Name = Name;
-			session.MaxSession = IsPoolable();
-			return session;
-		}
+            }
+            public object ExecuteScalar()
+            {
+                var sw = System.Diagnostics.Stopwatch.StartNew();
+                var ret = Command.ExecuteScalar();
+                long ms = sw.ElapsedMilliseconds;
+                if (ms > global::Framework.Caspar.Extensions.Database.SlowQueryMilliseconds)
+                {
+                    Logger.Info($"{Command.CommandText} - {ms}ms");
+                }
+                return ret;
+            }
 
 
-		public ICommandable CreateCommand()
-		{
-			if (Command == null)
-			{
-				Command = Connection.CreateCommand();
-				Command.Transaction = Transaction;
-			}
-			Command.CommandType = CommandType.Text;
-			Command.CommandText = "";
-			Command.Parameters.Clear();
-			return new Queryable() { Command = Command };
-		}
+
+            public async Task<int> ExecuteNonQueryAsync()
+            {
+                // var query = new ExecuteNonQuery();
+                // query.command = Command;
+                // Queries.Add(query);
+                // return await query.TCS.Task;
+                return await Command.ExecuteNonQueryAsync();
+            }
+            public async Task<System.Data.Common.DbDataReader> ExecuteReaderAsync()
+            {
+                return await Command.ExecuteReaderAsync();
+
+                // return await Task.Run(() =>
+                // {
+                //     try
+                //     {
+                //         var sw = System.Diagnostics.Stopwatch.StartNew();
+                //         var ret = Command.ExecuteReader();
+                //         long ms = sw.ElapsedMilliseconds;
+                //         if (ms > global::Framework.Caspar.Extensions.Database.SlowQueryMilliseconds)
+                //         {
+                //             Logger.Info($"{Command.CommandText} - {ms}ms");
+                //         }
+                //         return ret;
+                //     }
+                //     catch
+                //     {
+                //         throw;
+                //     }
+                // });
+            }
+            public async Task<object> ExecuteScalarAsync()
+            {
+                return await Command.ExecuteScalarAsync();
+
+                // return await Task.Run(() =>
+                // {
+                //     try
+                //     {
+                //         var sw = System.Diagnostics.Stopwatch.StartNew();
+                //         var ret = Command.ExecuteScalar();
+                //         long ms = sw.ElapsedMilliseconds;
+                //         if (ms > global::Framework.Caspar.Extensions.Database.SlowQueryMilliseconds)
+                //         {
+                //             Logger.Info($"{Command.CommandText} - {ms}ms");
+                //         }
+                //         return ret;
+                //     }
+                //     catch
+                //     {
+                //         throw;
+                //     }
+
+                // });
+            }
+            public MySqlCommand Command { get; internal set; }
+            public MySqlParameterCollection Parameters => Command.Parameters;
+            public void Prepare() { Command.Prepare(); }
+            public string CommandText { get { return Command.CommandText; } set { Command.CommandText = value; } }
+            public System.Data.CommandType CommandType { get { return Command.CommandType; } set { Command.CommandType = value; } }
+        }
+
+        //  public class Session : Driver.Session {
+        public string Name { get; set; }
+        public string Id { get; set; }
+        public string Pw { get; set; }
+        public string Ip { get; set; }
+        public string Port { get; set; }
+        public string Db { get; set; }
+        public MySqlConnection Connection { get; set; }
+        public MySqlTransaction Transaction { get; set; }
+        public MySqlCommand Command { get; set; }
+        private string connectionStringValue;
+        internal int MaxSession { get; set; } = 0;
+
+        //public static async Task<MySql> Session(string db)
+        //{
+        //    return await GetSession("Game", true, false);
+        //}
+
+        //public int IsPoolable() { return MaxSession; }
+        public int IsPoolable() { return 0; }
+        public bool Ping()
+        {
+            if (Connection == null)
+            {
+                return false;
+            }
+            else
+            {
+                return Connection.Ping();
+            }
+        }
+        public IConnection Create()
+        {
+            var session = new MySql();
+            session.connectionStringValue = connectionStringValue;
+            session.IAM = IAM;
+            session.Id = Id;
+            session.Pw = Pw;
+            session.Ip = Ip;
+            session.Port = Port;
+            session.Db = Db;
+            session.Name = Name;
+            session.MaxSession = IsPoolable();
+            return session;
+        }
 
 
-		public void BeginTransaction()
-		{
-			if (Transaction == null)
-			{
-				Transaction = Connection.BeginTransaction();
-
-			}
-
-			if (Command != null)
-			{
-				Command.Transaction = Transaction;
-			}
-		}
-
-		public void Commit()
-		{
-			Transaction?.Commit();
-			Transaction = null;
-			if (Command != null)
-			{
-				Command.Transaction = null;
-			}
-		}
-
-		public void Rollback()
-		{
-			Transaction?.Rollback();
-			Transaction = null;
-			if (Command != null)
-			{
-				Command.Transaction = null;
-			}
-		}
-
-		public bool IAM { get; set; } = false;
-		internal DateTime InitializedAt { get; set; } = DateTime.UtcNow;
-
-		public void Initialize()
-		{
-
-			if (Database.Driver.Databases.TryGetValue(Name, out var session) == false)
-			{
-				return;
-			}
-			if (session != null && session is MySql)
-			{
-				connectionStringValue = (session as MySql).connectionStringValue;
-				if ((session as MySql).InitializedAt > DateTime.UtcNow) { return; }
-				lock (session)
-				{
-					var connectionString = new MySqlConnectionStringBuilder();
-					//SqlConnectionStringBuilder connectionString = new SqlConnectionStringBuilder();
-					connectionString.UserID = Id;
-					connectionString.Password = Pw;
-
-					try
-					{
-						if (IAM == true)
-						{
-							var awsCredentials = new Amazon.Runtime.BasicAWSCredentials((string)global::Framework.Caspar.Api.Config.AWS.Access.KeyId, (string)global::Framework.Caspar.Api.Config.AWS.Access.SecretAccessKey);
-							var pwd = Amazon.RDS.Util.RDSAuthTokenGenerator.GenerateAuthToken(awsCredentials, Ip, 3306, Id);
-							connectionString.SslMode = MySqlSslMode.Required;
-							connectionString.Password = pwd;
-						}
-					}
-					catch (Exception e)
-					{
-						Logger.Error(e);
-					}
-
-					connectionString.Server = Ip;
-					connectionString.Port = Convert.ToUInt32(Port);
-					connectionString.Database = Db;
-
-					connectionString.Pooling = false;
-					//   if (IAM == false && IsPoolable() > 0 && Framework.Caspar.Api.ServerType != "Agent")
-					// {
-					//     connectionString.Pooling = true;
-					//     connectionString.MinimumPoolSize = 8;
-					//     connectionString.MaximumPoolSize = 16;
-					// }
-					connectionString.AllowZeroDateTime = true;
-					connectionString.CharacterSet = "utf8";
-					//    connectionString.CheckParameters = false;
-
-					(session as MySql).connectionStringValue = connectionString.ToString();//.GetConnectionString(true);
-					Logger.Info((session as MySql).connectionStringValue);
-					(session as MySql).InitializedAt = DateTime.UtcNow.AddMinutes(10);
-				}
-				connectionStringValue = (session as MySql).connectionStringValue;
-			}
-
-		}
+        public ICommandable CreateCommand()
+        {
+            if (Command == null)
+            {
+                Command = Connection.CreateCommand();
+                Command.Transaction = Transaction;
+            }
+            Command.CommandType = CommandType.Text;
+            Command.CommandText = "";
+            Command.Parameters.Clear();
+            return new Queryable() { Command = Command };
+        }
 
 
-		public async Task<IConnection> Open(CancellationToken token = default, bool transaction = true)
-		{
-			try
-			{
-				if (Connection == null)
-				{
-					Initialize();
+        public void BeginTransaction()
+        {
+            if (Transaction == null)
+            {
+                Transaction = Connection.BeginTransaction();
 
-					//   System.Data.Odbc.OdbcConnection MyConnection = new System.Data.Odbc.OdbcConnection("MyConString");
+            }
 
-					//        Logger.Info($"New Mysql Connection");
-					Connection = new MySqlConnection(connectionStringValue);
-					await Connection.OpenAsync();
-				}
-				if (transaction == true)
-				{
-					BeginTransaction();
-				}
-			}
-			catch (Exception e)
-			{
-				Logger.Error(e);
-				Connection?.Close();
-				Connection?.Dispose();
-				Connection = null;
-				Dispose();
-				throw;
-			}
-			return this;
-		}
+            if (Command != null)
+            {
+                Command.Transaction = Transaction;
+            }
+        }
 
-		public void Close()
-		{
-			try
-			{
-				Rollback();
-			}
-			catch (Exception ex)
-			{
-				global::Framework.Caspar.Api.Logger.Info("Driver Level Rollback Exception " + ex);
-			}
+        public void Commit()
+        {
+            Transaction?.Commit();
+            Transaction = null;
+            if (Command != null)
+            {
+                Command.Transaction = null;
+            }
+        }
 
-		}
-		private int disposed = 0;
-		public void Dispose()
-		{
-			if (Interlocked.CompareExchange(ref disposed, 1, 0) != 0)
-			{
-				return;
-			}
-			Close();
+        public void Rollback()
+        {
+            Transaction?.Rollback();
+            Transaction = null;
+            if (Command != null)
+            {
+                Command.Transaction = null;
+            }
+        }
 
-			Command?.Dispose();
-			Command = null;
+        public bool IAM { get; set; } = false;
+        internal DateTime InitializedAt { get; set; } = DateTime.UtcNow;
 
-			Transaction?.Dispose();
-			Transaction = null;
+        public void Initialize()
+        {
 
-			Connection?.Close();
-			Connection?.Dispose();
-			Connection = null;
-		}
+            if (Database.Driver.Databases.TryGetValue(Name, out var session) == false)
+            {
+                return;
+            }
+            if (session != null && session is MySql)
+            {
+                connectionStringValue = (session as MySql).connectionStringValue;
+                if ((session as MySql).InitializedAt > DateTime.UtcNow) { return; }
+                lock (session)
+                {
+                    var connectionString = new MySqlConnectionStringBuilder();
+                    //SqlConnectionStringBuilder connectionString = new SqlConnectionStringBuilder();
+                    connectionString.UserID = Id;
+                    connectionString.Password = Pw;
+
+                    try
+                    {
+                        if (IAM == true)
+                        {
+                            var awsCredentials = new Amazon.Runtime.BasicAWSCredentials((string)global::Framework.Caspar.Api.Config.AWS.Access.KeyId, (string)global::Framework.Caspar.Api.Config.AWS.Access.SecretAccessKey);
+                            var pwd = Amazon.RDS.Util.RDSAuthTokenGenerator.GenerateAuthToken(awsCredentials, Ip, 3306, Id);
+                            connectionString.SslMode = MySqlSslMode.Required;
+                            connectionString.Password = pwd;
+                        }
+                    }
+                    catch (Exception e)
+                    {
+                        Logger.Error(e);
+                    }
+
+                    connectionString.Server = Ip;
+                    connectionString.Port = Convert.ToUInt32(Port);
+                    connectionString.Database = Db;
+
+                    connectionString.Pooling = false;
+                    //   if (IAM == false && IsPoolable() > 0 && Framework.Caspar.Api.ServerType != "Agent")
+                    // {
+                    //     connectionString.Pooling = true;
+                    //     connectionString.MinimumPoolSize = 8;
+                    //     connectionString.MaximumPoolSize = 16;
+                    // }
+                    connectionString.AllowZeroDateTime = true;
+                    connectionString.CharacterSet = "utf8";
+                    //    connectionString.CheckParameters = false;
+
+                    (session as MySql).connectionStringValue = connectionString.ToString();//.GetConnectionString(true);
+                    Logger.Info((session as MySql).connectionStringValue);
+                    (session as MySql).InitializedAt = DateTime.UtcNow.AddMinutes(10);
+                }
+                connectionStringValue = (session as MySql).connectionStringValue;
+            }
+
+        }
 
 
-		public void CopyFrom(IConnection value)
-		{
+        public async Task<IConnection> Open(CancellationToken token = default, bool transaction = true)
+        {
+            try
+            {
+                if (Connection == null)
+                {
+                    Initialize();
 
-			var rhs = value as MySql;
-			if (rhs == null) { return; }
+                    //   System.Data.Odbc.OdbcConnection MyConnection = new System.Data.Odbc.OdbcConnection("MyConString");
 
-			Name = rhs.Name;
-			Id = rhs.Id;
-			Pw = rhs.Pw;
-			Ip = rhs.Ip;
-			Port = rhs.Port;
-			Db = rhs.Db;
+                    //        Logger.Info($"New Mysql Connection");
+                    Connection = new MySqlConnection(connectionStringValue);
+                    await Connection.OpenAsync();
+                }
+                if (transaction == true)
+                {
+                    BeginTransaction();
+                }
+            }
+            catch (Exception e)
+            {
+                Logger.Error(e);
+                Connection?.Close();
+                Connection?.Dispose();
+                Connection = null;
+                Dispose();
+                throw;
+            }
+            return this;
+        }
 
-		}
+        public void Close()
+        {
+            try
+            {
+                Rollback();
+            }
+            catch (Exception ex)
+            {
+                global::Framework.Caspar.Api.Logger.Info("Driver Level Rollback Exception " + ex);
+            }
 
-	}
+        }
+        private int disposed = 0;
+        public void Dispose()
+        {
+            if (Interlocked.CompareExchange(ref disposed, 1, 0) != 0)
+            {
+                return;
+            }
+            Close();
+
+            Command?.Dispose();
+            Command = null;
+
+            Transaction?.Dispose();
+            Transaction = null;
+
+            Connection?.Close();
+            Connection?.Dispose();
+            Connection = null;
+        }
+
+
+        public void CopyFrom(IConnection value)
+        {
+
+            var rhs = value as MySql;
+            if (rhs == null) { return; }
+
+            Name = rhs.Name;
+            Id = rhs.Id;
+            Pw = rhs.Pw;
+            Ip = rhs.Ip;
+            Port = rhs.Port;
+            Db = rhs.Db;
+
+        }
+
+    }
 }

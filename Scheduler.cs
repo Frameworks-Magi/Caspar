@@ -93,8 +93,8 @@ namespace Framework.Caspar
 
         public void Resume()
         {
-            Paused = false;
             if (timer == null) { return; }
+            Paused = false;
             timer.Enabled = true;
         }
 
