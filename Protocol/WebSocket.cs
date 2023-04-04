@@ -239,7 +239,6 @@ namespace Framework.Caspar.Protocol
                 }
                 OnDisconnect();
                 await temp.CloseAsync(System.Net.WebSockets.WebSocketCloseStatus.Empty, "", CancellationToken.None);
-                Logger.Debug("WebSocket closed");
             }
             catch
             {
