@@ -98,6 +98,12 @@ namespace Framework.Caspar
             timer.Enabled = true;
         }
 
+        new public void Close()
+        {
+            Stop();
+            base.Close();
+        }
+
         internal int interval = -1;
         internal long Next = 0;
         public bool Paused { get; private set; } = false;
