@@ -212,11 +212,14 @@ namespace Framework.Caspar
             return Encoding.UTF8.GetString(value);
         }
 
-
-
         public static string ToJson(this global::Google.Protobuf.IMessage value)
         {
             return Framework.Caspar.Api.JsonFormatter.Format(value);
+        }
+
+        public static string ToJson(this object value)
+        {
+            return Newtonsoft.Json.JsonConvert.SerializeObject(value);
         }
 
         public static global::Google.Protobuf.CodedInputStream ToCodedInputStream(this global::Google.Protobuf.IMessage msg)
