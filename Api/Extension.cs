@@ -79,6 +79,11 @@ namespace Framework.Caspar
             return 0;
         }
 
+        public static BigInteger ToWei(this decimal value, Nethereum.Util.UnitConversion.EthUnit fromUnit = Nethereum.Util.UnitConversion.EthUnit.Ether)
+        {
+            return Nethereum.Util.UnitConversion.Convert.ToWei(value, fromUnit);
+        }
+
         public static BigInteger ToInt256(this string value)
         {
             return BigInteger.Parse(value);
