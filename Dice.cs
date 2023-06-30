@@ -9,30 +9,42 @@ namespace Framework.Caspar
 {
     public class Dice
     {
+
+
+        //static ThreadLocal<System.Random> random = new ThreadLocal<System.Random>(() => { return MersenneTwister.DsfmtRandom.Create(MersenneTwister.DsfmtEdition.Original_19937); });
+        static ThreadLocal<System.Random> random = new ThreadLocal<System.Random>(() => { return MersenneTwister.MTRandom.Create(MersenneTwister.MTEdition.Original_19937); });
+        //static System.Random random = MersenneTwister.MTRandom.Create(MersenneTwister.MTEdition.Original_19937);
         static public int Roll(int from, int to)
         {
             if (from == to) { return roll(); }
-            return System.Random.Shared.Next(from, to);
+            //return System.Random.Shared.Next(from, to);
+            return random.Value.Next(from, to);
+
         }
 
         static public double Roll(double from, double to)
         {
-            return System.Random.Shared.NextDouble() * (to - from) + from;
+            //return System.Random.Shared.NextDouble() * (to - from) + from;
+            return random.Value.NextDouble() * (to - from) + from;
         }
 
         static protected int roll()
         {
-            return System.Random.Shared.Next();
+            return random.Value.Next();
+            //return random.Next();
         }
 
         static public int Roll(int max)
         {
-            return System.Random.Shared.Next(max);
+            //return System.Random.Shared.Next(max);
+            return random.Value.Next(max);
         }
 
         public static double Roll()
         {
-            return System.Random.Shared.NextDouble();
+            return random.Value.NextDouble();
+            //return System.Random.Shared.NextDouble();
+            //return random.NextDouble();
         }
         public interface IBuket<T>
         {
@@ -123,49 +135,46 @@ namespace Framework.Caspar
             {
                 public T Value;
                 public int PER;
+                public double Rate(int Max)
+                {
+                    return (double)PER / (double)Max;
+                }
             }
 
-            private SortedDictionary<int, Tuple<T, int>> origin = new SortedDictionary<int, Tuple<T, int>>();
+            private List<Slot> origin = new();
+            private SortedDictionary<double, T> shuffled = new();
             public int MaxPER { get; set; }
 
             public int Count { get { return origin.Count; } }
             public void Insert(T value, int per)
             {
-
                 if (per == 0) { return; }
                 MaxPER += per;
-                var item = new Tuple<T, int>(value, per);
-                origin.Add(MaxPER, item);
+                origin.Add(new Slot()
+                {
+                    Value = value,
+                    PER = MaxPER,
+                });
 
             }
             public T Pick()
             {
-
                 if (origin.Count == 0) { return default(T); }
-                var dice = global::Framework.Caspar.Dice.Roll(0, MaxPER);
+                var dice = global::Framework.Caspar.Dice.Roll();
 
-                var item = origin;
-
-                var tuple = item.First(e => e.Key >= dice).Value;
-                return tuple.Item1;
-
+                var temp = shuffled;
+                var picked = temp.First(e => e.Key >= dice).Value;
+                return picked;
             }
 
             public void Shuffle()
             {
-
-                var temp = origin.ToArray();
-                temp.Shuffle();
-
-                SortedDictionary<int, Tuple<T, int>> other = new SortedDictionary<int, Tuple<T, int>>();
-
-                var per = 0;
-                foreach (var e in temp)
+                SortedDictionary<double, T> other = new();
+                foreach (var e in origin)
                 {
-                    per += e.Value.Item2;
-                    other.Add(per, e.Value);
+                    other.Add(e.Rate(MaxPER), e.Value);
                 }
-                origin = other;
+                shuffled = other;
 
             }
             public void Clear()
