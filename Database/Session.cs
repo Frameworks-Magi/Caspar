@@ -24,6 +24,7 @@ namespace Framework.Caspar.Database
         void Prepare() { }
         string CommandText { get; set; }
         System.Data.CommandType CommandType { get; set; }
+        bool IsTransaction { get { return false; } }
 
 
     }

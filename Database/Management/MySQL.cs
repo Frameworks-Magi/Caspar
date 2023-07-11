@@ -21,6 +21,7 @@ namespace Framework.Caspar.Database.Management.Relational
     {
         public sealed class Queryable : ICommandable
         {
+            bool IsTransaction { get { return Command.Transaction != null; } }
             public int ExecuteNonQuery()
             {
 
@@ -220,6 +221,7 @@ namespace Framework.Caspar.Database.Management.Relational
         public bool IAM { get; set; } = false;
         internal DateTime InitializedAt { get; set; } = DateTime.UtcNow;
 
+
         public void Initialize()
         {
 
@@ -236,28 +238,35 @@ namespace Framework.Caspar.Database.Management.Relational
                     var connectionString = new MySqlConnectionStringBuilder();
                     //SqlConnectionStringBuilder connectionString = new SqlConnectionStringBuilder();
                     connectionString.UserID = Id;
-                    connectionString.Password = Pw;
 
-                    try
-                    {
-                        if (IAM == true)
-                        {
-                            var awsCredentials = new Amazon.Runtime.BasicAWSCredentials((string)global::Framework.Caspar.Api.Config.AWS.Access.KeyId, (string)global::Framework.Caspar.Api.Config.AWS.Access.SecretAccessKey);
-                            var pwd = Amazon.RDS.Util.RDSAuthTokenGenerator.GenerateAuthToken(awsCredentials, Ip, 3306, Id);
-                            connectionString.SslMode = MySqlSslMode.Required;
-                            connectionString.Password = pwd;
-                        }
-                    }
-                    catch (Exception e)
-                    {
-                        Logger.Error(e);
-                    }
+                    // try
+                    // {
+                    //     if (IAM == true)
+                    //     {
+                    //         var awsCredentials = new Amazon.Runtime.BasicAWSCredentials((string)global::Framework.Caspar.Api.Config.AWS.Access.KeyId, (string)global::Framework.Caspar.Api.Config.AWS.Access.SecretAccessKey);
+                    //         var pwd = Amazon.RDS.Util.RDSAuthTokenGenerator.GenerateAuthToken(awsCredentials, Ip, 3306, Id);
+                    //         connectionString.SslMode = MySqlSslMode.Required;
+                    //         connectionString.Password = pwd;
+                    //     }
+                    //     else
+                    //     {
+                    //         connectionString.Password = Pw;
+                    //     }
+                    // }
+                    // catch (Exception e)
+                    // {
+                    //     Logger.Error(e);
+                    // }
 
                     connectionString.Server = Ip;
                     connectionString.Port = Convert.ToUInt32(Port);
                     connectionString.Database = Db;
 
-                    connectionString.Pooling = false;
+                    connectionString.Pooling = true;
+                    connectionString.MinimumPoolSize = 2;
+                    connectionString.MaximumPoolSize = 32;
+                    connectionString.ConnectionIdleTimeout = 60;
+
                     //   if (IAM == false && IsPoolable() > 0 && Framework.Caspar.Api.ServerType != "Agent")
                     // {
                     //     connectionString.Pooling = true;
@@ -284,12 +293,26 @@ namespace Framework.Caspar.Database.Management.Relational
             {
                 if (Connection == null)
                 {
-                    Initialize();
-
-                    //   System.Data.Odbc.OdbcConnection MyConnection = new System.Data.Odbc.OdbcConnection("MyConString");
-
-                    //        Logger.Info($"New Mysql Connection");
+                    //          Initialize();
                     Connection = new MySqlConnection(connectionStringValue);
+                    Connection.ProvidePasswordCallback = (context) =>
+                    {
+                        if (IAM == true)
+                        {
+                            var awsCredentials = new Amazon.Runtime.BasicAWSCredentials((string)global::Framework.Caspar.Api.Config.AWS.Access.KeyId, (string)global::Framework.Caspar.Api.Config.AWS.Access.SecretAccessKey);
+                            var pwd = Amazon.RDS.Util.RDSAuthTokenGenerator.GenerateAuthToken(awsCredentials, Ip, 3306, Id);
+                            Logger.Info("mysql ProvidePasswordCallback");
+                            Logger.Info($"before: {connectionStringValue}");
+                            Logger.Info($"new pw: {pwd}");
+                            return pwd;
+                        }
+                        else
+                        {
+                            return Pw;
+                        }
+                    };
+
+
                     await Connection.OpenAsync();
                 }
                 if (transaction == true)
