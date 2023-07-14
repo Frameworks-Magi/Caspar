@@ -219,7 +219,7 @@ namespace Framework.Caspar.Database.Management.Relational
         }
 
         public bool IAM { get; set; } = false;
-        internal DateTime InitializedAt { get; set; } = DateTime.UtcNow;
+        //  internal DateTime InitializedAt { get; set; } = DateTime.UtcNow;
 
 
         public void Initialize()
@@ -231,33 +231,9 @@ namespace Framework.Caspar.Database.Management.Relational
             }
             if (session != null && session is MySql)
             {
-                connectionStringValue = (session as MySql).connectionStringValue;
-                if ((session as MySql).InitializedAt > DateTime.UtcNow) { return; }
-                lock (session)
                 {
                     var connectionString = new MySqlConnectionStringBuilder();
-                    //SqlConnectionStringBuilder connectionString = new SqlConnectionStringBuilder();
                     connectionString.UserID = Id;
-
-                    // try
-                    // {
-                    //     if (IAM == true)
-                    //     {
-                    //         var awsCredentials = new Amazon.Runtime.BasicAWSCredentials((string)global::Framework.Caspar.Api.Config.AWS.Access.KeyId, (string)global::Framework.Caspar.Api.Config.AWS.Access.SecretAccessKey);
-                    //         var pwd = Amazon.RDS.Util.RDSAuthTokenGenerator.GenerateAuthToken(awsCredentials, Ip, 3306, Id);
-                    //         connectionString.SslMode = MySqlSslMode.Required;
-                    //         connectionString.Password = pwd;
-                    //     }
-                    //     else
-                    //     {
-                    //         connectionString.Password = Pw;
-                    //     }
-                    // }
-                    // catch (Exception e)
-                    // {
-                    //     Logger.Error(e);
-                    // }
-
                     connectionString.Server = Ip;
                     connectionString.Port = Convert.ToUInt32(Port);
                     connectionString.Database = Db;
@@ -267,23 +243,11 @@ namespace Framework.Caspar.Database.Management.Relational
                     connectionString.MaximumPoolSize = 32;
                     connectionString.ConnectionIdleTimeout = 60;
 
-                    //   if (IAM == false && IsPoolable() > 0 && Framework.Caspar.Api.ServerType != "Agent")
-                    // {
-                    //     connectionString.Pooling = true;
-                    //     connectionString.MinimumPoolSize = 8;
-                    //     connectionString.MaximumPoolSize = 16;
-                    // }
                     connectionString.AllowZeroDateTime = true;
                     connectionString.CharacterSet = "utf8";
-                    //    connectionString.CheckParameters = false;
-
-                    (session as MySql).connectionStringValue = connectionString.ToString();//.GetConnectionString(true);
-                    Logger.Info((session as MySql).connectionStringValue);
-                    (session as MySql).InitializedAt = DateTime.UtcNow.AddMinutes(10);
+                    connectionStringValue = connectionString.ToString();//.GetConnectionString(true);
                 }
-                connectionStringValue = (session as MySql).connectionStringValue;
             }
-
         }
 
 
@@ -293,7 +257,6 @@ namespace Framework.Caspar.Database.Management.Relational
             {
                 if (Connection == null)
                 {
-                    //          Initialize();
                     Connection = new MySqlConnection(connectionStringValue);
                     Connection.ProvidePasswordCallback = (context) =>
                     {
@@ -302,8 +265,8 @@ namespace Framework.Caspar.Database.Management.Relational
                             var awsCredentials = new Amazon.Runtime.BasicAWSCredentials((string)global::Framework.Caspar.Api.Config.AWS.Access.KeyId, (string)global::Framework.Caspar.Api.Config.AWS.Access.SecretAccessKey);
                             var pwd = Amazon.RDS.Util.RDSAuthTokenGenerator.GenerateAuthToken(awsCredentials, Ip, 3306, Id);
                             Logger.Info("mysql ProvidePasswordCallback");
-                            Logger.Info($"before: {connectionStringValue}");
-                            Logger.Info($"new pw: {pwd}");
+                            Logger.Info($"connectionStringValue: {connectionStringValue}");
+                            Logger.Info($"password: {pwd}");
                             return pwd;
                         }
                         else
