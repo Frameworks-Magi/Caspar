@@ -384,7 +384,7 @@ namespace Framework.Caspar
         }
         public static bool IsNullOrDeadAddress(this string str)
         {
-            if (str == "0x0000000000000000000000000000000000000000" || str == "0x000000000000000000000000000000000000dEaD")
+            if (str == "0x0000000000000000000000000000000000000000" || str == "0x000000000000000000000000000000000000dEaD" || str.ToLower() == "0x000000000000000000000000000000000000dead")
             {
                 return true;
             }
@@ -401,7 +401,7 @@ namespace Framework.Caspar
         }
         public static bool IsDeadAddress(this string str)
         {
-            if (str == "0x000000000000000000000000000000000000dEaD")
+            if (str == "0x000000000000000000000000000000000000dEaD" || str.ToLower() == "0x000000000000000000000000000000000000dead")
             {
                 return true;
             }
