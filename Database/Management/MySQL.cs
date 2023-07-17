@@ -21,7 +21,7 @@ namespace Framework.Caspar.Database.Management.Relational
     {
         public sealed class Queryable : ICommandable
         {
-            bool IsTransaction { get { return Command.Transaction != null; } }
+            public bool IsTransaction { get { return Command.Transaction != null; } }
             public int ExecuteNonQuery()
             {
 
