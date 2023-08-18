@@ -20,6 +20,7 @@
 
 
   <ItemGroup>
+    <PackageReference Include="Fido2" Version="3.0.1" />
     <PackageReference Include="Google.Apis.PeopleService.v1" Version="1.61.0.3093" />
     <PackageReference Include="MersenneTwister" Version="1.0.6" />
     <PackageReference Include="Microsoft.Extensions.ObjectPool" Version="6.0.1" />
