@@ -27,7 +27,7 @@
     <PackageReference Include="MySqlConnector" Version="2.2.5" />
     <PackageReference Include="PeterO.Cbor" Version="4.5.2" />
     <PackageReference Include="System.Data.Odbc" Version="7.0.0" />
-    <PackageReference Include="System.IdentityModel.Tokens.Jwt" Version="6.8.0" />
+    <PackageReference Include="System.IdentityModel.Tokens.Jwt" Version="6.17.0" />
     <PackageReference Include="aliyun-net-sdk-cdn" Version="3.4.1" />
     <PackageReference Include="aliyun-net-sdk-core" Version="1.5.6" />
     <PackageReference Include="AWSSDK.CloudFront" Version="3.7.1" />
@@ -38,7 +38,7 @@
     <PackageReference Include="AWSSDK.SecurityToken" Version="3.7.1.199" />
     <PackageReference Include="Google.Protobuf" Version="3.11.4" />
     <PackageReference Include="Microsoft.Azure.Cosmos" Version="3.20.0" />
-    <PackageReference Include="Microsoft.IdentityModel.Tokens" Version="6.11.0" />
+    <PackageReference Include="Microsoft.IdentityModel.Tokens" Version="6.17.0" />
     <PackageReference Include="MySql.Data" Version="8.0.23" />
     <PackageReference Include="StackExchange.Redis" Version="2.2.50" />
     <PackageReference Include="System.CodeDom" Version="5.0.0" />
