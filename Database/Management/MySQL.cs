@@ -264,9 +264,9 @@ namespace Framework.Caspar.Database.Management.Relational
                         {
                             var awsCredentials = new Amazon.Runtime.BasicAWSCredentials((string)global::Framework.Caspar.Api.Config.AWS.Access.KeyId, (string)global::Framework.Caspar.Api.Config.AWS.Access.SecretAccessKey);
                             var pwd = Amazon.RDS.Util.RDSAuthTokenGenerator.GenerateAuthToken(awsCredentials, Ip, 3306, Id);
-                            Logger.Info("mysql ProvidePasswordCallback");
-                            Logger.Info($"connectionStringValue: {connectionStringValue}");
-                            Logger.Info($"password: {pwd}");
+                            // Logger.Info("mysql ProvidePasswordCallback");
+                            // Logger.Info($"connectionStringValue: {connectionStringValue}");
+                            // Logger.Info($"password: {pwd}");
                             return pwd;
                         }
                         else
