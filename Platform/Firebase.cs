@@ -27,5 +27,22 @@ namespace Framework.Caspar.Platform.Firebase
             }
             return null;
         }
+
+        public static async Task<FirebaseAdmin.Auth.UserRecord> Get(string uid)
+        {
+            try
+            {
+                var user = await FirebaseAuth.GetAuth(App).GetUserAsync(uid);
+                return user;
+            }
+            catch (Exception e)
+            {
+                //  Logger.Debug(e);
+            }
+            return null;
+        }
+
+
+        public static FirebaseAuth Instance { get { return FirebaseAuth.GetAuth(App); } }
     }
 }
