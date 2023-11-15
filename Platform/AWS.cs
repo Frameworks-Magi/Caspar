@@ -18,7 +18,7 @@ using static Framework.Caspar.Api;
 
 namespace Framework.Caspar.Platform
 {
-    public static class AWS
+    public static partial class AWS
     {
         public class S3
         {
