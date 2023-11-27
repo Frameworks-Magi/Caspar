@@ -44,7 +44,7 @@ namespace Framework.Caspar.Platform
                 var signature = s3UploadSignature(AWSSecretKey, policyBase64, credential, region);
 
                 var json = new JObject();
-                json.Add("key", $"QA/{filename}");
+                json.Add("key", $"{filename}");
                 json.Add("acl", "private");
                 json.Add("success_action_status", "201");
                 json.Add("policy", policyBase64);
@@ -75,7 +75,7 @@ namespace Framework.Caspar.Platform
 
                 json.Add("conditions", new JArray(
                     new JObject(new JProperty("bucket", bucket)),
-                    new JObject(new JProperty("key", $"QA/{filename}")),
+                    new JObject(new JProperty("key", $"{filename}")),
                     new JObject(new JProperty("acl", "private")),
                     new JObject(new JProperty("success_action_status", "201")),
                     start_with,
