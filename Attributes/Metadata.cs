@@ -190,7 +190,7 @@ namespace Framework.Caspar.Attributes
                     }
                     catch (Exception ex)
                     {
-                        Logger.Error(ex);
+                        Logger.Error($"Failed Load Metadata: {System.IO.Path.GetFileName(e.Key)}");
                         await Task.Delay(10);
                         Assemblies.Enqueue(e);
                     }

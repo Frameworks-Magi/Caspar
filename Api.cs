@@ -2014,13 +2014,13 @@ namespace Framework.Caspar
                 connectionString.Password = global::Framework.Caspar.Api.DesDecrypt(connectionString.Password, "magimagi");
             }
             connectionString.Server = db.Ip;
-
             try
             {
+
                 if (db.IAM == true)
                 {
                     var awsCredentials = new Amazon.Runtime.BasicAWSCredentials((string)global::Framework.Caspar.Api.Config.AWS.Access.KeyId, (string)global::Framework.Caspar.Api.Config.AWS.Access.SecretAccessKey);
-                    var pwd = Amazon.RDS.Util.RDSAuthTokenGenerator.GenerateAuthToken(awsCredentials, connectionString.Server, 3306, connectionString.UserID);
+                    var pwd = Amazon.RDS.Util.RDSAuthTokenGenerator.GenerateAuthToken(awsCredentials, RegionEndpoint.APNortheast2, connectionString.Server, 3306, connectionString.UserID);
                     connectionString.Password = pwd;
                 }
             }
@@ -2034,19 +2034,8 @@ namespace Framework.Caspar
             connectionString.Pooling = false;
             connectionString.AllowZeroDateTime = true;
             connectionString.CheckParameters = false;
-            connectionString.UseCompression = true;
+            connectionString.UseCompression = false;
             connectionString.ConnectionTimeout = 30;
-            if (db.IAM == true)
-            {
-                connectionString.SslMode = MySql.Data.MySqlClient.MySqlSslMode.Required;
-                connectionString.SslCa = "rds-ca-2019-root.pem";
-            }
-            else
-            {
-                connectionString.SslMode = MySql.Data.MySqlClient.MySqlSslMode.None;
-            }
-
-
 
             var connectionStringValue = connectionString.GetConnectionString(true);
             Logger.Info($"Registration to {connectionStringValue}");
@@ -2059,6 +2048,7 @@ namespace Framework.Caspar
 
                     using var connection = new MySql.Data.MySqlClient.MySqlConnection(connectionStringValue);
                     Logger.Info($"Registration to {connectionString.Server}:{connectionString.Port}");
+
                     connection.Open();
 
                     using var command = connection.CreateCommand();
@@ -2076,6 +2066,12 @@ namespace Framework.Caspar
                     command.Parameters.AddWithValue("@region", (string)global::Framework.Caspar.Api.Config.Region);
                     command.Parameters.AddWithValue("@type", ServerType);
                     command.Parameters.AddWithValue("@ip", PublicIp);
+
+                    Logger.Info($"Provider : {Framework.Caspar.Api.Config.Provider}");
+                    Logger.Info($"Publish : {Framework.Caspar.Api.Config.Publish}");
+                    Logger.Info($"Region : {Framework.Caspar.Api.Config.Region}");
+                    Logger.Info($"Type : {ServerType}");
+                    Logger.Info($"IP : {PublicIp}");
                     using var reader = command.ExecuteReader();
 
 
@@ -2106,11 +2102,14 @@ namespace Framework.Caspar
                         reader.Close();
                     }
 
-
                     if (Deploy.PPRT == 0)
                     {
                         command.Parameters.Clear();
-                        command.CommandText = $"INSERT IGNORE INTO `caspar`.`Deploy` (`Provider`, `Publish`, `Region`, `Type`, `IP`) VALUES (@provider, '', '', '', @ip), (@provider, @publish, '', '', @ip), (@provider, @publish, @region, '', @ip), (@provider, @publish, @region, @type, @ip);";
+                        command.CommandText = $"INSERT IGNORE INTO `caspar`.`Deploy` (`Provider`, `Publish`, `Region`, `Type`, `IP`) VALUES (@provider, '', '', '', @ip);";
+                        command.CommandText += $"INSERT IGNORE INTO `caspar`.`Deploy` (`Provider`, `Publish`, `Region`, `Type`, `IP`) VALUES (@provider, @publish, '', '', @ip);";
+                        command.CommandText += $"INSERT IGNORE INTO `caspar`.`Deploy` (`Provider`, `Publish`, `Region`, `Type`, `IP`) VALUES (@provider, @publish, @region, '', @ip);";
+                        command.CommandText += $"INSERT IGNORE INTO `caspar`.`Deploy` (`Provider`, `Publish`, `Region`, `Type`, `IP`) VALUES (@provider, @publish, @region, @type, @ip);";
+
                         command.Parameters.AddWithValue("@provider", (string)global::Framework.Caspar.Api.Config.Provider);
                         command.Parameters.AddWithValue("@publish", (string)global::Framework.Caspar.Api.Config.Publish);
                         command.Parameters.AddWithValue("@region", (string)global::Framework.Caspar.Api.Config.Region);
