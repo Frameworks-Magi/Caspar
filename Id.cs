@@ -7,5 +7,6 @@ namespace Framework.Caspar
   public static class Id<T>
   {
     public static int Value;
+    public static string Name;
   }
 }

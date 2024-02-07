@@ -12,6 +12,7 @@ using System.Threading.Tasks;
 using Microsoft.IdentityModel.Tokens;
 using static Framework.Caspar.Api;
 
+
 namespace Framework.Caspar.Google
 {
     public static class Api
@@ -21,17 +22,47 @@ namespace Framework.Caspar.Google
 
         public static ThreadLocal<JsonWebKeySet> JWK { get; set; } = new ThreadLocal<JsonWebKeySet>();
 
-        public static string Issuer { get; set; }
+        public static string Issuer { get; set; } = "https://accounts.google.com";
         public static List<string> ValidAudiences { get; set; } = new();
 
         public static ThreadLocal<TokenValidationParameters> TVP { get; set; } = new();
         public static class IdToken
         {
+            public async static Task<bool> VerifyGoogleIdToken(string idToken, string clientId)
+            {
+                try
+                {
+                    HttpClient httpClient = new HttpClient();
+                    HttpResponseMessage response = await httpClient.GetAsync($"https://www.googleapis.com/oauth2/v3/tokeninfo?id_token={idToken}");
+
+                    if (response.IsSuccessStatusCode)
+                    {
+                        var responseBody = await response.Content.ReadAsStringAsync();
+                        // Parse the response to get the required information
+                        // For example, you can check the audience (aud) and client ID (azp) in the response
+                        // to verify if the ID token is valid for your client application
+
+                        // Example check: verify that the client ID matches the expected value
+                        if (responseBody.Contains($"\"azp\": \"{clientId}\""))
+                        {
+                            // Verification succeeded
+                            return true;
+                        }
+                    }
+
+                    // Verification failed
+                    return false;
+                }
+                catch (Exception ex)
+                {
+                    // Handle the exception or log the error
+                    return false;
+                }
+            }
 
             public async static Task<System.IdentityModel.Tokens.Jwt.JwtSecurityToken> Verify(string token)
             {
                 int max = 2;
-
                 while (max > 0)
                 {
                     max -= 1;
@@ -43,6 +74,7 @@ namespace Framework.Caspar.Google
                             using (var httpClient = new HttpClient())
                             {
                                 var res = await httpClient.GetAsync("https://www.googleapis.com/oauth2/v3/certs");
+                                var age = res.Headers.CacheControl.MaxAge;
                                 var keys = await res.Content.ReadAsStringAsync();
                                 JWK.Value = new JsonWebKeySet(keys);
                             }
