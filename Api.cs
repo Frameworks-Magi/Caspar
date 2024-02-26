@@ -2287,7 +2287,7 @@ namespace Framework.Caspar
                             PublicIp = (string)ret.GetValue("RemoteIp");
                         }
                     }
-                    catch
+                    catch(Exception e)
                     {
                         Offset = DateTime.UtcNow.ToUnixTime();
                     }
