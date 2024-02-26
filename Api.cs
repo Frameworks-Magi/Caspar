@@ -2266,7 +2266,7 @@ namespace Framework.Caspar
             }
 
 
-            Logger.Info("StartUp Framework... ip setting");
+            Logger.Info($"StartUp Framework... ip setting {(string)Config.Agent.Ip}");
             // ip setting
             {
                 PublicIp = string.Empty;
