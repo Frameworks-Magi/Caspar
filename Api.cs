@@ -2163,7 +2163,7 @@ namespace Framework.Caspar
             JsonFormatter = new global::Google.Protobuf.JsonFormatter(setting);
 
             Logger.Initialize();
-            Logger.Info("StartUp Framework...");
+            Logger.Info("StartUp Framework... local config");
 
 
             args ??= new string[] { "" };
@@ -2186,6 +2186,8 @@ namespace Framework.Caspar
             //cdn.Container = "hal";
             global::Framework.Caspar.Api.Config = null;
             JObject json = null;
+
+            Logger.Info("StartUp Framework... s3 config");
             try
             {
 
@@ -2264,6 +2266,7 @@ namespace Framework.Caspar
             }
 
 
+            Logger.Info($"StartUp Framework... ip setting {(string)Config.Agent.Ip}");
             // ip setting
             {
                 PublicIp = string.Empty;
@@ -2528,6 +2531,7 @@ namespace Framework.Caspar
 
             if (seed == false)
             {
+                Logger.Info("StartUp Framework... Registration");
                 Registration();
             }
 
