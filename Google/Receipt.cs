@@ -12,6 +12,7 @@ namespace Framework.Caspar.Google
         public static void Initialize(string MY_BASE64_PUBLIC_KEY)
         {
             cryptoServiceProviderXml = PEMKeyLoader.CryptoServiceProviderFromPublicKeyInfo(MY_BASE64_PUBLIC_KEY).ToXmlString(false);
+            if(null == cryptoServiceProviderXml) throw new Exception("Failed : Framework.Caspar.Google.Initialize");
         }
 
         public static string cryptoServiceProviderXml = null;
