@@ -2180,7 +2180,9 @@ namespace Framework.Caspar
             }
             catch (Exception e)
             {
+                Logger.Error(e);
             }
+
 
 
             //cdn.Container = "hal";
@@ -2290,7 +2292,7 @@ namespace Framework.Caspar
                             PublicIp = (string)ret.GetValue("RemoteIp");
                         }
                     }
-                    catch(Exception e)
+                    catch (Exception e)
                     {
                         Offset = DateTime.UtcNow.ToUnixTime();
                     }
