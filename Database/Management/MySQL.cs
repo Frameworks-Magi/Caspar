@@ -142,7 +142,7 @@ namespace Framework.Caspar.Database.Management.Relational
         //}
 
         //public int IsPoolable() { return MaxSession; }
-        public int IsPoolable() { return 0; }
+        public int IsPoolable() { return MaxSession; }
         public bool Ping()
         {
             if (Connection == null)
@@ -165,7 +165,7 @@ namespace Framework.Caspar.Database.Management.Relational
             session.Port = Port;
             session.Db = Db;
             session.Name = Name;
-            session.MaxSession = IsPoolable();
+            session.MaxSession = MaxSession;
             return session;
         }
 
@@ -248,6 +248,16 @@ namespace Framework.Caspar.Database.Management.Relational
                     {
                         connectionString.MaximumPoolSize = 32;
                     }
+
+                    if (Framework.Caspar.Api.ServerType == "Agent")
+                    {
+                        connectionString.MaximumPoolSize = 8;
+                    }
+                    else if (connectionString.MaximumPoolSize > 32)
+                    {
+                        Logger.Info($"Database Session Initialize {Name} MaximumPoolSize is {connectionString.MaximumPoolSize}");
+                    }
+
                     connectionString.ConnectionIdleTimeout = 60;
 
                     connectionString.AllowZeroDateTime = true;

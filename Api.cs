@@ -123,9 +123,9 @@ namespace Framework.Caspar
                         {
                             driver.MaxSession = json.MaxSession;
                         }
-                        catch
+                        catch (Exception ex)
                         {
-
+                            Logger.Error(ex);
                         }
                         finally
                         {
