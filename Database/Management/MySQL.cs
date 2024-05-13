@@ -240,7 +240,14 @@ namespace Framework.Caspar.Database.Management.Relational
 
                     connectionString.Pooling = true;
                     connectionString.MinimumPoolSize = 2;
-                    connectionString.MaximumPoolSize = 32;
+                    if (MaxSession > 32)
+                    {
+                        connectionString.MaximumPoolSize = (uint)MaxSession;
+                    }
+                    else
+                    {
+                        connectionString.MaximumPoolSize = 32;
+                    }
                     connectionString.ConnectionIdleTimeout = 60;
 
                     connectionString.AllowZeroDateTime = true;

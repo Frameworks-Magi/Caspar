@@ -118,6 +118,7 @@ namespace Framework.Caspar
                         driver.Pw = json.Pw;
                         driver.Db = json.Db;
                         driver.Name = e.Name;
+                        driver.MaxSession = 32;
                         try
                         {
                             driver.MaxSession = json.MaxSession;
@@ -125,6 +126,10 @@ namespace Framework.Caspar
                         catch
                         {
 
+                        }
+                        finally
+                        {
+                            Logger.Info($"Database {e.Name} Session Max = {driver.MaxSession}");
                         }
 
                         if (json.Crypt == true)
@@ -168,6 +173,7 @@ namespace Framework.Caspar
                     driver.Pw = session.Pw;
                     driver.Db = session.Db;
                     driver.Name = session.Name;
+
 
                     if (session.Crypt == true)
                     {
