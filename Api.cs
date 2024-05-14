@@ -125,7 +125,6 @@ namespace Framework.Caspar
                         }
                         catch (Exception ex)
                         {
-                            Logger.Error(ex);
                         }
                         finally
                         {
