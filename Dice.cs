@@ -46,7 +46,7 @@ namespace Framework.Caspar
             //return System.Random.Shared.NextDouble();
             //return random.NextDouble();
         }
-        public interface IBuket<T>
+        public interface IBucket<T>
         {
             void Insert(T value, int per);
             void Shuffle();
@@ -55,7 +55,7 @@ namespace Framework.Caspar
             T Pick();
         }
 
-        public sealed class PopBucket<T> : IBuket<T>
+        public sealed class PopBucket<T> : IBucket<T>
         {
 
             private List<Tuple<T, int>> orignal = new List<Tuple<T, int>>();
@@ -129,7 +129,7 @@ namespace Framework.Caspar
             }
 
         }
-        public sealed class Bucket<T> : IBuket<T>
+        public sealed class Bucket<T> : IBucket<T>
         {
             public class Slot
             {
@@ -184,7 +184,7 @@ namespace Framework.Caspar
 
         }
 
-        public sealed class Fixed<T> : IBuket<T>
+        public sealed class Fixed<T> : IBucket<T>
         {
             private ThreadLocal<int> Index = new ThreadLocal<int>();
             private List<T> origins = new List<T>();
