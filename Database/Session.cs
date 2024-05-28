@@ -62,7 +62,14 @@ namespace Framework.Caspar.Database
             public static void Update()
             {
                 long now = DateTime.UtcNow.Ticks;
-                ExpireAt = DateTime.UtcNow.AddSeconds(Interval).Ticks;
+                if (Framework.Caspar.Api.Config.Deploy == "QA")
+                {
+                    ExpireAt = DateTime.UtcNow.AddSeconds(600).Ticks;
+                }
+                else
+                {
+                    ExpireAt = DateTime.UtcNow.AddSeconds(Interval).Ticks;
+                }
 
                 while (Connections.Count > 0)
                 {
