@@ -2183,6 +2183,10 @@ namespace Framework.Caspar
                 global::Framework.Caspar.CDN.S3Client = new AmazonS3Client((string)Config.AWS.S3.Key, (string)Config.AWS.S3.Secret, endpoint);
                 Framework.Caspar.CDN.Domain = (string)Config.AWS.S3.Domain;
             }
+            catch (System.IO.FileNotFoundException e)
+            {
+
+            }
             catch (Exception e)
             {
                 Logger.Error(e);
@@ -2245,11 +2249,8 @@ namespace Framework.Caspar
             Config = json;
 
 
-
-
             try
             {
-
                 foreach (var e in args)
                 {
                     if (e.ToLower().StartsWith("platform="))
