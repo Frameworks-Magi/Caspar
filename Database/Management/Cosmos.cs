@@ -12,7 +12,7 @@ namespace Framework.Caspar.Database.NoSql
 
         public ThreadLocal<CosmosClient> Connection = new ThreadLocal<CosmosClient>();
 
-        public string EndPoint { get; set; } = "AccountEndpoint=https://retiad.documents.azure.com:443/;AccountKey=BpLGtSePPsWPlgTMsFx4r6kXzdPEC05Cy4KV5rfZgRKcPIZWK0UYqvJTRa3P91l5AoljVesJ1EeJeFHdppO1hg==;";
+        public string EndPoint { get; set; } = "";
         public string Name { get; internal set; }
 
         public void Initialize()

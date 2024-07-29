@@ -20,7 +20,7 @@ namespace Framework.Caspar
 {
     public static class CDN
     {
-        public static IAmazonS3 S3Client { get; set; } = new AmazonS3Client("AKIAS3EN46735AXZGIW2", "ZWkvlfBNxnEUHJ5E/X1/xeHqg6oJVSdWuKany+J7", RegionEndpoint.APNortheast2);
+        public static IAmazonS3 S3Client { get; set; }
         public static string Domain { get; set; } = "";
         public static async Task<Stream> Get(string path)
         {
@@ -37,8 +37,8 @@ namespace Framework.Caspar
 
         }
 
-        public static string CloudFront { get; set; } = "d2mcamx1uto7j2.cloudfront.net";
-        public static string CFKeyId { get; set; } = "KD2PQJA6LPYM4";
+        public static string CloudFront { get; set; } = "";
+        public static string CFKeyId { get; set; } = "";
         public static CloudFrontPEM PEM { get; set; } = () =>
         {
             return typeof(global::Framework.Caspar.Api).Assembly.GetManifestResourceStream("Framework.Caspar.Resources.pk-CloudFront.pem");
