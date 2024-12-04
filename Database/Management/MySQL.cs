@@ -116,12 +116,23 @@ namespace Framework.Caspar.Database.Management.Relational
 
                 // });
             }
+            public void AddWithValue(string name, object value)
+            {
+                Command.Parameters.AddWithValue(name, value);
+            }
+            public void Clear()
+            {
+                Command.Parameters.Clear();
+            }
+
             public MySqlCommand Command { get; internal set; }
             public MySqlParameterCollection Parameters => Command.Parameters;
             public void Prepare() { Command.Prepare(); }
             public string CommandText { get { return Command.CommandText; } set { Command.CommandText = value; } }
             public System.Data.CommandType CommandType { get { return Command.CommandType; } set { Command.CommandType = value; } }
         }
+
+
 
         //  public class Session : Driver.Session {
         public string Name { get; set; }

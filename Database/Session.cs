@@ -12,7 +12,13 @@ using MySqlConnector;
 
 namespace Framework.Caspar.Database
 {
-    public interface ICommandable
+
+    public interface IParameterizable
+    {
+        void Clear();
+        void AddWithValue(string name, object value);
+    }
+    public interface ICommandable : IParameterizable
     {
         int ExecuteNonQuery() { return 0; }
         async Task<int> ExecuteNonQueryAsync() { await Task.CompletedTask; return 0; }
