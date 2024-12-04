@@ -32,10 +32,10 @@ namespace Framework.Caspar.Protocol
                     command.Parameters.Clear();
                     command.CommandText = string.Empty;
 
-                    command.CommandText += $"INSERT INTO caspar.Delegator (Provider, Publish, Region, Type, Platform, State, PublicIp, PrivateIp, HeartBeat, Latitude, Longitude) ";
-                    command.CommandText += $"VALUES (@provider, @Publish, @region, @type, @platform, @state, @publicip, @privateip, @heartbeat, @latitude, @longitude) ";
+                    command.CommandText += $"INSERT INTO caspar.delegator (provider, publish, region, type, platform, state, public_ip, private_ip, heartbeat, latitude, longitude) ";
+                    command.CommandText += $"VALUES (@provider, @Publish, @region, @type, @platform, @state, @public_ip, @private_ip, @heartbeat, @latitude, @longitude) ";
                     command.CommandText += $"ON DUPLICATE KEY ";
-                    command.CommandText += $"UPDATE Platform = @platform, HeartBeat = @heartbeat, Latitude = @latitude, Longitude = @longitude;";
+                    command.CommandText += $"UPDATE platform = @platform, heartbeat = @heartbeat, latitude = @latitude, longitude = @longitude;";
 
                     command.Parameters.AddWithValue("@provider", (string)Framework.Caspar.Api.Config.Provider);
                     command.Parameters.AddWithValue("@publish", (string)Framework.Caspar.Api.Config.Publish);
@@ -43,8 +43,8 @@ namespace Framework.Caspar.Protocol
                     command.Parameters.AddWithValue("@type", Type);
                     command.Parameters.AddWithValue("@platform", Framework.Caspar.Api.Config.CloudPlatform.ToString());
                     command.Parameters.AddWithValue("@state", 1);
-                    command.Parameters.AddWithValue("@publicip", Framework.Caspar.Api.PublicIp);
-                    command.Parameters.AddWithValue("@privateip", Framework.Caspar.Api.PrivateIp);
+                    command.Parameters.AddWithValue("@public_ip", Framework.Caspar.Api.PublicIp);
+                    command.Parameters.AddWithValue("@private_ip", Framework.Caspar.Api.PrivateIp);
                     command.Parameters.AddWithValue("@heartbeat", DateTime.UtcNow.AddMinutes(1));
                     command.Parameters.AddWithValue("@latitude", 0.0);
                     command.Parameters.AddWithValue("@longitude", 0.0);

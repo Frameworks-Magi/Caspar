@@ -87,7 +87,7 @@ namespace Framework.Caspar.Protocol
 
                     //서버들을 받아온다.
                     command.Parameters.Clear();
-                    command.CommandText = $"SELECT * FROM `caspar`.`Delegator` WHERE Provider = '{Framework.Caspar.Api.Config.Provider}' AND Type = '{RemoteType.ToString()}';";
+                    command.CommandText = $"SELECT * FROM `caspar`.`delegator` WHERE provider = '{Framework.Caspar.Api.Config.Provider}' AND type = '{RemoteType}';";
                     session.ResultSet = (await command.ExecuteReaderAsync()).ToResultSet();
 
 

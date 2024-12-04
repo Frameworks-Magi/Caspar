@@ -2006,13 +2006,11 @@ namespace Framework.Caspar
         {
             var connectionString = new MySql.Data.MySqlClient.MySqlConnectionStringBuilder();
 
-            JObject obj = global::Framework.Caspar.Api.Config.Databases.MySql;
-            dynamic db = obj.First;
-            db = global::Framework.Caspar.Api.Config.Databases.MySql[db.Name];
-
+            dynamic db = global::Framework.Caspar.Api.Config.Databases.Caspar;
 
             connectionString.UserID = db.Id;
             connectionString.Password = db.Pw;
+
             if (db.Crypt == true)
             {
                 connectionString.UserID = global::Framework.Caspar.Api.DesDecrypt(connectionString.UserID, "magimagi");
@@ -2061,10 +2059,10 @@ namespace Framework.Caspar
 
 
                     command.Parameters.Clear();
-                    command.CommandText = $"SELECT UID FROM `caspar`.`Deploy` WHERE `Provider` = @provider AND `Publish` = '' AND `Region` = '' AND `Type` = '';";
-                    command.CommandText += $"SELECT UID FROM `caspar`.`Deploy` WHERE `Provider` = @provider AND `Publish` = @publish AND `Region` = '' AND `Type` = '';";
-                    command.CommandText += $"SELECT UID FROM `caspar`.`Deploy` WHERE `Provider` = @provider AND `Publish` = @publish AND `Region` = @region AND `Type` = '';";
-                    command.CommandText += $"SELECT UID FROM `caspar`.`Deploy` WHERE `Provider` = @provider AND `Publish` = @publish AND `Region` = @region AND `Type` = @type;";
+                    command.CommandText = $"SELECT id FROM `caspar`.`deploy` WHERE `provider` = @provider AND `publish` = '' AND `region` = '' AND `type` = '';";
+                    command.CommandText += $"SELECT id FROM `caspar`.`deploy` WHERE `provider` = @provider AND `publish` = @publish AND `region` = '' AND `type` = '';";
+                    command.CommandText += $"SELECT id FROM `caspar`.`deploy` WHERE `provider` = @provider AND `publish` = @publish AND `region` = @region AND `type` = '';";
+                    command.CommandText += $"SELECT id FROM `caspar`.`deploy` WHERE `provider` = @provider AND `publish` = @publish AND `region` = @region AND `type` = @type;";
 
                     command.Parameters.AddWithValue("@provider", (string)global::Framework.Caspar.Api.Config.Provider);
                     command.Parameters.AddWithValue("@publish", (string)global::Framework.Caspar.Api.Config.Publish);
@@ -2110,10 +2108,10 @@ namespace Framework.Caspar
                     if (Deploy.PPRT == 0)
                     {
                         command.Parameters.Clear();
-                        command.CommandText = $"INSERT IGNORE INTO `caspar`.`Deploy` (`Provider`, `Publish`, `Region`, `Type`, `IP`) VALUES (@provider, '', '', '', @ip);";
-                        command.CommandText += $"INSERT IGNORE INTO `caspar`.`Deploy` (`Provider`, `Publish`, `Region`, `Type`, `IP`) VALUES (@provider, @publish, '', '', @ip);";
-                        command.CommandText += $"INSERT IGNORE INTO `caspar`.`Deploy` (`Provider`, `Publish`, `Region`, `Type`, `IP`) VALUES (@provider, @publish, @region, '', @ip);";
-                        command.CommandText += $"INSERT IGNORE INTO `caspar`.`Deploy` (`Provider`, `Publish`, `Region`, `Type`, `IP`) VALUES (@provider, @publish, @region, @type, @ip);";
+                        command.CommandText = $"INSERT IGNORE INTO `caspar`.`deploy` (`provider`, `publish`, `region`, `type`, `ip`) VALUES (@provider, '', '', '', @ip);";
+                        command.CommandText += $"INSERT IGNORE INTO `caspar`.`deploy` (`provider`, `publish`, `region`, `type`, `ip`) VALUES (@provider, @publish, '', '', @ip);";
+                        command.CommandText += $"INSERT IGNORE INTO `caspar`.`deploy` (`provider`, `publish`, `region`, `type`, `ip`) VALUES (@provider, @publish, @region, '', @ip);";
+                        command.CommandText += $"INSERT IGNORE INTO `caspar`.`deploy` (`provider`, `publish`, `region`, `type`, `ip`) VALUES (@provider, @publish, @region, @type, @ip);";
 
                         command.Parameters.AddWithValue("@provider", (string)global::Framework.Caspar.Api.Config.Provider);
                         command.Parameters.AddWithValue("@publish", (string)global::Framework.Caspar.Api.Config.Publish);
@@ -2125,10 +2123,10 @@ namespace Framework.Caspar
                     else
                     {
                         command.Parameters.Clear();
-                        command.CommandText = $"UPDATE `caspar`.`Deploy` SET `IP` = @ip WHERE `Provider` = @provider AND `Publish` = '' AND `Region` = '' AND `Type` = '';";
-                        command.CommandText += $"UPDATE `caspar`.`Deploy` SET `IP` = @ip WHERE `Provider` = @provider AND `Publish` = @publish AND `Region` = '' AND `Type` = '';";
-                        command.CommandText += $"UPDATE `caspar`.`Deploy` SET `IP` = @ip WHERE `Provider` = @provider AND `Publish` = @publish AND `Region` = @region AND `Type` = '';";
-                        command.CommandText += $"UPDATE `caspar`.`Deploy` SET `IP` = @ip WHERE `Provider` = @provider AND `Publish` = @publish AND `Region` = @region AND `Type` = @type;";
+                        command.CommandText = $"UPDATE `caspar`.`deploy` SET `ip` = @ip WHERE `provider` = @provider AND `publish` = '' AND `region` = '' AND `type` = '';";
+                        command.CommandText += $"UPDATE `caspar`.`deploy` SET `ip` = @ip WHERE `provider` = @provider AND `publish` = @publish AND `region` = '' AND `type` = '';";
+                        command.CommandText += $"UPDATE `caspar`.`deploy` SET `ip` = @ip WHERE `provider` = @provider AND `publish` = @publish AND `region` = @region AND `type` = '';";
+                        command.CommandText += $"UPDATE `caspar`.`deploy` SET `ip` = @ip WHERE `provider` = @provider AND `publish` = @publish AND `region` = @region AND `type` = @type;";
                         command.Parameters.AddWithValue("@provider", (string)global::Framework.Caspar.Api.Config.Provider);
                         command.Parameters.AddWithValue("@publish", (string)global::Framework.Caspar.Api.Config.Publish);
                         command.Parameters.AddWithValue("@region", (string)global::Framework.Caspar.Api.Config.Region);
@@ -2155,7 +2153,7 @@ namespace Framework.Caspar
 
         }
 
-        public static async Task StartUp(string[] args, string config = "Caspar/Config/DEV.json", bool seed = false)
+        public static async Task StartUp(string[] args, bool seed = false)
         {
 
 
@@ -2198,13 +2196,13 @@ namespace Framework.Caspar
             global::Framework.Caspar.Api.Config = null;
             JObject json = null;
 
-            Logger.Info("StartUp Framework... s3 config");
+            Logger.Info("StartUp Framework... config");
             try
             {
 
                 foreach (var e in args)
                 {
-                    if (e.ToLower().StartsWith("config="))
+                    if (e.ToLower().StartsWith("s3="))
                     {
                         var task = await global::Framework.Caspar.CDN.Get($"{e.Split('=')[1]}.json");
 
@@ -2219,22 +2217,10 @@ namespace Framework.Caspar
                         json = JObject.Parse(base64String);
                         break;
                     }
-                }
-
-                while (json == null)
-                {
-                    try
+                    else if (e.ToLower().StartsWith("file="))
                     {
-                        //Logger.Info($"Get config from {cdn.GetType()}-{config}");
-                        var task = await global::Framework.Caspar.CDN.Get(config);
-                        json = JObject.Parse(new StreamReader(task).ReadToEnd());
-                    }
-                    catch (Exception e)
-                    {
-                        //Logger.Error(e);
-                        Logger.Error($"{config}");
-                        Logger.Error($"{Framework.Caspar.CDN.Domain}");
-                        await Task.Delay(1000);
+                        json = JObject.Parse(new StreamReader(File.OpenRead(e.Split('=')[1])).ReadToEnd());
+                        break;
                     }
                 }
             }
@@ -2244,6 +2230,11 @@ namespace Framework.Caspar
                 Logger.Error(e);
             }
 
+            if (json == null)
+            {
+                // exit program
+                Environment.Exit(0);
+            }
 
 
             Config = json;
@@ -2291,7 +2282,7 @@ namespace Framework.Caspar
                     {
                         using (var httpClient = new HttpClient())
                         {
-                            var res = await httpClient.GetAsync($"http://{(string)Config.Agent.Ip}:5281/Admin/Seed");
+                            var res = await httpClient.GetAsync($"{Config.Seed}");
                             var content = await res.Content.ReadAsStringAsync();
                             var ret = JObject.Parse(content);
                             Offset = (int)ret.GetValue("Offset");
