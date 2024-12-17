@@ -209,6 +209,16 @@ namespace Framework.Caspar.Database.Management.Relational
             }
         }
 
+        public async Task CommitAsync()
+        {
+            await Transaction?.CommitAsync();
+            Transaction = null;
+            if (Command != null)
+            {
+                Command.Transaction = null;
+            }
+        }
+
         public void Commit()
         {
             Transaction?.Commit();
@@ -222,6 +232,16 @@ namespace Framework.Caspar.Database.Management.Relational
         public void Rollback()
         {
             Transaction?.Rollback();
+            Transaction = null;
+            if (Command != null)
+            {
+                Command.Transaction = null;
+            }
+        }
+
+        public async Task RollbackAsync()
+        {
+            await Transaction?.RollbackAsync();
             Transaction = null;
             if (Command != null)
             {

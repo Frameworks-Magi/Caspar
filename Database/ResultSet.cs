@@ -112,8 +112,9 @@ namespace Framework.Caspar.Database
 
             public override bool TryGetMember(System.Dynamic.GetMemberBinder binder, out object result)
             {
-                result = null;
-                return Members.TryGetValue(binder.Name, out result);
+                Members.TryGetValue(binder.Name, out result);
+                if (result == DBNull.Value) { result = null; }
+                return true;
             }
 
         }

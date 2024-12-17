@@ -61,7 +61,9 @@ namespace Framework.Caspar.Database.NoSql
 
         public void BeginTransaction() { }
         public void Commit() { }
+        public async Task CommitAsync() { await Task.CompletedTask; }
         public void Rollback() { }
+        public async Task RollbackAsync() { await Task.CompletedTask; }
         public async Task<IConnection> Open(CancellationToken token = default, bool transaction = true)
         {
             await System.Threading.Tasks.Task.CompletedTask;

@@ -39,7 +39,9 @@ namespace Framework.Caspar.Database
         void Initialize();
         void BeginTransaction();
         void Commit();
+        Task CommitAsync();
         void Rollback();
+        Task RollbackAsync();
         Task<IConnection> Open(CancellationToken token = default, bool transaction = true);
         void Close();
         void CopyFrom(IConnection value);
@@ -177,6 +179,21 @@ namespace Framework.Caspar.Database
             }
         }
 
+        public async Task RollbackAsync()
+        {
+            foreach (var e in connections)
+            {
+                try
+                {
+                    await e.RollbackAsync();
+                }
+                catch
+                {
+
+                }
+            }
+        }
+
         public void Commit()
         {
             foreach (var e in connections)
@@ -184,6 +201,21 @@ namespace Framework.Caspar.Database
                 try
                 {
                     e.Commit();
+                }
+                catch
+                {
+
+                }
+            }
+        }
+
+        public async Task CommitAsync()
+        {
+            foreach (var e in connections)
+            {
+                try
+                {
+                    await e.CommitAsync();
                 }
                 catch
                 {
