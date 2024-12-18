@@ -1764,7 +1764,10 @@ namespace Framework.Caspar
                         Debug = (object msg) =>
                         {
                             Interlocked.Increment(ref validate);
+                            // console color dark magenta
+                            System.Console.ForegroundColor = ConsoleColor.DarkMagenta;
                             System.Console.WriteLine($"[{KST.ToString("yyyy/MM/dd HH:mm:ss.fffzzz")}][{Interlocked.Increment(ref sequence)}][Debug] {msg}");
+                            System.Console.ResetColor();
                         };
                     }
                     else
@@ -1775,38 +1778,56 @@ namespace Framework.Caspar
                     Error = (object msg, object tags) =>
                     {
                         Interlocked.Increment(ref validate);
+                        // console color red
+                        System.Console.ForegroundColor = ConsoleColor.Red;
                         System.Console.WriteLine($"[{KST.ToString("yyyy/MM/dd HH:mm:ss.fffzzz")}][{Interlocked.Increment(ref sequence)}][Error] {msg} {JsonConvert.SerializeObject(tags)}");
+                        System.Console.ResetColor();
                     };
 
                     Warning = (object msg) =>
                     {
+                        // console color yellow
+                        System.Console.ForegroundColor = ConsoleColor.Yellow;
                         Interlocked.Increment(ref validate);
                         System.Console.WriteLine($"[{KST.ToString("yyyy/MM/dd HH:mm:ss.fffzzz")}][{Interlocked.Increment(ref sequence)}][Warning] {msg}");
+                        System.Console.ResetColor();
                     };
 
                     Info = (object msg) =>
                     {
                         Interlocked.Increment(ref validate);
+                        // console color green
+                        System.Console.ForegroundColor = ConsoleColor.Green;
                         System.Console.WriteLine($"[{KST.ToString("yyyy/MM/dd HH:mm:ss.fffzzz")}][{Interlocked.Increment(ref sequence)}][Info] {msg}");
+                        System.Console.ResetColor();
                     };
 
                     Verbose = (object msg) =>
                     {
                         Interlocked.Increment(ref validate);
+                        // console color gray
+                        System.Console.ForegroundColor = ConsoleColor.Magenta;
                         System.Console.WriteLine($"[{KST.ToString("yyyy/MM/dd HH:mm:ss.fffzzz")}][{Interlocked.Increment(ref sequence)}][Verbose] {msg}");
+                        System.Console.ResetColor();
                     };
 
                     Stage = (long idx, object msg, object tags) =>
                     {
                         Interlocked.Increment(ref validate);
+                        // console color cyan
+                        System.Console.ForegroundColor = ConsoleColor.Cyan;
                         System.Console.WriteLine($"[{KST.ToString("yyyy/MM/dd HH:mm:ss.fffzzz")}][{Interlocked.Increment(ref sequence)}][Stage][{idx}] {msg} {JsonConvert.SerializeObject(tags)}");
+                        System.Console.ResetColor();
                     };
 
                     User = (long idx, object msg, object tags) =>
                     {
 
                         Interlocked.Increment(ref validate);
+                        // dark cyan
+                        System.Console.ForegroundColor = ConsoleColor.DarkCyan;
                         System.Console.WriteLine($"[{KST.ToString("yyyy/MM/dd HH:mm:ss.fffzzz")}][{Interlocked.Increment(ref sequence)}][User][{idx}] {msg} {JsonConvert.SerializeObject(tags)}");
+                        System.Console.ResetColor();
 
                     };
                 }
