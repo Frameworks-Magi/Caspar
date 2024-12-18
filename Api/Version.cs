@@ -33,7 +33,7 @@ namespace Framework.Caspar
         public static async Task<IList<string>> GetVersions(string path)
         {
 
-            var S3 = Framework.Caspar.Platform.AWS.S3.Get("Global");
+            var S3 = Framework.Caspar.Platform.AWS.S3.Get("Caspar");
             IAmazonS3 s3Client = S3.S3Client;
             IList<string> versions = new List<string>();
 

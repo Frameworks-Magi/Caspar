@@ -2385,6 +2385,27 @@ namespace Framework.Caspar
 
             try
             {
+
+                // using (var rsa = RSA.Create(2048))
+                // {
+                //     // PKCS#1 형식으로 개인키 내보내기
+                //     var privateKeyBytes = rsa.ExportRSAPrivateKey();
+                //     var privateKeyPem = new StringBuilder();
+                //     privateKeyPem.AppendLine("-----BEGIN RSA PRIVATE KEY-----");
+                //     privateKeyPem.AppendLine(Convert.ToBase64String(privateKeyBytes, Base64FormattingOptions.InsertLineBreaks));
+                //     privateKeyPem.AppendLine("-----END RSA PRIVATE KEY-----");
+
+                //     // 공개키 내보내기
+                //     var publicKeyBytes = rsa.ExportRSAPublicKey();
+                //     var publicKeyPem = new StringBuilder();
+                //     publicKeyPem.AppendLine("-----BEGIN RSA PUBLIC KEY-----");
+                //     publicKeyPem.AppendLine(Convert.ToBase64String(publicKeyBytes, Base64FormattingOptions.InsertLineBreaks));
+                //     publicKeyPem.AppendLine("-----END RSA PUBLIC KEY-----");
+
+                //     File.WriteAllText("private.pem", privateKeyPem.ToString());
+                //     File.WriteAllText("public.pem", publicKeyPem.ToString());
+                // }
+
                 string pem = (string)Config.AWS.CloudFront.PEM;
                 var bytes = Encoding.UTF8.GetBytes(pem);
                 Framework.Caspar.CDN.PEM = () =>
@@ -2394,6 +2415,11 @@ namespace Framework.Caspar
 
                 global::Framework.Caspar.CDN.CloudFront = (string)Config.AWS.CloudFront.Domain;
                 global::Framework.Caspar.CDN.CFKeyId = (string)Config.AWS.CloudFront.Key;
+
+
+
+
+                //    await global::Framework.Caspar.CDN.Get($"QA/Lobby/24.12.18.00", "temp");
 
 
             }
@@ -2506,6 +2532,14 @@ namespace Framework.Caspar
                     SecretAccessKey = (string)global::Framework.Caspar.Api.Config.AWS.Access.SecretAccessKey,
                     Domain = (string)global::Framework.Caspar.Api.Config.AWS.S3.Global.Domain,
                     Endpoint = (RegionEndpoint)typeof(RegionEndpoint).GetField((string)global::Framework.Caspar.Api.Config.AWS.S3.Global.RegionEndpoint).GetValue(null)
+                });
+
+                Framework.Caspar.Platform.AWS.S3.Add("Caspar", new Platform.AWS.S3()
+                {
+                    KeyId = (string)global::Framework.Caspar.Api.Config.AWS.Access.KeyId,
+                    SecretAccessKey = (string)global::Framework.Caspar.Api.Config.AWS.Access.SecretAccessKey,
+                    Domain = (string)global::Framework.Caspar.Api.Config.AWS.S3.Caspar.Domain,
+                    Endpoint = (RegionEndpoint)typeof(RegionEndpoint).GetField((string)global::Framework.Caspar.Api.Config.AWS.S3.Caspar.RegionEndpoint).GetValue(null)
                 });
             }
             catch (Exception e)
