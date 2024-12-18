@@ -2268,13 +2268,18 @@ namespace Framework.Caspar
                     if (e.ToLower().StartsWith("platform="))
                     {
                         Config.CloudPlatform = e.Split('=')[1];
-                        break;
                     }
 
                     if (e.ToLower().StartsWith("standalone"))
                     {
                         Config.Silence = false;
                         StandAlone = true;
+                    }
+
+                    if (e.ToLower().StartsWith("version="))
+                    {
+                        Api.Version = e.Split('=')[1];
+                        Logger.Info($"Version : {Api.Version}");
                     }
                 }
 
@@ -2667,7 +2672,7 @@ namespace Framework.Caspar
 
         public static string ServerType { get; set; } = "None";
         public static bool StandAlone { get; set; } = false;
-
+        public static string Version { get; set; } = "0.0.0.0";
         private static void App_UnhandledException(object sender, UnhandledExceptionEventArgs e)
         {
 
