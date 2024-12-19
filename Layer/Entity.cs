@@ -25,11 +25,11 @@ namespace Framework.Caspar
 				{
 					if (uid == value) { return; }
 					uid = value;
-					Strand = Math.Abs((int)(Interlocked.Increment(ref strand) % global::Framework.Caspar.Api.ThreadCount));
+					Strand = (int)(uid % global::Framework.Caspar.Api.ThreadCount);
 				}
 			}
 
-			public static int strand;
+			//public static int _strand;
 			public int Strand
 			{
 				get;

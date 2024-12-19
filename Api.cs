@@ -191,43 +191,48 @@ namespace Framework.Caspar
             try
             {
                 var session = config.Databases.Redis;
-
-                if (session.Disable != null && session.Disable == true)
+                if (session != null)
                 {
+                    if (session.Disable != null && session.Disable == true)
+                    {
 
+                    }
+                    else
+                    {
+                        var driver = new global::Framework.Caspar.Database.NoSql.Redis();
+
+                        driver.Id = session.Id;
+                        driver.Pw = session.Pw;
+                        driver.Db = session.Db;
+                        driver.Name = session.Name;
+
+                        if (session.Crypt == true)
+                        {
+                            driver.Id = DesDecrypt(driver.Id, "magimagi");
+                            driver.Pw = DesDecrypt(driver.Pw, "magimagi");
+                        }
+
+                        driver.SetMaster((string)session.Master.Ip, (string)session.Master.Port);
+                        try
+                        {
+                            foreach (var e in config.Databases.Redis.Slaves)
+                            {
+                                //driver.Slaves
+                            }
+                        }
+                        catch
+                        {
+
+                        }
+
+
+                        Database.Driver.AddDatabase(driver.Name, driver);
+                    }
                 }
                 else
                 {
-                    var driver = new global::Framework.Caspar.Database.NoSql.Redis();
-
-                    driver.Id = session.Id;
-                    driver.Pw = session.Pw;
-                    driver.Db = session.Db;
-                    driver.Name = session.Name;
-
-                    if (session.Crypt == true)
-                    {
-                        driver.Id = DesDecrypt(driver.Id, "magimagi");
-                        driver.Pw = DesDecrypt(driver.Pw, "magimagi");
-                    }
-
-                    driver.SetMaster((string)session.Master.Ip, (string)session.Master.Port);
-                    try
-                    {
-                        foreach (var e in config.Databases.Redis.Slaves)
-                        {
-                            //driver.Slaves
-                        }
-                    }
-                    catch
-                    {
-
-                    }
-
-
-                    Database.Driver.AddDatabase(driver.Name, driver);
+                    Logger.Warning("Redis Session is not configured");
                 }
-
             }
             catch (Exception e)
             {
@@ -653,11 +658,11 @@ namespace Framework.Caspar
             get
             {
                 var key = System.Threading.Interlocked.Increment(ref uniqueKey);
-                return (long)Offset | ((long)key << 32);
+                return ((long)_offset << 32) | ((long)key);
             }
         }
 
-        private static long Offset = 0;
+        private static long _offset = 0;
 
         public static string PublicIp { get; private set; }
         public static string PrivateIp { get; private set; }
@@ -1766,7 +1771,7 @@ namespace Framework.Caspar
                             Interlocked.Increment(ref validate);
                             // console color dark magenta
                             System.Console.ForegroundColor = ConsoleColor.DarkMagenta;
-                            System.Console.WriteLine($"[{KST.ToString("yyyy/MM/dd HH:mm:ss.fffzzz")}][{Interlocked.Increment(ref sequence)}][Debug] {msg}");
+                            System.Console.WriteLine($"[{KST.ToString("yyyy-MM-ddTHH:mm:ss.fffzzz")}][{Interlocked.Increment(ref sequence)}][Debug] {msg}");
                             System.Console.ResetColor();
                         };
                     }
@@ -1780,16 +1785,16 @@ namespace Framework.Caspar
                         Interlocked.Increment(ref validate);
                         // console color red
                         System.Console.ForegroundColor = ConsoleColor.Red;
-                        System.Console.WriteLine($"[{KST.ToString("yyyy/MM/dd HH:mm:ss.fffzzz")}][{Interlocked.Increment(ref sequence)}][Error] {msg} {JsonConvert.SerializeObject(tags)}");
+                        System.Console.WriteLine($"[{KST.ToString("yyyy-MM-ddTHH:mm:ss.fffzzz")}][{Interlocked.Increment(ref sequence)}][Error] {msg} {JsonConvert.SerializeObject(tags)}");
                         System.Console.ResetColor();
                     };
 
                     Warning = (object msg) =>
                     {
                         // console color yellow
-                        System.Console.ForegroundColor = ConsoleColor.Yellow;
+                        System.Console.ForegroundColor = ConsoleColor.DarkRed;
                         Interlocked.Increment(ref validate);
-                        System.Console.WriteLine($"[{KST.ToString("yyyy/MM/dd HH:mm:ss.fffzzz")}][{Interlocked.Increment(ref sequence)}][Warning] {msg}");
+                        System.Console.WriteLine($"[{KST.ToString("yyyy-MM-ddTHH:mm:ss.fffzzz")}][{Interlocked.Increment(ref sequence)}][Warning] {msg}");
                         System.Console.ResetColor();
                     };
 
@@ -1797,8 +1802,9 @@ namespace Framework.Caspar
                     {
                         Interlocked.Increment(ref validate);
                         // console color green
-                        System.Console.ForegroundColor = ConsoleColor.Green;
-                        System.Console.WriteLine($"[{KST.ToString("yyyy/MM/dd HH:mm:ss.fffzzz")}][{Interlocked.Increment(ref sequence)}][Info] {msg}");
+
+                        System.Console.ForegroundColor = ConsoleColor.DarkCyan;
+                        System.Console.WriteLine($"[{KST.ToString("yyyy-MM-ddTHH:mm:ss.fffzzz")}][{Interlocked.Increment(ref sequence)}][Info] {msg}");
                         System.Console.ResetColor();
                     };
 
@@ -1807,7 +1813,7 @@ namespace Framework.Caspar
                         Interlocked.Increment(ref validate);
                         // console color gray
                         System.Console.ForegroundColor = ConsoleColor.Magenta;
-                        System.Console.WriteLine($"[{KST.ToString("yyyy/MM/dd HH:mm:ss.fffzzz")}][{Interlocked.Increment(ref sequence)}][Verbose] {msg}");
+                        System.Console.WriteLine($"[{KST.ToString("yyyy-MM-ddTHH:mm:ss.fffzzz")}][{Interlocked.Increment(ref sequence)}][Verbose] {msg}");
                         System.Console.ResetColor();
                     };
 
@@ -1816,7 +1822,7 @@ namespace Framework.Caspar
                         Interlocked.Increment(ref validate);
                         // console color cyan
                         System.Console.ForegroundColor = ConsoleColor.Cyan;
-                        System.Console.WriteLine($"[{KST.ToString("yyyy/MM/dd HH:mm:ss.fffzzz")}][{Interlocked.Increment(ref sequence)}][Stage][{idx}] {msg} {JsonConvert.SerializeObject(tags)}");
+                        System.Console.WriteLine($"[{KST.ToString("yyyy-MM-ddTHH:mm:ss.fffzzz")}][{Interlocked.Increment(ref sequence)}][Stage][{idx}] {msg} {JsonConvert.SerializeObject(tags)}");
                         System.Console.ResetColor();
                     };
 
@@ -1825,7 +1831,7 @@ namespace Framework.Caspar
 
                         Interlocked.Increment(ref validate);
                         // dark cyan
-                        System.Console.ForegroundColor = ConsoleColor.DarkCyan;
+                        System.Console.ForegroundColor = ConsoleColor.Green;
                         System.Console.WriteLine($"[{KST.ToString("yyyy/MM/dd HH:mm:ss.fffzzz")}][{Interlocked.Increment(ref sequence)}][User][{idx}] {msg} {JsonConvert.SerializeObject(tags)}");
                         System.Console.ResetColor();
 
@@ -2062,8 +2068,7 @@ namespace Framework.Caspar
             connectionString.ConnectionTimeout = 30;
 
             var connectionStringValue = connectionString.GetConnectionString(true);
-            Logger.Info($"Registration to {connectionStringValue}");
-
+            Logger.Debug($"Registration to {connectionStringValue}");
 
             while (true)
             {
@@ -2299,7 +2304,7 @@ namespace Framework.Caspar
                 if (seed == true)
                 {
                     PublicIp = "127.0.0.1";
-                    Offset = DateTime.UtcNow.ToUnixTime();
+                    _offset = DateTime.UtcNow.ToUnixTime();
                 }
 
                 while (PublicIp.IsNullOrEmpty() == true)
@@ -2311,13 +2316,13 @@ namespace Framework.Caspar
                             var res = await httpClient.GetAsync($"{Config.Seed}");
                             var content = await res.Content.ReadAsStringAsync();
                             var ret = JObject.Parse(content);
-                            Offset = (int)ret.GetValue("Offset");
+                            _offset = (int)ret.GetValue("Offset");
                             PublicIp = (string)ret.GetValue("RemoteIp");
                         }
                     }
                     catch (Exception e)
                     {
-                        Offset = DateTime.UtcNow.ToUnixTime();
+                        _offset = DateTime.UtcNow.ToUnixTime();
                     }
 
                     if (seed == true)
