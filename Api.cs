@@ -2029,8 +2029,12 @@ namespace Framework.Caspar
             public static int PPRT { get; set; }
         }
 
-        public static void Registration()
+        public static void Registration(bool seed)
         {
+            if (seed == true)
+            {
+                return;
+            }
             var connectionString = new MySql.Data.MySqlClient.MySqlConnectionStringBuilder();
 
             dynamic db = global::Framework.Caspar.Api.Config.Databases.Caspar;
@@ -2175,14 +2179,10 @@ namespace Framework.Caspar
                 }
             }
 
-
-
         }
 
         public static async Task StartUp(string[] args, bool seed = false)
         {
-
-
 
             if (isOpen == true)
                 return;
@@ -2192,13 +2192,61 @@ namespace Framework.Caspar
             JsonFormatter = new global::Google.Protobuf.JsonFormatter(setting);
 
             Logger.Initialize();
-            Logger.Info("StartUp Framework... local config");
-
 
             args ??= new string[] { "" };
 
+            StartUpLocalConfiguration();
+
+            await StartUpRemoteConfiguration(args);
+
+
             try
             {
+                foreach (var e in args)
+                {
+                    if (e.ToLower().StartsWith("platform="))
+                    {
+                        Config.CloudPlatform = e.Split('=')[1];
+                    }
+
+                    if (e.ToLower().StartsWith("standalone"))
+                    {
+                        Config.Silence = false;
+                        StandAlone = true;
+                    }
+
+                    if (e.ToLower().StartsWith("version="))
+                    {
+                        Api.Version = e.Split('=')[1];
+                        Logger.Info($"Version : {Api.Version}");
+                    }
+                }
+
+            }
+            catch (Exception e)
+            {
+                Logger.Info($"{args}");
+                Logger.Error(e);
+            }
+
+
+
+            await StartUpNetworkInterface(seed);
+            OverrideConfiguration();
+            global::Framework.Protobuf.Api.StartUp();
+            StartUpVivox();
+            StartUpAWS();
+            Registration(seed);
+            StartUpLayer(args);
+            StartUpAttributes();
+            StartUpDatabase();
+        }
+
+        public static void StartUpLocalConfiguration()
+        {
+            try
+            {
+                Logger.Info("StartUp Framework... local config");
                 var caspar = File.OpenText(Path.Combine(Directory.GetCurrentDirectory(), "Caspar.json"));
                 Config = JObject.Parse(caspar.ReadToEnd());
                 Framework.Caspar.Api.ServerType = Config.ServerType;
@@ -2215,9 +2263,10 @@ namespace Framework.Caspar
             {
                 Logger.Error(e);
             }
+        }
 
-
-
+        public static async Task StartUpRemoteConfiguration(string[] args)
+        {
             //cdn.Container = "hal";
             global::Framework.Caspar.Api.Config = null;
             JObject json = null;
@@ -2261,219 +2310,76 @@ namespace Framework.Caspar
                 // exit program
                 Environment.Exit(0);
             }
-
-
             Config = json;
+        }
 
+        public static async Task StartUpNetworkInterface(bool seed)
+        {
+            Logger.Info($"StartUp Framework... ip setting {(string)Config.Agent.Ip}");
+            PublicIp = string.Empty;
 
-            try
+            if (seed == true)
             {
-                foreach (var e in args)
+                PublicIp = "127.0.0.1";
+                _offset = DateTime.UtcNow.ToUnixTime();
+            }
+
+            while (PublicIp.IsNullOrEmpty() == true)
+            {
+                try
                 {
-                    if (e.ToLower().StartsWith("platform="))
+                    using (var httpClient = new HttpClient())
                     {
-                        Config.CloudPlatform = e.Split('=')[1];
-                    }
-
-                    if (e.ToLower().StartsWith("standalone"))
-                    {
-                        Config.Silence = false;
-                        StandAlone = true;
-                    }
-
-                    if (e.ToLower().StartsWith("version="))
-                    {
-                        Api.Version = e.Split('=')[1];
-                        Logger.Info($"Version : {Api.Version}");
+                        var res = await httpClient.GetAsync($"{Config.Seed}");
+                        var content = await res.Content.ReadAsStringAsync();
+                        var ret = JObject.Parse(content);
+                        _offset = (int)ret.GetValue("Offset");
+                        PublicIp = (string)ret.GetValue("RemoteIp");
                     }
                 }
-
-            }
-            catch (Exception e)
-            {
-                Logger.Info($"{args}");
-                Logger.Error(e);
-            }
-
-
-            Logger.Info($"StartUp Framework... ip setting {(string)Config.Agent.Ip}");
-            // ip setting
-            {
-                PublicIp = string.Empty;
+                catch (Exception e)
+                {
+                    _offset = DateTime.UtcNow.ToUnixTime();
+                }
 
                 if (seed == true)
                 {
                     PublicIp = "127.0.0.1";
-                    _offset = DateTime.UtcNow.ToUnixTime();
                 }
+            }
 
-                while (PublicIp.IsNullOrEmpty() == true)
+
+            PrivateIp = "127.0.0.1";
+            List<string> privates = new();
+            foreach (NetworkInterface ni in NetworkInterface.GetAllNetworkInterfaces())
+            {
+                if (ni.NetworkInterfaceType == NetworkInterfaceType.Wireless80211 || ni.NetworkInterfaceType == NetworkInterfaceType.Ethernet)
                 {
-                    try
+                    foreach (UnicastIPAddressInformation ip in ni.GetIPProperties().UnicastAddresses)
                     {
-                        using (var httpClient = new HttpClient())
+                        if (ip.Address.AddressFamily == System.Net.Sockets.AddressFamily.InterNetwork && ni.OperationalStatus == OperationalStatus.Up)
                         {
-                            var res = await httpClient.GetAsync($"{Config.Seed}");
-                            var content = await res.Content.ReadAsStringAsync();
-                            var ret = JObject.Parse(content);
-                            _offset = (int)ret.GetValue("Offset");
-                            PublicIp = (string)ret.GetValue("RemoteIp");
-                        }
-                    }
-                    catch (Exception e)
-                    {
-                        _offset = DateTime.UtcNow.ToUnixTime();
-                    }
-
-                    if (seed == true)
-                    {
-                        PublicIp = "127.0.0.1";
-                    }
-                }
-
-
-                PrivateIp = "127.0.0.1";
-                List<string> privates = new();
-                foreach (NetworkInterface ni in NetworkInterface.GetAllNetworkInterfaces())
-                {
-                    if (ni.NetworkInterfaceType == NetworkInterfaceType.Wireless80211 || ni.NetworkInterfaceType == NetworkInterfaceType.Ethernet)
-                    {
-                        foreach (UnicastIPAddressInformation ip in ni.GetIPProperties().UnicastAddresses)
-                        {
-                            if (ip.Address.AddressFamily == System.Net.Sockets.AddressFamily.InterNetwork && ni.OperationalStatus == OperationalStatus.Up)
-                            {
-                                privates.Add(ip.Address.ToString());
-                            }
+                            privates.Add(ip.Address.ToString());
                         }
                     }
                 }
-
-                if (privates.Count == 0)
-                {
-                    PrivateIp = PublicIp;
-                }
-                else
-                {
-                    foreach (var e in privates)
-                    {
-                        // if (e == PublicIp) { continue; }
-                        // if (e == "127.0.0.1") { continue; }
-                        // if (e == "localhost") { continue; }
-                        PrivateIp = e;
-                        break;
-                    }
-                }
             }
 
-            try
+            if (privates.Count == 0)
             {
-                var address = PrivateIp.Split('.');
-                var platform = (JObject)Config.Override[(string)Config.CloudPlatform];
-
-                if (platform != null && StandAlone == false)
-                {
-                    var @override = platform[$"0.0.0.0/0"];
-                    if (@override != null)
-                    {
-                        json.Merge(@override, new JsonMergeSettings() { MergeArrayHandling = MergeArrayHandling.Merge, MergeNullValueHandling = MergeNullValueHandling.Ignore });
-                    }
-
-                    @override = platform[$"{address[0]}.0.0.0/8"];
-                    if (@override != null)
-                    {
-                        json.Merge(@override, new JsonMergeSettings() { MergeArrayHandling = MergeArrayHandling.Merge, MergeNullValueHandling = MergeNullValueHandling.Ignore });
-                    }
-
-                    @override = platform[$"{address[0]}.{address[1]}.0.0/16"];
-                    if (@override != null)
-                    {
-                        json.Merge(@override, new JsonMergeSettings() { MergeArrayHandling = MergeArrayHandling.Merge, MergeNullValueHandling = MergeNullValueHandling.Ignore });
-                    }
-
-                    @override = platform[$"{address[0]}.{address[1]}.{address[2]}.0/24"];
-                    if (@override != null)
-                    {
-                        json.Merge(@override, new JsonMergeSettings() { MergeArrayHandling = MergeArrayHandling.Merge, MergeNullValueHandling = MergeNullValueHandling.Ignore });
-                    }
-
-                    @override = platform[$"{PrivateIp}/32"];
-                    if (@override != null)
-                    {
-                        json.Merge(@override, new JsonMergeSettings() { MergeArrayHandling = MergeArrayHandling.Merge, MergeNullValueHandling = MergeNullValueHandling.Ignore });
-                    }
-                }
-                else
-                {
-                    Logger.Info("Cant Find Override Configs");
-                }
-
-
+                PrivateIp = PublicIp;
             }
-            catch (Exception e)
+            else
             {
-                Logger.Error(e);
-            }
-
-            try
-            {
-
-                // using (var rsa = RSA.Create(2048))
-                // {
-                //     // PKCS#1 형식으로 개인키 내보내기
-                //     var privateKeyBytes = rsa.ExportRSAPrivateKey();
-                //     var privateKeyPem = new StringBuilder();
-                //     privateKeyPem.AppendLine("-----BEGIN RSA PRIVATE KEY-----");
-                //     privateKeyPem.AppendLine(Convert.ToBase64String(privateKeyBytes, Base64FormattingOptions.InsertLineBreaks));
-                //     privateKeyPem.AppendLine("-----END RSA PRIVATE KEY-----");
-
-                //     // 공개키 내보내기
-                //     var publicKeyBytes = rsa.ExportRSAPublicKey();
-                //     var publicKeyPem = new StringBuilder();
-                //     publicKeyPem.AppendLine("-----BEGIN RSA PUBLIC KEY-----");
-                //     publicKeyPem.AppendLine(Convert.ToBase64String(publicKeyBytes, Base64FormattingOptions.InsertLineBreaks));
-                //     publicKeyPem.AppendLine("-----END RSA PUBLIC KEY-----");
-
-                //     File.WriteAllText("private.pem", privateKeyPem.ToString());
-                //     File.WriteAllText("public.pem", publicKeyPem.ToString());
-                // }
-
-                string pem = (string)Config.AWS.CloudFront.PEM;
-                var bytes = Encoding.UTF8.GetBytes(pem);
-                Framework.Caspar.CDN.PEM = () =>
+                foreach (var e in privates)
                 {
-                    return new MemoryStream(bytes);
-                };
-
-                global::Framework.Caspar.CDN.CloudFront = (string)Config.AWS.CloudFront.Domain;
-                global::Framework.Caspar.CDN.CFKeyId = (string)Config.AWS.CloudFront.Key;
-
-
-
-
-                //    await global::Framework.Caspar.CDN.Get($"QA/Lobby/24.12.18.00", "temp");
-
-
-            }
-            catch
-            {
-
-            }
-
-
-            try
-            {
-                if (StandAlone == true)
-                {
-                    json.Merge(JObject.Parse(new StreamReader(File.OpenRead("Config.json")).ReadToEnd()), new JsonMergeSettings() { MergeArrayHandling = MergeArrayHandling.Merge, MergeNullValueHandling = MergeNullValueHandling.Ignore });
+                    // if (e == PublicIp) { continue; }
+                    // if (e == "127.0.0.1") { continue; }
+                    // if (e == "localhost") { continue; }
+                    PrivateIp = e;
+                    break;
                 }
             }
-            catch (Exception)
-            {
-
-            }
-
-
-
 
             if (StandAlone == true)
             {
@@ -2502,11 +2408,76 @@ namespace Framework.Caspar
             Logger.Info($"PrivateIp Ip : {PrivateIp}");
             Logger.Info($"ServiceIp Ip : {ServiceIp}");
 
-            global::Framework.Protobuf.Api.StartUp();
             Idx = (long)IPAddressToUInt32(PublicIp) << 32 | IPAddressToUInt32(PrivateIp);
             Logger.Debug($"Idx: {Idx}");
+        }
+
+        public static void OverrideConfiguration()
+        {
+            try
+            {
+                var address = PrivateIp.Split('.');
+                var platform = (JObject)Config.Override[(string)Config.CloudPlatform];
+
+                if (platform != null && StandAlone == false)
+                {
+                    var @override = platform[$"0.0.0.0/0"];
+                    if (@override != null)
+                    {
+                        Config.Merge(@override, new JsonMergeSettings() { MergeArrayHandling = MergeArrayHandling.Merge, MergeNullValueHandling = MergeNullValueHandling.Ignore });
+                    }
+
+                    @override = platform[$"{address[0]}.0.0.0/8"];
+                    if (@override != null)
+                    {
+                        Config.Merge(@override, new JsonMergeSettings() { MergeArrayHandling = MergeArrayHandling.Merge, MergeNullValueHandling = MergeNullValueHandling.Ignore });
+                    }
+
+                    @override = platform[$"{address[0]}.{address[1]}.0.0/16"];
+                    if (@override != null)
+                    {
+                        Config.Merge(@override, new JsonMergeSettings() { MergeArrayHandling = MergeArrayHandling.Merge, MergeNullValueHandling = MergeNullValueHandling.Ignore });
+                    }
+
+                    @override = platform[$"{address[0]}.{address[1]}.{address[2]}.0/24"];
+                    if (@override != null)
+                    {
+                        Config.Merge(@override, new JsonMergeSettings() { MergeArrayHandling = MergeArrayHandling.Merge, MergeNullValueHandling = MergeNullValueHandling.Ignore });
+                    }
+
+                    @override = platform[$"{PrivateIp}/32"];
+                    if (@override != null)
+                    {
+                        Config.Merge(@override, new JsonMergeSettings() { MergeArrayHandling = MergeArrayHandling.Merge, MergeNullValueHandling = MergeNullValueHandling.Ignore });
+                    }
+                }
+                else
+                {
+                    Logger.Info("Cant Find Override Configs");
+                }
+
+            }
+            catch (Exception e)
+            {
+                Logger.Error(e);
+            }
 
 
+            if (StandAlone == true)
+            {
+                try
+                {
+                    Config.Merge(JObject.Parse(new StreamReader(File.OpenRead("Config.json")).ReadToEnd()), new JsonMergeSettings() { MergeArrayHandling = MergeArrayHandling.Merge, MergeNullValueHandling = MergeNullValueHandling.Ignore });
+                }
+                catch (Exception e)
+                {
+                    Logger.Error(e);
+                }
+            }
+        }
+
+        public static void StartUpVivox()
+        {
             try
             {
                 dynamic vivox = global::Framework.Caspar.Api.Config.Vivox;
@@ -2524,84 +2495,10 @@ namespace Framework.Caspar
 
             global::Framework.Caspar.Api.Vivox.Key = Encoding.UTF8.GetBytes(global::Framework.Caspar.Api.Vivox.Secret);
 
-            try
-            {
-                Framework.Caspar.Platform.AWS.SQS.Add("Log", new Platform.AWS.SQS()
-                {
-                    KeyId = (string)global::Framework.Caspar.Api.Config.AWS.Access.KeyId,
-                    SecretAccessKey = (string)global::Framework.Caspar.Api.Config.AWS.Access.SecretAccessKey,
-                    URL = (string)global::Framework.Caspar.Api.Config.AWS.SQS.Log.URL,
-                    Endpoint = (RegionEndpoint)typeof(RegionEndpoint).GetField((string)global::Framework.Caspar.Api.Config.AWS.SQS.Log.RegionEndpoint).GetValue(null)
-                });
-            }
-            catch (Exception e)
-            {
-                Logger.Error(e);
-            }
+        }
 
-            try
-            {
-                Framework.Caspar.Platform.AWS.SQS.Add("PlayStatistics", new Platform.AWS.SQS()
-                {
-                    KeyId = (string)global::Framework.Caspar.Api.Config.AWS.Access.KeyId,
-                    SecretAccessKey = (string)global::Framework.Caspar.Api.Config.AWS.Access.SecretAccessKey,
-                    URL = (string)global::Framework.Caspar.Api.Config.AWS.SQS.PlayStatistics.URL,
-                    Endpoint = (RegionEndpoint)typeof(RegionEndpoint).GetField((string)global::Framework.Caspar.Api.Config.AWS.SQS.PlayStatistics.RegionEndpoint).GetValue(null)
-                });
-            }
-            catch (Exception e)
-            {
-                Logger.Error(e);
-            }
-
-
-            try
-            {
-                Framework.Caspar.Platform.AWS.S3.Add("Global", new Platform.AWS.S3()
-                {
-                    KeyId = (string)global::Framework.Caspar.Api.Config.AWS.Access.KeyId,
-                    SecretAccessKey = (string)global::Framework.Caspar.Api.Config.AWS.Access.SecretAccessKey,
-                    Domain = (string)global::Framework.Caspar.Api.Config.AWS.S3.Global.Domain,
-                    Endpoint = (RegionEndpoint)typeof(RegionEndpoint).GetField((string)global::Framework.Caspar.Api.Config.AWS.S3.Global.RegionEndpoint).GetValue(null)
-                });
-
-                Framework.Caspar.Platform.AWS.S3.Add("Caspar", new Platform.AWS.S3()
-                {
-                    KeyId = (string)global::Framework.Caspar.Api.Config.AWS.Access.KeyId,
-                    SecretAccessKey = (string)global::Framework.Caspar.Api.Config.AWS.Access.SecretAccessKey,
-                    Domain = (string)global::Framework.Caspar.Api.Config.AWS.S3.Caspar.Domain,
-                    Endpoint = (RegionEndpoint)typeof(RegionEndpoint).GetField((string)global::Framework.Caspar.Api.Config.AWS.S3.Caspar.RegionEndpoint).GetValue(null)
-                });
-            }
-            catch (Exception e)
-            {
-                Logger.Error(e);
-            }
-
-            try
-            {
-                Framework.Caspar.Platform.AWS.S3.Add("PlayStatistics", new Platform.AWS.S3()
-                {
-                    KeyId = (string)global::Framework.Caspar.Api.Config.AWS.Access.KeyId,
-                    SecretAccessKey = (string)global::Framework.Caspar.Api.Config.AWS.Access.SecretAccessKey,
-                    Domain = (string)global::Framework.Caspar.Api.Config.AWS.S3.PlayStatistics.Domain,
-                    Endpoint = (RegionEndpoint)typeof(RegionEndpoint).GetField((string)global::Framework.Caspar.Api.Config.AWS.S3.PlayStatistics.RegionEndpoint).GetValue(null)
-                });
-            }
-            catch (Exception e)
-            {
-                Logger.Error(e);
-            }
-
-            if (seed == false)
-            {
-                Logger.Info("StartUp Framework... Registration");
-                Registration();
-            }
-
-
-            //Logger.Info(Config);
-
+        public static void StartUpLayer(string[] args)
+        {
             bool layer = true;
 
             foreach (var e in args)
@@ -2609,26 +2506,24 @@ namespace Framework.Caspar
                 if (e.StartsWith("NoLayer") == true)
                 {
                     layer = false;
+                    return;
                 }
             }
+            ThreadPool.SetMaxThreads(64, 64);
+            ThreadPool.SetMinThreads(8, 8);
 
+            global::Framework.Caspar.Attributes.Override.StartUp();
+            AppDomain.CurrentDomain.UnhandledException += App_UnhandledException;
 
-            if (layer == true)
-            {
-                ThreadPool.SetMaxThreads(64, 64);
-                ThreadPool.SetMinThreads(8, 8);
+            TaskScheduler.UnobservedTaskException += OnUnobservedTaskException;
+            isOpen = true;
+            thread = new Thread(new ThreadStart(() => { _ = LayerUpdate(); }));
+            thread.IsBackground = false;
+            thread.Start();
+        }
 
-                global::Framework.Caspar.Attributes.Override.StartUp();
-                AppDomain.CurrentDomain.UnhandledException += App_UnhandledException;
-
-                TaskScheduler.UnobservedTaskException += OnUnobservedTaskException;
-                isOpen = true;
-                thread = new Thread(new ThreadStart(() => { _ = LayerUpdate(); }));
-                thread.IsBackground = false;
-                thread.Start();
-            }
-
-
+        public static void StartUpAttributes()
+        {
             var classes = (from asm in AppDomain.CurrentDomain.GetAssemblies()
                            from type in asm.GetTypes()
                            where type.IsClass
@@ -2664,8 +2559,126 @@ namespace Framework.Caspar
             {
                 c.Value.GetMethod("StartUp").Invoke(null, null);
             }
+        }
 
-            StartUpDatabase();
+        public static void StartUpAWS()
+        {
+            try
+            {
+
+                // using (var rsa = RSA.Create(2048))
+                // {
+                //     // PKCS#1 형식으로 개인키 내보내기
+                //     var privateKeyBytes = rsa.ExportRSAPrivateKey();
+                //     var privateKeyPem = new StringBuilder();
+                //     privateKeyPem.AppendLine("-----BEGIN RSA PRIVATE KEY-----");
+                //     privateKeyPem.AppendLine(Convert.ToBase64String(privateKeyBytes, Base64FormattingOptions.InsertLineBreaks));
+                //     privateKeyPem.AppendLine("-----END RSA PRIVATE KEY-----");
+
+                //     // 공개키 내보내기
+                //     var publicKeyBytes = rsa.ExportRSAPublicKey();
+                //     var publicKeyPem = new StringBuilder();
+                //     publicKeyPem.AppendLine("-----BEGIN RSA PUBLIC KEY-----");
+                //     publicKeyPem.AppendLine(Convert.ToBase64String(publicKeyBytes, Base64FormattingOptions.InsertLineBreaks));
+                //     publicKeyPem.AppendLine("-----END RSA PUBLIC KEY-----");
+
+                //     File.WriteAllText("private.pem", privateKeyPem.ToString());
+                //     File.WriteAllText("public.pem", publicKeyPem.ToString());
+                // }
+
+                string pem = (string)Config.AWS.CloudFront.PEM;
+                var bytes = Encoding.UTF8.GetBytes(pem);
+                Framework.Caspar.CDN.PEM = () =>
+                {
+                    return new MemoryStream(bytes);
+                };
+
+                global::Framework.Caspar.CDN.CloudFront = (string)Config.AWS.CloudFront.Domain;
+                global::Framework.Caspar.CDN.CFKeyId = (string)Config.AWS.CloudFront.Key;
+
+                //    await global::Framework.Caspar.CDN.Get($"QA/Lobby/24.12.18.00", "temp");
+
+
+            }
+            catch (Exception e)
+            {
+                Logger.Error(e);
+            }
+
+            try
+            {
+                string keyId = (string)global::Framework.Caspar.Api.Config.AWS.Access.KeyId;
+                string secretAccessKey = (string)global::Framework.Caspar.Api.Config.AWS.Access.SecretAccessKey;
+
+                try
+                {
+                    JObject s3 = global::Framework.Caspar.Api.Config.AWS.S3;
+                    foreach (dynamic e in s3.Children())
+                    {
+                        try
+                        {
+                            dynamic element = s3[e.Name];
+                            if (element.Disable != null && element.Disable == true)
+                            {
+                                continue;
+                            }
+                            Framework.Caspar.Platform.AWS.S3.Add(e.Name, new Platform.AWS.S3()
+                            {
+                                KeyId = keyId,
+                                SecretAccessKey = secretAccessKey,
+                                Domain = (string)element.Domain,
+                                Endpoint = (RegionEndpoint)typeof(RegionEndpoint).GetField((string)element.RegionEndpoint).GetValue(null)
+                            });
+                        }
+                        catch (System.Exception ex)
+                        {
+                            Logger.Error(ex);
+                            continue;
+                        }
+                    }
+                }
+                catch (Exception ex)
+                {
+                    Logger.Error(ex);
+                }
+
+                try
+                {
+                    JObject sqs = global::Framework.Caspar.Api.Config.AWS.SQS;
+                    foreach (dynamic e in sqs.Children())
+                    {
+                        try
+                        {
+                            dynamic element = sqs[e.Name];
+                            if (element.Disable != null && element.Disable == true)
+                            {
+                                continue;
+                            }
+
+                            Framework.Caspar.Platform.AWS.SQS.Add(e.Name, new Platform.AWS.SQS()
+                            {
+                                KeyId = keyId,
+                                SecretAccessKey = secretAccessKey,
+                                URL = (string)element.URL,
+                                Endpoint = (RegionEndpoint)typeof(RegionEndpoint).GetField((string)element.RegionEndpoint).GetValue(null)
+                            });
+                        }
+                        catch (Exception ex)
+                        {
+                            Logger.Error(ex);
+                            continue;
+                        }
+                    }
+                }
+                catch (Exception ex)
+                {
+                    Logger.Error(ex);
+                }
+            }
+            catch (Exception e)
+            {
+                Logger.Error(e);
+            }
         }
 
         public static void CleanUp()
