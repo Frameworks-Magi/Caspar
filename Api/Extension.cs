@@ -153,6 +153,11 @@ namespace Framework.Caspar
             return Convert.ToInt64(value);
         }
 
+        public static decimal ToDecimal(this object value)
+        {
+            return Convert.ToDecimal(value);
+        }
+
         public static int Code<T>(this T msg) where T : class
         {
             return global::Framework.Caspar.Id<T>.Value;
