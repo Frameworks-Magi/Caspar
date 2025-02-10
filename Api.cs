@@ -49,31 +49,31 @@ namespace Framework.Caspar
             }
         }
         public static uint MaxSession = (uint)global::Framework.Caspar.Api.ThreadCount;
-        public static async Task QueryAsync(Func<global::Framework.Caspar.Database.Session, Task> func)
-        {
-            var session = new global::Framework.Caspar.Database.Session();
-            session.Command = async () => { await func(session); };
-            session.TCS = new();
+        // public static async Task QueryAsync(Func<global::Framework.Caspar.Database.Session, Task> func)
+        // {
+        //     var session = new global::Framework.Caspar.Database.Session();
+        //     session.Command = async () => { await func(session); };
+        //     session.TCS = new();
 
-            try
-            {
-                Database.Driver.sessions.TryGetValue(session.UID, out var queue);
-                if (queue == null)
-                {
-                    queue = new();
-                    Database.Driver.sessions.TryAdd(session.UID, queue);
-                }
-                {
-                    queue.Enqueue(session);
-                }
-            }
-            catch
-            {
-                throw;
-            }
+        //     try
+        //     {
+        //         Database.Driver.sessions.TryGetValue(session.UID, out var queue);
+        //         if (queue == null)
+        //         {
+        //             queue = new();
+        //             Database.Driver.sessions.TryAdd(session.UID, queue);
+        //         }
+        //         {
+        //             queue.Enqueue(session);
+        //         }
+        //     }
+        //     catch
+        //     {
+        //         throw;
+        //     }
 
-            await session.TCS.Task;
-        }
+        //     await session.TCS.Task;
+        // }
 
         public static void GenerateRSAKey()
         {

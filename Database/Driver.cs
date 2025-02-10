@@ -163,7 +163,7 @@ namespace Framework.Caspar.Database
                         try
                         {
                             query.CTS.CancelAfter(global::Framework.Caspar.Extensions.Database.QueryTimeoutSec);
-                            await query.Command();
+                            //    await query.Command();
                         }
                         catch (Exception e)
                         {

@@ -9,13 +9,14 @@ using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using Framework.Caspar.Container;
+using Framework.Caspar.Database;
 using static Framework.Caspar.Api;
 
 namespace Framework.Caspar
 {
 	public partial class Layer
 	{
-		public class Entity
+		public class Entity : SynchronizationContext
 		{
 			private long uid = 0;
 			public virtual long UID
@@ -130,6 +131,16 @@ namespace Framework.Caspar
 			//    }
 			//}
 
+			public override void Post(SendOrPostCallback d, object state)
+			{
+				PostMessage(() => { d(state); });
+			}
+
+			public override void Send(SendOrPostCallback d, object state)
+			{
+				base.Send(d, state);
+			}
+
 
 			public void Close()
 			{
@@ -206,82 +217,11 @@ namespace Framework.Caspar
 				}
 				return false;
 			}
-
-			public class SynchronizationContext : System.Threading.SynchronizationContext
-			{
-
-				public SynchronizationContext()
-				{
-					Entity = global::Framework.Caspar.Layer.CurrentEntity.Value;
-				}
-				public global::Framework.Caspar.Layer.Entity Entity = null;
-				public global::Framework.Caspar.Layer.Entity Back = null;
-
-				public override System.Threading.SynchronizationContext CreateCopy()
-				{
-					var sc = new SynchronizationContext();
-					sc.Entity = Entity;
-					return sc;
-				}
-
-				public override int Wait(IntPtr[] waitHandles, bool waitAll, int millisecondsTimeout)
-				{
-					return base.Wait(waitHandles, waitAll, millisecondsTimeout);
-				}
-				public override void OperationCompleted()
-				{
-					started -= 1;
-					base.OperationCompleted();
-				}
-
-
-				int started = 0;
-
-				public override void OperationStarted()
-				{
-					started += 1;
-					base.OperationStarted();
-				}
-
-				public override void Post(SendOrPostCallback d, object state)
-				{
-
-					if (Entity == null || Entity.IsClose() || started > 0)
-					{
-						started -= 1;
-						base.Post(d, state);
-						return;
-					}
-
-					Logger.Info("Post Entity Callback");
-
-					Entity.PostContinuation(null, () =>
-					{
-						d.Invoke(state);
-					});
-					//base.Post(d, state);
-				}
-				public override void Send(SendOrPostCallback d, object state)
-				{
-					if (Entity == null || Entity.IsClose())
-					{
-						base.Post(d, state);
-						return;
-					}
-
-					Entity.PostContinuation(null, () =>
-					{
-						d(state);
-					});
-					//base.Send(d, state);
-				}
-			}
-
-
 			internal ConcurrentDictionary<System.Threading.Tasks.Task, System.Threading.Tasks.Task> locks = new();
 			public bool IsLocked { get { return locks.Count > 0; } }
 
 			public DateTime PostAt { get; set; }
+			public Session Session { get; internal set; }
 
 			public void Lock(System.Threading.Tasks.Task task)
 			{
@@ -411,6 +351,7 @@ namespace Framework.Caspar
 				{
 					try
 					{
+						//						SynchronizationContext.SetSynchronizationContext(this);
 						TCS.SetResult(await callback());
 					}
 					catch (Exception e)

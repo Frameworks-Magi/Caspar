@@ -8,6 +8,7 @@ using System.Threading.Tasks;
 using static Framework.Caspar.Api;
 using Framework.Caspar.Container;
 using MySqlConnector;
+using Pipelines.Sockets.Unofficial;
 //using MySql.Data.MySqlClient;
 
 namespace Framework.Caspar.Database
@@ -52,7 +53,7 @@ namespace Framework.Caspar.Database
 
     }
 
-    public class Session : IDisposable
+    public class Session : SynchronizationContext, IDisposable
     {
 
         public class Closer
@@ -135,9 +136,65 @@ namespace Framework.Caspar.Database
             }
         }
 
+        public static ThreadLocal<Session> CurrentSession = new ThreadLocal<Session>();
+
+
+        public static async Task<IConnection> GetConnection(string name, bool transaction = true)
+        {
+            var session = Begin();
+            return await session.GetConnection(name, transaction);
+        }
+
+        public static async Task<ICommandable> GetCommandable(string name, bool transaction = true)
+        {
+            var connection = await GetConnection(name, transaction);
+            return connection.CreateCommand();
+        }
+
+        public static Session Begin()
+        {
+            if (Layer.CurrentEntity.Value != null)
+            {
+                var session = Layer.CurrentEntity.Value.Session;
+                if (session != null)
+                {
+                    if (CurrentSession.Value != session)
+                    {
+                        Logger.Error($"Session is mismatched.");
+                    }
+                    CurrentSession.Value = session;
+                    return session;
+                }
+                else
+                {
+                    return Create();
+                }
+            }
+
+            if (CurrentSession.Value != null)
+            {
+                return CurrentSession.Value;
+            }
+            else
+            {
+                return Create();
+            }
+        }
+
+        protected static Session Create()
+        {
+            var session = new Session();
+            CurrentSession.Value = session;
+            if (Layer.CurrentEntity.Value != null)
+            {
+                Layer.CurrentEntity.Value.Session = session;
+            }
+            return session;
+        }
+
         public Session()
         {
-            Command = async () => { await ValueTask.CompletedTask; };
+            //    Command = async () => { await ValueTask.CompletedTask; };
             if (Layer.CurrentEntity.Value == null)
             {
                 UID = global::Framework.Caspar.Api.UniqueKey;
@@ -152,11 +209,33 @@ namespace Framework.Caspar.Database
 
         }
 
+        public override void Post(SendOrPostCallback d, object? state)
+        {
+            if (owner != null)
+            {
+                owner.Post(d, state);
+            }
+            else
+            {
+                ThreadPool.QueueUserWorkItem(static s =>
+                {
+                    var context = s as Session;
+                    SynchronizationContext.SetSynchronizationContext(context);
+                    // d(state);
+                }, this);
+            }
+        }
+
+        public override void Send(SendOrPostCallback d, object? state)
+        {
+            base.Send(d, state);
+        }
+
         internal Layer.Entity owner { get; set; }
 
         public Session(Layer.Entity entity)
         {
-            Command = async () => { await ValueTask.CompletedTask; };
+            //   Command = async () => { await ValueTask.CompletedTask; };
             UID = entity.UID;
             owner = entity;
             entity.Add(this);
@@ -452,7 +531,7 @@ namespace Framework.Caspar.Database
         public Action ResponseCallBack { get; set; }
         public virtual string Host { get; }
 
-        internal Func<Task> Command { get; set; }
+        //  internal Func<Task> Command { get; set; }
         public int Error { get; protected set; }
         public System.Exception Exception { get; protected set; }
         public int Strand { get; set; }
