@@ -11,12 +11,12 @@ namespace Framework.Caspar
 {
     public static partial class Extension
     {
-        public static Layer.Awaitable Strand(this System.Threading.Tasks.Task task, Layer.Entity entity)
+        public static Layer.Awaitable Strand(this System.Threading.Tasks.Task task, Layer.Frame entity)
         {
             return new Layer.Awaitable(task, entity);
         }
 
-        public static Layer.Awaitable Lock(this global::Framework.Caspar.Strand strand, Layer.Entity entity)
+        public static Layer.Awaitable Lock(this global::Framework.Caspar.Strand strand, Layer.Frame entity)
         {
             return new Layer.Awaitable(strand.task, entity, true);
         }
@@ -25,7 +25,7 @@ namespace Framework.Caspar
             return new Layer.Awaitable(task);
         }
 
-        public static Layer.Awaitable Lock(this System.Threading.Tasks.Task task, Layer.Entity entity)
+        public static Layer.Awaitable Lock(this System.Threading.Tasks.Task task, Layer.Frame entity)
         {
             return new Layer.Awaitable(task, entity, true);
         }
@@ -39,7 +39,7 @@ namespace Framework.Caspar
         {
             return new Layer.Awaitable<T>(task);
         }
-        public static Layer.Awaitable<T> Strand<T>(this System.Threading.Tasks.Task<T> task, Layer.Entity entity)
+        public static Layer.Awaitable<T> Strand<T>(this System.Threading.Tasks.Task<T> task, Layer.Frame entity)
         {
             return new Layer.Awaitable<T>(task, entity);
         }
@@ -49,7 +49,7 @@ namespace Framework.Caspar
             return new Layer.Awaitable<T>(task, true);
         }
 
-        public static Layer.Awaitable<T> Lock<T>(this System.Threading.Tasks.Task<T> task, Layer.Entity entity)
+        public static Layer.Awaitable<T> Lock<T>(this System.Threading.Tasks.Task<T> task, Layer.Frame entity)
         {
             return new Layer.Awaitable<T>(task, entity, true);
         }
@@ -66,7 +66,7 @@ namespace Framework.Caspar
             {
                 awaitable = new Awaiter(task, locked);
             }
-            public Awaitable(System.Threading.Tasks.Task task, Entity entity, bool locked = false)
+            public Awaitable(System.Threading.Tasks.Task task, Frame entity, bool locked = false)
             {
                 awaitable = new Awaiter(task, entity, locked);
             }
@@ -76,7 +76,7 @@ namespace Framework.Caspar
             public struct Awaiter : INotifyCompletion
             {
                 System.Threading.Tasks.Task task { get; set; }
-                Entity entity { get; set; }
+                Frame entity { get; set; }
                 public Awaiter(System.Threading.Tasks.Task task, bool locked = false)
                 {
                     entity = global::Framework.Caspar.Layer.CurrentEntity.Value;
@@ -93,7 +93,7 @@ namespace Framework.Caspar
                     }
                 }
 
-                public Awaiter(System.Threading.Tasks.Task task, Entity entity, bool locked = false)
+                public Awaiter(System.Threading.Tasks.Task task, Frame entity, bool locked = false)
                 {
                     this.entity = entity;
                     this.task = task;
@@ -161,7 +161,7 @@ namespace Framework.Caspar
             {
                 awaitable = new Awaiter(task, locked);
             }
-            public Awaitable(System.Threading.Tasks.Task<T> task, Entity entity, bool locked = false)
+            public Awaitable(System.Threading.Tasks.Task<T> task, Frame entity, bool locked = false)
             {
                 awaitable = new Awaiter(task, entity, locked);
             }
@@ -170,7 +170,7 @@ namespace Framework.Caspar
             public struct Awaiter : INotifyCompletion
             {
                 System.Threading.Tasks.Task<T> task { get; set; }
-                Entity entity { get; set; }
+                Frame entity { get; set; }
                 public Awaiter(System.Threading.Tasks.Task<T> task, bool locked = false)
                 {
                     this.task = task;
@@ -188,7 +188,7 @@ namespace Framework.Caspar
 
                 }
 
-                public Awaiter(System.Threading.Tasks.Task<T> task, Entity entity, bool locked)
+                public Awaiter(System.Threading.Tasks.Task<T> task, Frame entity, bool locked)
                 {
                     this.entity = entity;
                     this.task = task;

@@ -44,7 +44,7 @@ namespace Framework.Caspar.Attributes
         }
 
         public class Layer : global::Framework.Caspar.Layer { }
-        public class Loader : global::Framework.Caspar.Layer.Entity
+        public class Loader : global::Framework.Caspar.Layer.Frame
         {
             public Loader() : base(Singleton<Layer>.Instance) { }
             public static string Path { get; set; } = $"{(string)Framework.Caspar.Api.Config.Deploy}/Metadata";

@@ -139,62 +139,38 @@ namespace Framework.Caspar.Database
         public static ThreadLocal<Session> CurrentSession = new ThreadLocal<Session>();
 
 
-        public static async Task<IConnection> GetConnection(string name, bool transaction = true)
+        public static async ValueTask<IConnection> GetConnection(string name, bool transaction = true)
         {
-            var session = Begin();
-            return await session.GetConnection(name, transaction);
+            var session = Session.CurrentSession.Value;
+            if (session == null) { return null; }
+            var connection = await session.GetConnection(name, transaction);
+            if (connection == null) { return null; }
+            return connection;
         }
 
-        public static async Task<ICommandable> GetCommandable(string name, bool transaction = true)
+        public static async ValueTask<ICommandable> GetCommandable(string name, bool transaction = true)
         {
-            var connection = await GetConnection(name, transaction);
+            var session = Session.CurrentSession.Value;
+            if (session == null) { return null; }
+            var connection = await session.GetConnection(name, transaction);
+            if (connection == null) { return null; }
             return connection.CreateCommand();
         }
 
-        public static Session Begin()
-        {
-            if (Layer.CurrentEntity.Value != null)
-            {
-                var session = Layer.CurrentEntity.Value.Session;
-                if (session != null)
-                {
-                    if (CurrentSession.Value != session)
-                    {
-                        Logger.Error($"Session is mismatched.");
-                    }
-                    CurrentSession.Value = session;
-                    return session;
-                }
-                else
-                {
-                    return Create();
-                }
-            }
 
-            if (CurrentSession.Value != null)
-            {
-                return CurrentSession.Value;
-            }
-            else
-            {
-                return Create();
-            }
-        }
-
-        protected static Session Create()
+        public static Session Create()
         {
-            var session = new Session();
-            CurrentSession.Value = session;
-            if (Layer.CurrentEntity.Value != null)
-            {
-                Layer.CurrentEntity.Value.Session = session;
-            }
-            return session;
+            return new Session();
         }
+        private SynchronizationContext parentContext = null;
 
         public Session()
         {
-            //    Command = async () => { await ValueTask.CompletedTask; };
+
+            parentContext = SynchronizationContext.Current;
+            SynchronizationContext.SetSynchronizationContext(this);
+            CurrentSession.Value = this;
+
             if (Layer.CurrentEntity.Value == null)
             {
                 UID = global::Framework.Caspar.Api.UniqueKey;
@@ -203,41 +179,49 @@ namespace Framework.Caspar.Database
             else
             {
                 UID = Layer.CurrentEntity.Value.UID;
-                owner = Layer.CurrentEntity.Value;
+                frame = Layer.CurrentEntity.Value;
                 Layer.CurrentEntity.Value.Add(this);
             }
-
         }
+
 
         public override void Post(SendOrPostCallback d, object? state)
         {
-            if (owner != null)
+            if (frame != null)
             {
-                owner.Post(d, state);
+                frame.PostMessage(() =>
+                {
+                    SynchronizationContext.SetSynchronizationContext(this);
+                    Session.CurrentSession.Value = this;
+                    d(state);
+                });
             }
             else
             {
                 ThreadPool.QueueUserWorkItem(static s =>
                 {
-                    var context = s as Session;
+                    var tuple = s as Tuple<Session, SendOrPostCallback, object>;
+                    var context = tuple.Item1;
                     SynchronizationContext.SetSynchronizationContext(context);
-                    // d(state);
-                }, this);
+                    tuple.Item2(tuple.Item3);
+                }, new Tuple<Session, SendOrPostCallback, object>(this, d, state));
             }
         }
 
         public override void Send(SendOrPostCallback d, object? state)
         {
+            SynchronizationContext.SetSynchronizationContext(this);
+            Session.CurrentSession.Value = this;
             base.Send(d, state);
         }
 
-        internal Layer.Entity owner { get; set; }
+        internal Layer.Frame frame { get; set; }
 
-        public Session(Layer.Entity entity)
+        public Session(Layer.Frame entity)
         {
             //   Command = async () => { await ValueTask.CompletedTask; };
             UID = entity.UID;
-            owner = entity;
+            frame = entity;
             entity.Add(this);
 
         }
@@ -245,7 +229,7 @@ namespace Framework.Caspar.Database
 
         public void Rollback()
         {
-            foreach (var e in connections)
+            foreach (var e in _connections.Values)
             {
                 try
                 {
@@ -260,7 +244,7 @@ namespace Framework.Caspar.Database
 
         public async Task RollbackAsync()
         {
-            foreach (var e in connections)
+            foreach (var e in _connections.Values)
             {
                 try
                 {
@@ -275,7 +259,7 @@ namespace Framework.Caspar.Database
 
         public void Commit()
         {
-            foreach (var e in connections)
+            foreach (var e in _connections.Values)
             {
                 try
                 {
@@ -290,7 +274,7 @@ namespace Framework.Caspar.Database
 
         public async Task CommitAsync()
         {
-            foreach (var e in connections)
+            foreach (var e in _connections.Values)
             {
                 try
                 {
@@ -307,7 +291,7 @@ namespace Framework.Caspar.Database
         {
             try
             {
-                foreach (var e in connections)
+                foreach (var e in _connections.Values)
                 {
                     try
                     {
@@ -318,7 +302,7 @@ namespace Framework.Caspar.Database
 
                     }
                 }
-                connections.Clear();
+                _connections.Clear();
             }
             catch
             {
@@ -336,12 +320,12 @@ namespace Framework.Caspar.Database
             }
 
         }
-        private int disposed = 0;
-        public bool IsDisposed => disposed == 1;
+        private int _disposed = 0;
+        public bool IsDisposed => _disposed == 1;
 
         internal void Log()
         {
-            foreach (object connection in connections)
+            foreach (var connection in _connections.Values)
             {
                 if (connection is Management.Relational.MySql)
                 {
@@ -355,21 +339,27 @@ namespace Framework.Caspar.Database
         }
         public void Dispose()
         {
-            if (Interlocked.CompareExchange(ref disposed, 1, 0) != 0)
+            if (Interlocked.CompareExchange(ref _disposed, 1, 0) != 0)
             {
                 return;
             }
 
+            Logger.Debug($"Dispose Session: {UID}");
+
+            SynchronizationContext.SetSynchronizationContext(parentContext);
+            Session.CurrentSession.Value = null;
+            parentContext = null;
+
             try
             {
-                owner?.Remove(this);
+                frame?.Remove(this);
             }
             catch
             {
 
             }
 
-            owner = null;
+            frame = null;
 
             try
             {
@@ -388,130 +378,41 @@ namespace Framework.Caspar.Database
             {
                 Logger.Error(ex);
             }
+
+
         }
 
-        List<IConnection> connections { get; set; } = new List<IConnection>();
-        //static ConcurrentDictionary<string, ConcurrentBag<IConnection>> connections = new();
 
         internal TaskCompletionSource TCS { get; set; } = null;
 
-        // static async public Task<Session> Create(bool autoCommit = true)
-        // {
-        //     var session = new Session() { autoCommit = autoCommit };
-        //     session.TCS = new();
-        //     while (true)
-        //     {
-        //         try
-        //         {
-        //             if (progresses.TryGetValue(session.UID, out var old) == true)
-        //             {
-        //                 await old.TCS.Task;
-        //             }
-
-        //             if (progresses.TryAdd(session.UID, session) == true) { break; }
-        //         }
-        //         catch (Exception ex)
-        //         {
-        //             Logger.Error(ex);
-        //         }
-        //     }
-        //     return session;
-        // }
-
-        //   public static ConcurrentDictionary<string, BlockingCollection<IConnection>> sessions = new();
-
-        // static async internal Task<IConnection> GetConnection(string db, CancellationToken token, bool transaction = true)
-        // {
-
-
-
-
-
-        //     // //connections.GetOrCreate(db).Add()
-        //     // return await Task.Run(async () =>
-        //     // {
-        //     //     var sw = System.Diagnostics.Stopwatch.StartNew();
-        //     //     IConnection session;
-        //     //     if (Driver.Databases.TryGetValue(db, out session) == true)
-        //     //     {
-        //     //         session = session.Create();
-        //     //         await session.Open(token, transaction);
-        //     //         return session;
-        //     //     }
-        //     //     return null;
-        //     // });
-        // }
-
         public static ConcurrentQueue<Session> Timeouts = new();
+        private Dictionary<string, IConnection> _connections = new();
 
         public async Task<IConnection> GetConnection(string name, bool open = true, bool transaction = true)
         {
             try
             {
-                // if (IsValid == false) { return null; }
-                // if (Driver.Connections.TryGetValue(name, out var queue) == false)
-                // {
-                //     return null;
-                // }
-
-                if (Driver.Databases.TryGetValue(name, out var connection) == false)
+                if (this.IsDisposed == true) { return null; }
+                if (_connections.TryGetValue(name, out var connection) == true)
+                {
+                    return connection;
+                }
+                if (Driver.Databases.TryGetValue(name, out connection) == false)
                 {
                     Logger.Error($"Database {name} is not configuration");
                     return null;
                 }
 
-                // if (connection.IsPoolable() > 0)
-                // {
-                //     if (Driver.ConnectionPools[name].TryDequeue(out connection) == true)
-                //     {
-                //         var mysql = (connection as Framework.Caspar.Database.Management.Relational.MySql);
-                //         if (mysql != null)
-                //         {
-                //             mysql.disposed = 0;
-                //         }
-                //         connections.Add(connection);
-                //         Logger.Info($"Connection allocate from pool {name}, {Driver.ConnectionPools[name].Count}");
-                //         return connection;
-                //     }
-                // }
-
                 connection = connection.Create();
                 await connection.Open(this.CancellationToken, transaction);
-                connections.Add(connection);
+                _connections.Add(name, connection);
                 return connection;
-                // // //             CTS.CancelAfter(1000);
-                // // var session = queue.Take();
-
-                // return await Task.Run(async () =>
-                // {
-                //     try
-                //     {
-                //         //        CTS.CancelAfter(1000);
-                //         //     var sw = System.Diagnostics.Stopwatch.StartNew();
-                //         IConnection connection;
-                //         connection = session.Create();
-                //         await connection.Open(this.CancellationToken, transaction);
-                //         connections.Add(connection);
-                //         return connection;
-                //     }
-                //     catch (Exception e)
-                //     {
-                //         Logger.Error(e);
-                //         return null;
-                //     }
-
-                // });
             }
             catch (Exception e)
             {
                 Logger.Error(e);
                 return null;
             }
-
-            // var ret = await GetConnection(name, this.CancellationToken, transaction);
-            // connections.Add(ret);
-            // return ret;
-
         }
 
         public Amazon.DynamoDBv2.AmazonDynamoDBClient GetDynamoDB(string db = "DynamoDB")
@@ -544,11 +445,6 @@ namespace Framework.Caspar.Database
         internal protected virtual void SetResult(int result)
         {
             this.Error = result;
-            //if (TCS == null)
-            //{
-            //    task?.PostMessage(ResponseCallBack);
-            //    return;
-            //}
             TCS?.SetResult();
         }
 
@@ -559,29 +455,6 @@ namespace Framework.Caspar.Database
             TCS?.SetException(e);
 
         }
-
-
-        // public virtual async Task ExecuteAsync()
-        // {
-        //     if (TCS != null) { throw new Exception("ExecuteAsync twice"); }
-        //     if (Trace.IsNullOrEmpty() == true && Layer.CurrentTask.Value != null)
-        //     {
-        //         Trace = Layer.CurrentTask.Value.GetType().FullName;
-        //     }
-        //     Driver.sessions.TryGetValue(UID, out ConcurrentQueue<Session> queue);
-        //     if (queue == null)
-        //     {
-        //         queue = new ConcurrentQueue<Session>();
-        //         Driver.sessions.TryAdd(UID, queue);
-        //     }
-        //     {
-        //         queue.Enqueue(this);
-        //     }
-
-        //     TCS = new global::System.Threading.Tasks.TaskCompletionSource();
-        //     await TCS.Task;
-        // }
-
 
         public virtual IEnumerable<string> GetHost()
         {

@@ -5,7 +5,7 @@ using static Framework.Caspar.Api;
 
 namespace Framework.Caspar
 {
-    public class Scheduler : global::Framework.Caspar.Layer.Entity
+    public class Scheduler : global::Framework.Caspar.Layer.Frame
     {
         //internal static ConcurrentBag<Scheduler> Elements { get; } = new();
         //internal static System.Collections.Generic.List<Scheduler> Elements { get; } = new();

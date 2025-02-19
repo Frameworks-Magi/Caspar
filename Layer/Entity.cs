@@ -16,7 +16,7 @@ namespace Framework.Caspar
 {
 	public partial class Layer
 	{
-		public class Entity : SynchronizationContext
+		public class Frame : SynchronizationContext
 		{
 			private long uid = 0;
 			public virtual long UID
@@ -37,17 +37,30 @@ namespace Framework.Caspar
 				private set;
 
 			}
-			public Entity(Layer layer)
+			public Frame(Layer layer)
 			{
 				this.layer = layer;
 				UID = global::Framework.Caspar.Api.UniqueKey;
 			}
 
-			public Entity()
+			public Frame()
 			{
 				this.layer = Singleton<Layer>.Instance;
 				UID = global::Framework.Caspar.Api.UniqueKey;
 			}
+
+			public Frame(long uid)
+			{
+				this.layer = Singleton<Layer>.Instance;
+				UID = uid;
+			}
+
+			public Frame(Layer layer, long uid)
+			{
+				this.layer = layer;
+				UID = uid;
+			}
+
 			internal enum State
 			{
 				IDLE = 0,
