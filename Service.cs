@@ -3,7 +3,7 @@ using System.Threading.Tasks;
 
 namespace Framework.Caspar
 {
-    public class Service : Layer.Entity
+    public class Service : Layer.Frame
     {
         public class Layer : global::Framework.Caspar.Layer { }
 

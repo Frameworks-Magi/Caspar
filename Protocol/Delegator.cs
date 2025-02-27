@@ -28,11 +28,11 @@ namespace Framework.Caspar.Protocol
 
         public void Close() { }
         public void Delegate(long from, long to, global::Framework.Caspar.ISerializable serializable) { }
-        public void Delegate<T, R>(global::Framework.Caspar.Layer.Entity task, long to, T msg, AsyncCallback<R> callback, Action fallback = null)
+        public void Delegate<T, R>(global::Framework.Caspar.Layer.Frame task, long to, T msg, AsyncCallback<R> callback, Action fallback = null)
            where T : global::Google.Protobuf.IMessage<T>
            where R : global::Google.Protobuf.IMessage<R>
         { }
-        public void Delegate<T>(global::Framework.Caspar.Layer.Entity task, long to, T msg, AsyncCallback<T> callback, Action fallback = null)
+        public void Delegate<T>(global::Framework.Caspar.Layer.Frame task, long to, T msg, AsyncCallback<T> callback, Action fallback = null)
            where T : global::Google.Protobuf.IMessage<T>
         { }
         public async Task<T> DelegateAsync<T>(long from, long to, T msg)
@@ -578,7 +578,7 @@ namespace Framework.Caspar.Protocol
 
 
 
-        public void Delegate<T>(global::Framework.Caspar.Layer.Entity task, long to, T msg, global::Framework.Caspar.AsyncCallback<T> callback, Action fallback = null)
+        public void Delegate<T>(global::Framework.Caspar.Layer.Frame task, long to, T msg, global::Framework.Caspar.AsyncCallback<T> callback, Action fallback = null)
             where T : global::Google.Protobuf.IMessage<T>
         {
 
@@ -632,7 +632,7 @@ namespace Framework.Caspar.Protocol
             }
         }
 
-        public void Delegate<T, R>(global::Framework.Caspar.Layer.Entity task, long to, T msg, global::Framework.Caspar.AsyncCallback<R> callback, Action fallback = null)
+        public void Delegate<T, R>(global::Framework.Caspar.Layer.Frame task, long to, T msg, global::Framework.Caspar.AsyncCallback<R> callback, Action fallback = null)
             where T : global::Google.Protobuf.IMessage<T>
             where R : global::Google.Protobuf.IMessage<R>
         {
@@ -1012,7 +1012,7 @@ namespace Framework.Caspar.Protocol
             return 0;
         }
 
-        public global::Framework.Caspar.Layer.Entity Handler { get; set; }
+        public global::Framework.Caspar.Layer.Frame Handler { get; set; }
 
     }
 }

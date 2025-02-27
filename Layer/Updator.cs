@@ -17,11 +17,11 @@ namespace Framework.Caspar
 
 
         internal static object lockObj = new Object();
-        static ConcurrentQueue<Entity> queue = null;
+        static ConcurrentQueue<Frame> queue = null;
 
 
 
-        public static BlockingCollection<ConcurrentQueue<Entity>> Entities = new();
+        public static BlockingCollection<ConcurrentQueue<Frame>> Entities = new();
         public static BlockingCollection<Layer> WaitLayers = new();
 
 

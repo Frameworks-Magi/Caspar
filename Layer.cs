@@ -19,17 +19,17 @@ namespace Framework.Caspar
         //public static int MaxLoop { get; set; } = 1000000;
 
         public double MS { get; set; }
-        static public Entity g_e { get; set; }
+        static public Frame g_e { get; set; }
         public static int MaxLoop { get; set; } = 100000;
         public static long CurrentStrand { get => CurrentEntity.Value.UID; }
 
-        internal ConcurrentDictionary<int, ConcurrentQueue<Entity>> waitProcessEntities = new ConcurrentDictionary<int, ConcurrentQueue<Entity>>();
-        internal ConcurrentQueue<Entity> waitEntities = new ConcurrentQueue<Entity>();
-        internal ConcurrentDictionary<int, ConcurrentQueue<Entity>> waitCloseEntities = new ConcurrentDictionary<int, ConcurrentQueue<Entity>>();
+        internal ConcurrentDictionary<int, ConcurrentQueue<Frame>> waitProcessEntities = new ConcurrentDictionary<int, ConcurrentQueue<Frame>>();
+        internal ConcurrentQueue<Frame> waitEntities = new ConcurrentQueue<Frame>();
+        internal ConcurrentDictionary<int, ConcurrentQueue<Frame>> waitCloseEntities = new ConcurrentDictionary<int, ConcurrentQueue<Frame>>();
         internal static System.Threading.Tasks.ParallelOptions options = new System.Threading.Tasks.ParallelOptions() { MaxDegreeOfParallelism = global::Framework.Caspar.Api.ThreadCount };
 
         internal static BlockingCollection<Layer> Layers = new();
-        internal BlockingCollection<(ConcurrentQueue<Entity>, int, DateTime)> Queued = new();
+        internal BlockingCollection<(ConcurrentQueue<Frame>, int, DateTime)> Queued = new();
         internal BlockingCollection<bool> Releaser = new();
 
         public static int TotalHandled = 0;
@@ -44,8 +44,8 @@ namespace Framework.Caspar
 
             for (int i = 0; i < global::Framework.Caspar.Api.ThreadCount; ++i)
             {
-                waitProcessEntities.TryAdd(i, new ConcurrentQueue<Entity>());
-                waitCloseEntities.TryAdd(i, new ConcurrentQueue<Entity>());
+                waitProcessEntities.TryAdd(i, new ConcurrentQueue<Frame>());
+                waitCloseEntities.TryAdd(i, new ConcurrentQueue<Frame>());
             }
 
             for (int i = 0; i < global::Framework.Caspar.Api.ThreadCount; ++i)
@@ -67,7 +67,7 @@ namespace Framework.Caspar
         }
 
         public virtual void OnUpdate() { }
-        public static ThreadLocal<Entity> CurrentEntity = new ThreadLocal<Entity>();
+        public static ThreadLocal<Frame> CurrentEntity = new ThreadLocal<Frame>();
         public static ThreadLocal<long> FromDelegateUID = new ThreadLocal<long>();
         internal virtual bool Run()
         {
@@ -103,7 +103,7 @@ namespace Framework.Caspar
             return flag;
         }
 
-        private void process(ConcurrentQueue<Entity> container, int max)
+        private void process(ConcurrentQueue<Frame> container, int max)
         {
             for (int i = 0; i < max; ++i)
             {
@@ -265,7 +265,7 @@ namespace Framework.Caspar
             int remainTask = 0;
             System.Threading.Tasks.Parallel.ForEach(waitCloseEntities, options, (tasks) =>
             {
-                Entity task = null;
+                Frame task = null;
                 int max = tasks.Value.Count;
                 while (max > 0)
                 {
@@ -380,9 +380,9 @@ namespace Framework.Caspar
             }
             return false;
         }
-        internal void Post(Entity e)
+        internal void Post(Frame e)
         {
-            ConcurrentQueue<Entity> tasks = null;
+            ConcurrentQueue<Frame> tasks = null;
             if (waitProcessEntities.TryGetValue(e.Strand, out tasks) == false)
             {
                 return;
@@ -397,9 +397,9 @@ namespace Framework.Caspar
         }
         private int state = 0;
 
-        internal void Close(Entity entity)
+        internal void Close(Frame entity)
         {
-            ConcurrentQueue<Entity> tasks = null;
+            ConcurrentQueue<Frame> tasks = null;
             if (waitCloseEntities.TryGetValue(entity.Strand, out tasks) == false)
             {
                 return;

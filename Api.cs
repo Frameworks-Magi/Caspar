@@ -1747,6 +1747,13 @@ namespace Framework.Caspar
             void Verbose(object msg);
         }
 
+        // public static class Session
+        // {
+        //     public static Framework.Caspar.Database.Session Create()
+        //     {
+        //         return new Framework.Caspar.Database.Session();
+        //     }
+        // }
 
         public static class Logger
         {

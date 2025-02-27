@@ -16,7 +16,7 @@ namespace Framework.Caspar.Database.NoSql
     public sealed class Redis : IConnection
     {
 
-        internal static ConcurrentDictionary<int, Layer.Entity> tasks = new ConcurrentDictionary<int, Layer.Entity>();
+        internal static ConcurrentDictionary<int, Layer.Frame> tasks = new ConcurrentDictionary<int, Layer.Frame>();
         internal static Dictionary<string, Dictionary<Action<RedisChannel, RedisValue>, Action<RedisChannel, RedisValue>>> subscribers = new Dictionary<string, Dictionary<Action<RedisChannel, RedisValue>, Action<RedisChannel, RedisValue>>>();
 
         public IConnection Create()
@@ -36,7 +36,7 @@ namespace Framework.Caspar.Database.NoSql
 
             if (callbacks.ContainsKey(callback) == false)
             {
-                var task = new Layer.Entity(Singleton<Api.RedisLayer>.Instance);
+                var task = new Layer.Frame(Singleton<Api.RedisLayer>.Instance);
                 task = tasks.GetOrAdd(strand, task);
 
                 task.UID = strand;
