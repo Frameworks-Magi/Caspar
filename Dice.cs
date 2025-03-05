@@ -4,24 +4,32 @@ using System.Linq;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
+using static Framework.Caspar.Api;
 
 namespace Framework.Caspar
 {
     public class Dice
     {
-
-
         //static ThreadLocal<System.Random> random = new ThreadLocal<System.Random>(() => { return MersenneTwister.DsfmtRandom.Create(MersenneTwister.DsfmtEdition.Original_19937); });
         static ThreadLocal<System.Random> random = new ThreadLocal<System.Random>(() => { return MersenneTwister.MTRandom.Create(MersenneTwister.MTEdition.Original_19937); });
         //static System.Random random = MersenneTwister.MTRandom.Create(MersenneTwister.MTEdition.Original_19937);
-        static public int Roll(int from, int to)
+        static public int Roll(int from, int toExclusive)
         {
-            if (from == to) { return roll(); }
+            if (from == toExclusive) { return roll(); }
             //return System.Random.Shared.Next(from, to);
-            return random.Value.Next(from, to);
-
+            return random.Value.Next(from, toExclusive);
         }
-
+        public static string Digit(int length)
+        {
+            string digits = string.Empty;
+            digits = Roll(1, 10).ToString();
+            for (int i = 1; i < length; i++)
+            {
+                digits += Roll(0, 10).ToString();
+            }
+            Logger.Debug($"Digit: {length}, {digits}");
+            return digits;
+        }
         static public double Roll(double from, double to)
         {
             //return System.Random.Shared.NextDouble() * (to - from) + from;
