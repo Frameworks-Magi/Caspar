@@ -395,6 +395,10 @@ namespace Framework.Caspar.Database
                 if (this.IsDisposed == true) { return null; }
                 if (_connections.TryGetValue(name, out var connection) == true)
                 {
+                    if (transaction == true)
+                    {
+                        connection.BeginTransaction();
+                    }
                     return connection;
                 }
                 if (Driver.Databases.TryGetValue(name, out connection) == false)
