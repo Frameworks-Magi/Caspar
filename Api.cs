@@ -1,5 +1,4 @@
 ﻿using Amazon.Auth.AccessControlPolicy.ActionIdentifiers;
-using Caspar;
 using Microsoft.CSharp;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
@@ -312,7 +311,116 @@ namespace Caspar
 
         }
 
+        internal class Seed
+        {
+            private static int _value { get; set; }
+            internal static int Value
+            {
+                get { return _value; }
+                set
+                {
+                    _value = value;
+                    Sequence = ((long)_value) << 32;
+                }
+            }
+            internal static long Sequence = 0;
 
+            public static long UID
+            {
+                get
+                {
+                    return Interlocked.Increment(ref Sequence);
+                }
+            }
+        }
+
+        internal class Snowflake
+        {
+            internal static int Instance { get; set; } = 0;
+            internal static int Service { get; set; } = 0;
+            public static long Sequence = 0;
+            public static int Guard = 0;
+            internal static int Timestamp { get; set; } = 0;
+            internal static Timer Timer { get; set; }
+
+            // 분당 최대 1000000개의 UID 생성
+
+            // 초당 최대 8096개의 UID 생성
+
+            public static void StartUp()
+            {
+                Update();
+                // Timer = new Timer((e) =>
+                // {
+                //     Update();
+                // }, null, 0, 31000);
+                Timer = new Timer((e) =>
+                {
+                    Update();
+                }, null, 0, 1500);
+
+            }
+
+            public static long UID
+            {
+                get
+                {
+                    if (Guard > 8000)
+                    {
+                        throw new Exception("UID OverFlow");
+                    }
+                    var uid = Interlocked.Increment(ref Sequence);
+                    Interlocked.Increment(ref Guard);
+                    return uid;
+                }
+            }
+
+            internal static void Update()
+            {
+                var now = DateTime.UtcNow;
+                var epoch = new DateTime(2025, 1, 1, 0, 0, 0, DateTimeKind.Utc);
+                var diff = now - epoch;
+                Timestamp = Convert.ToInt32(diff.TotalSeconds);
+
+                // |서비스ID 8비트|워커ID 10비트|타임스탬프 32비트|시퀀스 13비트|
+                // 8bit = 256
+                // 10bit = 1024
+                // 32bit = 4294967296
+                // 13bit = 8192
+
+                long temp = Service << 55;
+                temp |= (long)Instance << 45;
+                temp |= (long)Timestamp << 13;
+                temp |= 1;
+                Interlocked.Exchange(ref Sequence, temp);
+                Interlocked.Exchange(ref Guard, 0);
+            }
+            // internal static void Update()
+            // {
+            //     var now = DateTime.UtcNow;
+            //     var epoch = new DateTime(2025, 1, 1, 0, 0, 0, DateTimeKind.Utc);
+            //     var diff = now - epoch;
+            //     var current = Convert.ToInt32(diff.TotalMinutes);
+
+            //     if (current == Timestamp)
+            //     {
+            //         return;
+            //     }
+            //     Timestamp = current;
+            //     // |서비스ID 8비트|워커ID 10비트|타임스탬프 25비트|시퀀스 20비트|
+            //     // 8bit = 256
+            //     // 10bit = 1024
+            //     // 25bit = 33554432
+            //     // 20bit = 1048576
+
+            //     long temp = Service << 55;
+            //     temp |= (long)Instance << 45;
+            //     temp |= (long)Timestamp << 20;
+            //     temp |= 1;
+            //     Interlocked.Exchange(ref Sequence, temp);
+            //     Interlocked.Exchange(ref Guard, 0);
+            // }
+        }
 
 
         internal class RedisLayer : Caspar.Layer
@@ -684,8 +792,8 @@ namespace Caspar
         {
             get
             {
-                var key = System.Threading.Interlocked.Increment(ref uniqueKey);
-                return ((long)_offset << 32) | ((long)key);
+                //return Api.Snowflake.UID;
+                return Api.Seed.UID;
             }
         }
 
@@ -698,7 +806,7 @@ namespace Caspar
         {
             get { return StandAlone == true ? PrivateIp : PublicIp; }
         }
-        private static int uniqueKey = 1;
+        private static long uniqueKey = 1;
 
         static public int ThreadCount { get; set; } = Math.Min(16, Math.Max(4, Convert.ToInt32(Math.Ceiling((Environment.ProcessorCount * 0.75) * 1.0))));
 
@@ -2119,58 +2227,59 @@ namespace Caspar
                     connection.Open();
 
                     using var command = connection.CreateCommand();
-                    command.Transaction = connection.BeginTransaction();
 
-
-                    command.Parameters.Clear();
-                    command.CommandText = $"SELECT id FROM `caspar`.`deploy` WHERE `provider` = @provider AND `publish` = '' AND `region` = '' AND `type` = '';";
-                    command.CommandText += $"SELECT id FROM `caspar`.`deploy` WHERE `provider` = @provider AND `publish` = @publish AND `region` = '' AND `type` = '';";
-                    command.CommandText += $"SELECT id FROM `caspar`.`deploy` WHERE `provider` = @provider AND `publish` = @publish AND `region` = @region AND `type` = '';";
-                    command.CommandText += $"SELECT id FROM `caspar`.`deploy` WHERE `provider` = @provider AND `publish` = @publish AND `region` = @region AND `type` = @type;";
-
-                    command.Parameters.AddWithValue("@provider", (string)global::Caspar.Api.Config.Provider);
-                    command.Parameters.AddWithValue("@publish", (string)global::Caspar.Api.Config.Publish);
-                    command.Parameters.AddWithValue("@region", (string)global::Caspar.Api.Config.Region);
-                    command.Parameters.AddWithValue("@type", ServerType);
-                    command.Parameters.AddWithValue("@ip", PublicIp);
-
-                    Logger.Info($"Provider : {Caspar.Api.Config.Provider}");
-                    Logger.Info($"Publish : {Caspar.Api.Config.Publish}");
-                    Logger.Info($"Region : {Caspar.Api.Config.Region}");
-                    Logger.Info($"Type : {ServerType}");
-                    Logger.Info($"IP : {PublicIp}");
-                    using var reader = command.ExecuteReader();
-
-
-
-                    try
+                    if (Deploy.PPRT == 0)
                     {
-                        reader.Read();
-                        Deploy.PXXX = reader[0].ToInt32();
+                        command.Parameters.Clear();
+                        command.CommandText = $"SELECT id FROM `caspar`.`deploy` WHERE `provider` = @provider AND `publish` = '' AND `region` = '' AND `type` = '';";
+                        command.CommandText += $"SELECT id FROM `caspar`.`deploy` WHERE `provider` = @provider AND `publish` = @publish AND `region` = '' AND `type` = '';";
+                        command.CommandText += $"SELECT id FROM `caspar`.`deploy` WHERE `provider` = @provider AND `publish` = @publish AND `region` = @region AND `type` = '';";
+                        command.CommandText += $"SELECT id FROM `caspar`.`deploy` WHERE `provider` = @provider AND `publish` = @publish AND `region` = @region AND `type` = @type;";
 
-                        reader.NextResult();
-                        reader.Read();
-                        Deploy.PPXX = reader[0].ToInt32();
+                        command.Parameters.AddWithValue("@provider", (string)global::Caspar.Api.Config.Provider);
+                        command.Parameters.AddWithValue("@publish", (string)global::Caspar.Api.Config.Publish);
+                        command.Parameters.AddWithValue("@region", (string)global::Caspar.Api.Config.Region);
+                        command.Parameters.AddWithValue("@type", ServerType);
+                        command.Parameters.AddWithValue("@ip", PublicIp);
 
-                        reader.NextResult();
-                        reader.Read();
-                        Deploy.PPRX = reader[0].ToInt32();
+                        Logger.Info($"Provider : {Caspar.Api.Config.Provider}");
+                        Logger.Info($"Publish : {Caspar.Api.Config.Publish}");
+                        Logger.Info($"Region : {Caspar.Api.Config.Region}");
+                        Logger.Info($"Type : {ServerType}");
+                        Logger.Info($"IP : {PublicIp}");
+                        using (var reader = command.ExecuteReader())
+                        {
+                            try
+                            {
+                                reader.Read();
+                                Deploy.PXXX = reader[0].ToInt32();
 
-                        reader.NextResult();
-                        reader.Read();
-                        Deploy.PPRT = reader[0].ToInt32();
-                    }
-                    catch
-                    {
+                                reader.NextResult();
+                                reader.Read();
+                                Deploy.PPXX = reader[0].ToInt32();
 
-                    }
-                    finally
-                    {
-                        reader.Close();
+                                reader.NextResult();
+                                reader.Read();
+                                Deploy.PPRX = reader[0].ToInt32();
+
+                                reader.NextResult();
+                                reader.Read();
+                                Deploy.PPRT = reader[0].ToInt32();
+                            }
+                            catch
+                            {
+
+                            }
+                            finally
+                            {
+                                reader.Close();
+                            }
+                        }
                     }
 
                     if (Deploy.PPRT == 0)
                     {
+                        command.Transaction = connection.BeginTransaction();
                         command.Parameters.Clear();
                         command.CommandText = $"INSERT IGNORE INTO `caspar`.`deploy` (`provider`, `publish`, `region`, `type`, `ip`) VALUES (@provider, '', '', '', @ip);";
                         command.CommandText += $"INSERT IGNORE INTO `caspar`.`deploy` (`provider`, `publish`, `region`, `type`, `ip`) VALUES (@provider, @publish, '', '', @ip);";
@@ -2183,9 +2292,11 @@ namespace Caspar
                         command.Parameters.AddWithValue("@type", ServerType);
                         command.Parameters.AddWithValue("@ip", PublicIp);
                         command.ExecuteNonQuery();
+                        command.Transaction.Commit();
                     }
                     else
                     {
+                        command.Transaction = connection.BeginTransaction();
                         command.Parameters.Clear();
                         command.CommandText = $"UPDATE `caspar`.`deploy` SET `ip` = @ip WHERE `provider` = @provider AND `publish` = '' AND `region` = '' AND `type` = '';";
                         command.CommandText += $"UPDATE `caspar`.`deploy` SET `ip` = @ip WHERE `provider` = @provider AND `publish` = @publish AND `region` = '' AND `type` = '';";
@@ -2197,13 +2308,79 @@ namespace Caspar
                         command.Parameters.AddWithValue("@type", ServerType);
                         command.Parameters.AddWithValue("@ip", PublicIp);
                         command.ExecuteNonQuery();
+                        command.Transaction.Commit();
                     }
 
+                    // command.CommandText = $"SELECT `id` FROM `caspar`.`snowflakes` WHERE `type` = @type AND `public_ip` = @publicIp AND `private_ip` = @privateIp;";
+                    // command.Parameters.Clear();
+                    // command.Parameters.AddWithValue("@type", ServerType);
+                    // command.Parameters.AddWithValue("@publicIp", PublicIp);
+                    // command.Parameters.AddWithValue("@privateIp", PrivateIp);
+                    // using (var reader = command.ExecuteReader())
+                    // {
+                    //     try
+                    //     {
+                    //         if (reader.Read() == false)
+                    //         {
+                    //             reader.Close();
+                    //             command.CommandText = $"INSERT INTO `caspar`.`snowflakes` (`type`, `public_ip`, `private_ip`) VALUES (@type, @publicIp, @privateIp);";
+                    //             command.ExecuteNonQuery();
+                    //         }
+                    //         else
+                    //         {
+                    //             Api.Snowflake.Instance = reader[0].ToInt32();
+                    //         }
+                    //     }
+                    //     catch (Exception e)
+                    //     {
+                    //         Logger.Error(e);
+                    //     }
+                    //     finally
+                    //     {
+                    //         reader.Close();
+                    //     }
 
+                    // }
+                    command.Parameters.Clear();
+                    command.Transaction = connection.BeginTransaction();
+                    command.CommandText = "UPDATE `caspar`.`seed` SET `value` = `value` + 10 WHERE `id` = 1;";
+                    if (command.ExecuteNonQuery() == 0)
+                    {
+                        command.Transaction.Rollback();
+                        continue;
+                    }
+                    command.CommandText = "SELECT `value` FROM `caspar`.`seed` WHERE `id` = 1 FOR UPDATE;";
+                    using (var reader = command.ExecuteReader())
+                    {
+                        try
+                        {
+                            if (reader.Read() == true)
+                            {
+                                Api.Seed.Value = reader[0].ToInt32();
+                            }
+                        }
+                        catch (Exception e)
+                        {
+                            Logger.Error(e);
+                        }
+                        finally
+                        {
+                            reader.Close();
+                        }
+                    }
 
                     command.Transaction.Commit();
                     connection.Close();
 
+                    // if (Api.Snowflake.Instance == 0)
+                    // {
+                    //     continue;
+                    // }
+                    // Api.Snowflake.StartUp();
+                    if (Api.Seed.Value == 0)
+                    {
+                        continue;
+                    }
                     if (Deploy.PPRT != 0) { break; }
                 }
                 catch (Exception e)
@@ -2370,6 +2547,8 @@ namespace Caspar
                         _offset = (int)ret.GetValue("Offset");
                         PublicIp = (string)ret.GetValue("RemoteIp");
                     }
+                    var temp = _offset << 32 | (int)1;
+                    Interlocked.Exchange(ref uniqueKey, temp);
                 }
                 catch (Exception e)
                 {
