@@ -1,5 +1,5 @@
 ﻿using System;
-namespace Framework.Caspar
+namespace Caspar
 {
     public interface ISerializable
     {

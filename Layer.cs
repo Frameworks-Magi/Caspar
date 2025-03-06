@@ -1,5 +1,5 @@
 ﻿using Amazon.SQS.Model;
-using Framework.Caspar.Container;
+using Caspar.Container;
 using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
@@ -9,9 +9,9 @@ using System.Runtime.CompilerServices;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
-using static Framework.Caspar.Api;
+using static Caspar.Api;
 
-namespace Framework.Caspar
+namespace Caspar
 {
     public partial class Layer
     {
@@ -26,7 +26,7 @@ namespace Framework.Caspar
         internal ConcurrentDictionary<int, ConcurrentQueue<Frame>> waitProcessEntities = new ConcurrentDictionary<int, ConcurrentQueue<Frame>>();
         internal ConcurrentQueue<Frame> waitEntities = new ConcurrentQueue<Frame>();
         internal ConcurrentDictionary<int, ConcurrentQueue<Frame>> waitCloseEntities = new ConcurrentDictionary<int, ConcurrentQueue<Frame>>();
-        internal static System.Threading.Tasks.ParallelOptions options = new System.Threading.Tasks.ParallelOptions() { MaxDegreeOfParallelism = global::Framework.Caspar.Api.ThreadCount };
+        internal static System.Threading.Tasks.ParallelOptions options = new System.Threading.Tasks.ParallelOptions() { MaxDegreeOfParallelism = global::Caspar.Api.ThreadCount };
 
         internal static BlockingCollection<Layer> Layers = new();
         internal BlockingCollection<(ConcurrentQueue<Frame>, int, DateTime)> Queued = new();
@@ -36,19 +36,19 @@ namespace Framework.Caspar
         internal int TotalQueued = 0;
         public Layer()
         {
-            global::Framework.Caspar.Api.ThreadCount = 16;
-            if (options.MaxDegreeOfParallelism != global::Framework.Caspar.Api.ThreadCount)
+            global::Caspar.Api.ThreadCount = 16;
+            if (options.MaxDegreeOfParallelism != global::Caspar.Api.ThreadCount)
             {
-                options = new System.Threading.Tasks.ParallelOptions() { MaxDegreeOfParallelism = global::Framework.Caspar.Api.ThreadCount };
+                options = new System.Threading.Tasks.ParallelOptions() { MaxDegreeOfParallelism = global::Caspar.Api.ThreadCount };
             }
 
-            for (int i = 0; i < global::Framework.Caspar.Api.ThreadCount; ++i)
+            for (int i = 0; i < global::Caspar.Api.ThreadCount; ++i)
             {
                 waitProcessEntities.TryAdd(i, new ConcurrentQueue<Frame>());
                 waitCloseEntities.TryAdd(i, new ConcurrentQueue<Frame>());
             }
 
-            for (int i = 0; i < global::Framework.Caspar.Api.ThreadCount; ++i)
+            for (int i = 0; i < global::Caspar.Api.ThreadCount; ++i)
             {
                 var t = new Thread(() =>
                 {
@@ -63,7 +63,7 @@ namespace Framework.Caspar
                 });
                 t.Start();
             }
-            global::Framework.Caspar.Api.Add(this);
+            global::Caspar.Api.Add(this);
         }
 
         public virtual void OnUpdate() { }
@@ -119,7 +119,7 @@ namespace Framework.Caspar
                     {
                         CurrentEntity.Value = entity;
                         FromDelegateUID.Value = 0;
-                        //   Framework.Caspar.Database.Session.CurrentSession.Value = entity.sessions.FirstOrDefault();
+                        //   Caspar.Database.Session.CurrentSession.Value = entity.sessions.FirstOrDefault();
                         SynchronizationContext.SetSynchronizationContext(entity);
                         for (int c = 0; entity.continuations.Count > 0 && c < MaxLoop && entity.interrupted == false; ++c)
                         {
@@ -168,7 +168,7 @@ namespace Framework.Caspar
                     }
                     catch (Exception e)
                     {
-                        Framework.Caspar.Api.Logger.Info(e);
+                        Caspar.Api.Logger.Info(e);
                     }
                     finally
                     {
@@ -206,10 +206,10 @@ namespace Framework.Caspar
             bool flags = false;
 
 
-            int[] maxs = new int[global::Framework.Caspar.Api.ThreadCount];
+            int[] maxs = new int[global::Caspar.Api.ThreadCount];
 
             //-------------------------------------
-            for (int i = 0; i < global::Framework.Caspar.Api.ThreadCount; ++i)
+            for (int i = 0; i < global::Caspar.Api.ThreadCount; ++i)
             {
                 int max = waitProcessEntities[i].Count;
                 TotalQueued += max;
@@ -223,7 +223,7 @@ namespace Framework.Caspar
                 flags = true;
             }
 
-            for (int i = 0; i < global::Framework.Caspar.Api.ThreadCount; ++i)
+            for (int i = 0; i < global::Caspar.Api.ThreadCount; ++i)
             {
                 Queued.Add((waitProcessEntities[i], maxs[i], DateTime.UtcNow));
             }
@@ -311,7 +311,7 @@ namespace Framework.Caspar
                     }
                     catch (Exception e)
                     {
-                        Framework.Caspar.Api.Logger.Error(e);
+                        Caspar.Api.Logger.Error(e);
                     }
                     finally
                     {

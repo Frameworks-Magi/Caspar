@@ -1,7 +1,7 @@
 using System;
 using System.Linq;
 
-namespace Framework.Caspar.Attributes
+namespace Caspar.Attributes
 {
     [AttributeUsage(AttributeTargets.Class)]
     public class Delegatable : Attribute
@@ -28,7 +28,7 @@ namespace Framework.Caspar.Attributes
         {
 
 
-            var caspar = typeof(Framework.Caspar.Api);
+            var caspar = typeof(Caspar.Api);
             var assembly = System.Reflection.Assembly.GetAssembly(caspar);
 
             var classes = (from asm in AppDomain.CurrentDomain.GetAssemblies()
@@ -37,19 +37,19 @@ namespace Framework.Caspar.Attributes
                            select type);
 
 
-            void listen(global::Framework.Caspar.Attributes.Delegatable delegatable, Type c)
+            void listen(global::Caspar.Attributes.Delegatable delegatable, Type c)
             {
                 {
-                    var type = assembly.GetType($"Framework.Caspar.Protocol.Delegator`1[[{c.FullName}, {c.Assembly.FullName}]]");
+                    var type = assembly.GetType($"Caspar.Protocol.Delegator`1[[{c.FullName}, {c.Assembly.FullName}]]");
                     var method = type.GetMethod("Listen", System.Reflection.BindingFlags.Static | System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.NonPublic, null, new Type[] { typeof(ushort) }, null);
                     method.Invoke(null, new object[] { delegatable.Port });
 
                 }
 
 
-                if (Framework.Caspar.Api.StandAlone == true) { return; }
+                if (Caspar.Api.StandAlone == true) { return; }
                 {
-                    var type = assembly.GetType($"Framework.Caspar.Protocol.Delegator`1+Listener[[{c.FullName}, {c.Assembly.FullName}]]");
+                    var type = assembly.GetType($"Caspar.Protocol.Delegator`1+Listener[[{c.FullName}, {c.Assembly.FullName}]]");
                     var listener = Activator.CreateInstance(type);
                     var method = listener.GetType().GetMethod("Run", new Type[] { });
                     method.Invoke(listener, new object[] { });
@@ -66,7 +66,7 @@ namespace Framework.Caspar.Attributes
                     foreach (var attribute in c.GetCustomAttributes(false))
                     {
 
-                        var delegatable = attribute as global::Framework.Caspar.Attributes.Delegatable;
+                        var delegatable = attribute as global::Caspar.Attributes.Delegatable;
                         if (delegatable == null)
                         {
                             continue;
@@ -83,18 +83,18 @@ namespace Framework.Caspar.Attributes
                                 listen(delegatable, c);
                             }
 
-                            if (Framework.Caspar.Api.StandAlone == true)
+                            if (Caspar.Api.StandAlone == true)
                             {
-                                var type = assembly.GetType($"Framework.Caspar.Protocol.Delegator`1[[{c.FullName}, {c.Assembly.FullName}]]");
+                                var type = assembly.GetType($"Caspar.Protocol.Delegator`1[[{c.FullName}, {c.Assembly.FullName}]]");
                                 var remoteType = c.Assembly.GetType(delegatable.RemoteType);
                                 var method = type.GetMethod("Create", System.Reflection.BindingFlags.Static | System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.NonPublic, null, new Type[] { typeof(long), typeof(bool) }, null);
-                                var delegator = method.Invoke(null, new object[] { (long)Framework.Caspar.Api.Idx, remoteType != null });
-                                (delegator as Framework.Caspar.Protocol.IDelegator).UID = Framework.Caspar.Api.Idx;
-                                (delegator as Framework.Caspar.Protocol.IDelegator).Connect("127.0.0.1", delegatable.Port);
+                                var delegator = method.Invoke(null, new object[] { (long)Caspar.Api.Idx, remoteType != null });
+                                (delegator as Caspar.Protocol.IDelegator).UID = Caspar.Api.Idx;
+                                (delegator as Caspar.Protocol.IDelegator).Connect("127.0.0.1", delegatable.Port);
                             }
                             else
                             {
-                                var type = assembly.GetType($"Framework.Caspar.Protocol.Delegator`1+Connector[[{c.FullName}, {c.Assembly.FullName}]]");
+                                var type = assembly.GetType($"Caspar.Protocol.Delegator`1+Connector[[{c.FullName}, {c.Assembly.FullName}]]");
                                 var connector = Activator.CreateInstance(type);
 
                                 connector.GetType().GetProperty("Port").SetValue(connector, delegatable.Port);

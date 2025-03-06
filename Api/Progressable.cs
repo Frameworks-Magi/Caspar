@@ -7,7 +7,7 @@ using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 
-namespace Framework.Caspar
+namespace Caspar
 {
     public static partial class Api
     {
@@ -161,5 +161,5 @@ namespace Framework.Caspar
             }
         }
     }
-    
+
 }

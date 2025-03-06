@@ -1,17 +1,17 @@
-﻿using Framework.Caspar;
+﻿using Caspar;
 using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
-using static Framework.Caspar.Api;
-using Framework.Caspar.Container;
+using static Caspar.Api;
+using Caspar.Container;
 using MySqlConnector;
 using Pipelines.Sockets.Unofficial;
 //using MySql.Data.MySqlClient;
 
-namespace Framework.Caspar.Database
+namespace Caspar.Database
 {
 
     public interface IParameterizable
@@ -71,7 +71,7 @@ namespace Framework.Caspar.Database
             public static void Update()
             {
                 long now = DateTime.UtcNow.Ticks;
-                if (Framework.Caspar.Api.Config.Deploy != "PD")
+                if (Caspar.Api.Config.Deploy != "PD")
                 {
                     ExpireAt = DateTime.UtcNow.AddSeconds(600).Ticks;
                 }
@@ -123,11 +123,11 @@ namespace Framework.Caspar.Database
             get
             {
                 Driver.Databases.TryGetValue("DynamoDB", out var connection);
-                return (connection as global::Framework.Caspar.Database.NoSql.DynamoDB).GetClient();
+                return (connection as global::Caspar.Database.NoSql.DynamoDB).GetClient();
             }
         }
 
-        public static global::Framework.Caspar.Database.NoSql.Redis Redis
+        public static global::Caspar.Database.NoSql.Redis Redis
         {
             get
             {
@@ -173,7 +173,7 @@ namespace Framework.Caspar.Database
 
             if (Layer.CurrentEntity.Value == null)
             {
-                UID = global::Framework.Caspar.Api.UniqueKey;
+                UID = global::Caspar.Api.UniqueKey;
                 Closer.Add(this);
             }
             else
@@ -422,13 +422,13 @@ namespace Framework.Caspar.Database
         public Amazon.DynamoDBv2.AmazonDynamoDBClient GetDynamoDB(string db = "DynamoDB")
         {
             Driver.Databases.TryGetValue(db, out var connection);
-            return (connection as global::Framework.Caspar.Database.NoSql.DynamoDB).GetClient();
+            return (connection as global::Caspar.Database.NoSql.DynamoDB).GetClient();
         }
 
         // public static Amazon.DynamoDBv2.AmazonDynamoDBClient GetDynamoDBClient(string db)
         // {
         //     Driver.Databases.TryGetValue(db, out var connection);
-        //     return (connection as Framework.Caspar.Database.NoSql.DynamoDB).GetClient();
+        //     return (connection as Caspar.Database.NoSql.DynamoDB).GetClient();
         // }
 
         public dynamic ResultSet { get; set; } = Singleton<Caspar.Database.ResultSet>.Instance;

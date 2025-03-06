@@ -10,10 +10,10 @@ using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.IdentityModel.Tokens;
-using static Framework.Caspar.Api;
+using static Caspar.Api;
 
 
-namespace Framework.Caspar.Google
+namespace Caspar.Google
 {
     public static class Api
     {

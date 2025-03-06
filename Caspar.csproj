@@ -2,8 +2,8 @@
 
   <PropertyGroup>
     <TargetFramework>net8.0</TargetFramework>
-    <AssemblyName>Framework.Caspar</AssemblyName>
-    <RootNamespace>Framework.Caspar</RootNamespace>
+    <AssemblyName>Caspar</AssemblyName>
+    <RootNamespace>Caspar</RootNamespace>
     <Configurations>Debug;Release</Configurations>
   </PropertyGroup>
 

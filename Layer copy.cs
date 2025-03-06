@@ -8,9 +8,9 @@
 // using System.Text;
 // using System.Threading;
 // using System.Threading.Tasks;
-// using static Framework.Caspar.Api;
+// using static Caspar.Api;
 
-// namespace Framework.Caspar
+// namespace Caspar
 // {
 //     public partial class Layer
 //     {
@@ -21,25 +21,25 @@
 
 //         internal ConcurrentDictionary<int, ConcurrentQueue<Entity>> waitProcessEntities = new ConcurrentDictionary<int, ConcurrentQueue<Entity>>();
 //         internal ConcurrentDictionary<int, ConcurrentQueue<Entity>> waitCloseEntities = new ConcurrentDictionary<int, ConcurrentQueue<Entity>>();
-//         internal static System.Threading.Tasks.ParallelOptions options = new System.Threading.Tasks.ParallelOptions() { MaxDegreeOfParallelism = global::Framework.Caspar.Api.ThreadCount };
+//         internal static System.Threading.Tasks.ParallelOptions options = new System.Threading.Tasks.ParallelOptions() { MaxDegreeOfParallelism = global::Caspar.Api.ThreadCount };
 
 //         internal static BlockingCollection<Layer> Layers = new();
 
 //         internal object pulse = new object();
 //         public Layer()
 //         {
-//             if (options.MaxDegreeOfParallelism != global::Framework.Caspar.Api.ThreadCount)
+//             if (options.MaxDegreeOfParallelism != global::Caspar.Api.ThreadCount)
 //             {
-//                 options = new System.Threading.Tasks.ParallelOptions() { MaxDegreeOfParallelism = global::Framework.Caspar.Api.ThreadCount };
+//                 options = new System.Threading.Tasks.ParallelOptions() { MaxDegreeOfParallelism = global::Caspar.Api.ThreadCount };
 //             }
 
-//             for (int i = 0; i < global::Framework.Caspar.Api.ThreadCount; ++i)
+//             for (int i = 0; i < global::Caspar.Api.ThreadCount; ++i)
 //             {
 //                 waitProcessEntities.TryAdd(i, new ConcurrentQueue<Entity>());
 //                 waitCloseEntities.TryAdd(i, new ConcurrentQueue<Entity>());
 //             }
 
-//             for (int i = 0; i < global::Framework.Caspar.Api.ThreadCount; ++i)
+//             for (int i = 0; i < global::Caspar.Api.ThreadCount; ++i)
 //             {
 //                 var t = new Thread((index) =>
 //                 {
@@ -63,7 +63,7 @@
 
 
 
-//             global::Framework.Caspar.Api.Add(this);
+//             global::Caspar.Api.Add(this);
 //         }
 
 //         public virtual void OnUpdate() { }
@@ -218,7 +218,7 @@
 //                     }
 //                     catch (Exception e)
 //                     {
-//                         Framework.Caspar.Api.Logger.Info(e);
+//                         Caspar.Api.Logger.Info(e);
 //                     }
 //                     finally
 //                     {
@@ -384,7 +384,7 @@
 //             //             }
 //             //             catch (Exception e)
 //             //             {
-//             //                 Framework.Caspar.Api.Logger.Info(e);
+//             //                 Caspar.Api.Logger.Info(e);
 //             //             }
 //             //             finally
 //             //             {
@@ -524,7 +524,7 @@
 //             //             }
 //             //             catch (Exception e)
 //             //             {
-//             //                 Framework.Caspar.Api.Logger.Info(e);
+//             //                 Caspar.Api.Logger.Info(e);
 //             //             }
 //             //             finally
 //             //             {
@@ -604,7 +604,7 @@
 //                     }
 //                     catch (Exception e)
 //                     {
-//                         Framework.Caspar.Api.Logger.Error(e);
+//                         Caspar.Api.Logger.Error(e);
 //                     }
 //                     finally
 //                     {

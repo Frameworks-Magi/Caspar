@@ -3,9 +3,9 @@ using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
-using static Framework.Caspar.Api;
+using static Caspar.Api;
 
-namespace Framework.Caspar.Container
+namespace Caspar.Container
 {
     public class ConcurrentHashSet<T> : ConcurrentDictionary<T, T>
     {

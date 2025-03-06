@@ -2,11 +2,11 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
-using static Framework.Caspar.Api;
+using static Caspar.Api;
 
-namespace Framework.Caspar.Container
+namespace Caspar.Container
 {
-    public class ConcurrentSortedList<K, T> where T : class, new() 
+    public class ConcurrentSortedList<K, T> where T : class, new()
     {
         protected System.Collections.Generic.SortedList<K, T> elements = new System.Collections.Generic.SortedList<K, T>();
         public int Count => elements.Count;
@@ -78,7 +78,7 @@ namespace Framework.Caspar.Container
                 elements.Add(uid, element);
                 return element;
             }
-            
+
         }
 
         public virtual T Pop(K uid)
@@ -89,7 +89,7 @@ namespace Framework.Caspar.Container
                 elements.Remove(uid, out element);
                 return element;
             }
-            
+
 
         }
         public virtual bool Remove(K uid)

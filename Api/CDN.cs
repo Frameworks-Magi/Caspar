@@ -8,7 +8,7 @@ using System.Threading.Tasks;
 //using Microsoft.WindowsAzure.Storage.Auth;
 //using Microsoft.WindowsAzure.Storage.Blob;
 using global::Amazon.CloudFront;
-using static Framework.Caspar.Api;
+using static Caspar.Api;
 using System.Net;
 using Amazon.S3;
 using Amazon;
@@ -16,7 +16,7 @@ using Aliyun.Acs.Core.Profile;
 using Aliyun.Acs.Core;
 using Aliyun.Acs.Cdn.Model.V20180510;
 
-namespace Framework.Caspar
+namespace Caspar
 {
     public static class CDN
     {
@@ -41,7 +41,7 @@ namespace Framework.Caspar
         public static string CFKeyId { get; set; } = "";
         public static CloudFrontPEM PEM { get; set; } = () =>
         {
-            return typeof(global::Framework.Caspar.Api).Assembly.GetManifestResourceStream("Framework.Caspar.Resources.pk-CloudFront.pem");
+            return typeof(global::Caspar.Api).Assembly.GetManifestResourceStream("Caspar.Resources.pk-CloudFront.pem");
         };
 
         public delegate Stream CloudFrontPEM();

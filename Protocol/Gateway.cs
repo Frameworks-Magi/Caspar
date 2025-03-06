@@ -6,7 +6,7 @@ using System.Net.Sockets;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace Framework.Caspar.Protocol
+namespace Caspar.Protocol
 {
     public class Gateway
     {
@@ -15,7 +15,7 @@ namespace Framework.Caspar.Protocol
             public string Ip { get; set; }
             public ushort Port { get; set; }
         }
-        private class Tcp : global::Framework.Caspar.Protocol.OldTcp
+        private class Tcp : global::Caspar.Protocol.OldTcp
         {
             public Tcp To { get; set; }
             protected override void Defragment(MemoryStream transferred)
@@ -44,7 +44,7 @@ namespace Framework.Caspar.Protocol
                     var msg = pendings.Dequeue();
                     switch (msg)
                     {
-                        case global::Framework.Caspar.ISerializable serializable:
+                        case global::Caspar.ISerializable serializable:
                             length += serializable.Length;
                             serializable.Serialize(stream);
                             break;
@@ -105,7 +105,7 @@ namespace Framework.Caspar.Protocol
                 From.Disconnect();
             };
 
-            From.To.Connect(global::Framework.Caspar.Api.UInt32ToIPAddress(ip), port);
+            From.To.Connect(global::Caspar.Api.UInt32ToIPAddress(ip), port);
             transferred.Seek(size, SeekOrigin.Begin);
             return 0;
         }
@@ -128,7 +128,7 @@ namespace Framework.Caspar.Protocol
 
         public static void Run(ushort port = 5881)
         {
-            global::Framework.Caspar.Api.Listen(port, 128, () =>
+            global::Caspar.Api.Listen(port, 128, () =>
             {
                 var gateway = new Gateway(port);
             });

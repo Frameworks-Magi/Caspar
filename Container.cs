@@ -2,9 +2,9 @@
 using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
-using static Framework.Caspar.Api;
+using static Caspar.Api;
 
-namespace Framework.Caspar.Container
+namespace Caspar.Container
 {
 
     public static class DictionaryExtension

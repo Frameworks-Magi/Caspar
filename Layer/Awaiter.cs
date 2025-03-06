@@ -5,9 +5,9 @@ using System.IO;
 using System.Linq;
 using System.Runtime.CompilerServices;
 using System.Text;
-using static Framework.Caspar.Api;
+using static Caspar.Api;
 
-namespace Framework.Caspar
+namespace Caspar
 {
     public static partial class Extension
     {
@@ -16,7 +16,7 @@ namespace Framework.Caspar
             return new Layer.Awaitable(task, entity);
         }
 
-        public static Layer.Awaitable Lock(this global::Framework.Caspar.Strand strand, Layer.Frame entity)
+        public static Layer.Awaitable Lock(this global::Caspar.Strand strand, Layer.Frame entity)
         {
             return new Layer.Awaitable(strand.task, entity, true);
         }
@@ -79,7 +79,7 @@ namespace Framework.Caspar
                 Frame entity { get; set; }
                 public Awaiter(System.Threading.Tasks.Task task, bool locked = false)
                 {
-                    entity = global::Framework.Caspar.Layer.CurrentEntity.Value;
+                    entity = global::Caspar.Layer.CurrentEntity.Value;
                     this.task = task;
                     if (entity == null)
                     {
@@ -174,7 +174,7 @@ namespace Framework.Caspar
                 public Awaiter(System.Threading.Tasks.Task<T> task, bool locked = false)
                 {
                     this.task = task;
-                    entity = global::Framework.Caspar.Layer.CurrentEntity.Value;
+                    entity = global::Caspar.Layer.CurrentEntity.Value;
                     if (entity == null)
                     {
                         Logger.Error(new StackTrace());

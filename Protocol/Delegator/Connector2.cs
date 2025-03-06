@@ -1,17 +1,17 @@
 using System;
 using System.Collections.Generic;
 using System.Text;
-using dbms = Framework.Caspar.Database.Management;
-using Framework.Caspar.Database;
-using Framework.Caspar;
+using dbms = Caspar.Database.Management;
+using Caspar.Database;
+using Caspar;
 using System.Threading.Tasks;
-using static Framework.Caspar.Extensions.Database;
+using static Caspar.Extensions.Database;
 
-namespace Framework.Caspar
+namespace Caspar
 {
     public static partial class Api
     {
-        public class Connector2 : Framework.Caspar.Scheduler
+        public class Connector2 : Caspar.Scheduler
         {
             public class Server
             {
@@ -35,8 +35,8 @@ namespace Framework.Caspar
                 {
                     get
                     {
-                        uint privateIp = Framework.Caspar.Api.IPAddressToUInt32(PrivateIp);
-                        uint publicIp = Framework.Caspar.Api.IPAddressToUInt32(PublicIp);
+                        uint privateIp = Caspar.Api.IPAddressToUInt32(PrivateIp);
+                        uint publicIp = Caspar.Api.IPAddressToUInt32(PublicIp);
                         return (long)publicIp << 32 | privateIp;
                     }
                 }
@@ -47,7 +47,7 @@ namespace Framework.Caspar
                 public string GetConnectionString()
                 {
 
-                    if (CloudPlatform.ToString() == (string)Framework.Caspar.Api.Config.CloudPlatform)
+                    if (CloudPlatform.ToString() == (string)Caspar.Api.Config.CloudPlatform)
                     {
                         return PrivateIp;
                     }
@@ -191,20 +191,20 @@ namespace Framework.Caspar
                 try
                 {
 
-                    if (Framework.Caspar.Api.StandAlone == true)
+                    if (Caspar.Api.StandAlone == true)
                     {
                         List<Server> servers = new List<Server>();
                         Server server = new Server();
-                        server.Provider = Framework.Caspar.Api.Config.Provider;
-                        server.Publish = Framework.Caspar.Api.Config.Publish;
-                        server.Region = Framework.Caspar.Api.Config.Region;
+                        server.Provider = Caspar.Api.Config.Provider;
+                        server.Publish = Caspar.Api.Config.Publish;
+                        server.Region = Caspar.Api.Config.Region;
 
                         server.Type = RemoteType;
-                        server.CloudPlatform = Framework.Caspar.Api.Config.CloudPlatform;
+                        server.CloudPlatform = Caspar.Api.Config.CloudPlatform;
 
                         // state
-                        server.PublicIp = Framework.Caspar.Api.PublicIp;
-                        server.PrivateIp = Framework.Caspar.Api.PrivateIp;
+                        server.PublicIp = Caspar.Api.PublicIp;
+                        server.PrivateIp = Caspar.Api.PrivateIp;
                         server.HeartBeat = DateTime.UtcNow;
 
                         server.Latitude = 0;
@@ -214,14 +214,14 @@ namespace Framework.Caspar
                         return;
                     }
 
-                    using var session = new Framework.Caspar.Database.Session();
+                    using var session = new Caspar.Database.Session();
 
 
                     var connection = await session.GetConnection(DB);
                     var command = connection.CreateCommand();
                     //Api.Region;
                     //Api.Country;
-                    //Framework.Caspar.Api.Config.CloudPlatform;
+                    //Caspar.Api.Config.CloudPlatform;
 
                     // 자신을 등록하고.
                     command.Parameters.Clear();
@@ -244,14 +244,14 @@ namespace Framework.Caspar
                         command.CommandText += $"ON DUPLICATE KEY ";
                         command.CommandText += $"UPDATE Platform = @platform, HeartBeat = @heartbeat, Latitude = @latitude, Longitude = @longitude;";
 
-                        command.Parameters.AddWithValue("@provider", Framework.Caspar.Api.Config.Provider);
-                        command.Parameters.AddWithValue("@publish", Framework.Caspar.Api.Config.Publish);
-                        command.Parameters.AddWithValue("@region", Framework.Caspar.Api.Config.Region);
+                        command.Parameters.AddWithValue("@provider", Caspar.Api.Config.Provider);
+                        command.Parameters.AddWithValue("@publish", Caspar.Api.Config.Publish);
+                        command.Parameters.AddWithValue("@region", Caspar.Api.Config.Region);
                         command.Parameters.AddWithValue("@type", ServerType.ToString());
-                        command.Parameters.AddWithValue("@platform", Framework.Caspar.Api.Config.CloudPlatform.ToString());
+                        command.Parameters.AddWithValue("@platform", Caspar.Api.Config.CloudPlatform.ToString());
                         command.Parameters.AddWithValue("@state", 1);
-                        command.Parameters.AddWithValue("@publicip", Framework.Caspar.Api.PublicIp);
-                        command.Parameters.AddWithValue("@privateip", Framework.Caspar.Api.PrivateIp);
+                        command.Parameters.AddWithValue("@publicip", Caspar.Api.PublicIp);
+                        command.Parameters.AddWithValue("@privateip", Caspar.Api.PrivateIp);
                         command.Parameters.AddWithValue("@heartbeat", DateTime.UtcNow);
                         command.Parameters.AddWithValue("@latitude", 0.0);
                         command.Parameters.AddWithValue("@longitude", 0.0);
@@ -264,9 +264,9 @@ namespace Framework.Caspar
 
                     //서버들을 받아온다.
                     command.Parameters.Clear();
-                    command.CommandText = $"SELECT * FROM `caspar`.`Server` WHERE Provider = '{Framework.Caspar.Api.Config.Provider}' AND Type = '{RemoteType.ToString()}';";
-                    // command.CommandText += $"SELECT * FROM `caspar`.`Server` WHERE Provider = '{Framework.Caspar.Api.Config.Provider}' AND Type = '{Schema.Protobuf.CSharp.Enums.EServer.Gateway.ToString()}';";
-                    // command.CommandText += $"SELECT * FROM `caspar`.`Server` WHERE Provider = '{Framework.Caspar.Api.Config.Provider}' AND Type = '{Schema.Protobuf.CSharp.Enums.EServer.Bridge.ToString()}';";
+                    command.CommandText = $"SELECT * FROM `caspar`.`Server` WHERE Provider = '{Caspar.Api.Config.Provider}' AND Type = '{RemoteType.ToString()}';";
+                    // command.CommandText += $"SELECT * FROM `caspar`.`Server` WHERE Provider = '{Caspar.Api.Config.Provider}' AND Type = '{Schema.Protobuf.CSharp.Enums.EServer.Gateway.ToString()}';";
+                    // command.CommandText += $"SELECT * FROM `caspar`.`Server` WHERE Provider = '{Caspar.Api.Config.Provider}' AND Type = '{Schema.Protobuf.CSharp.Enums.EServer.Bridge.ToString()}';";
                     session.ResultSet = (await command.ExecuteReaderAsync()).ToResultSet();
 
 
@@ -279,7 +279,7 @@ namespace Framework.Caspar
                         List<Server> bridges = new List<Server>();
 
 
-                        Framework.Caspar.Database.ResultSet resultSet = session.ResultSet;
+                        Caspar.Database.ResultSet resultSet = session.ResultSet;
 
                         foreach (var row in resultSet[0])
                         {
@@ -365,7 +365,7 @@ namespace Framework.Caspar
                 }
                 catch (Exception e)
                 {
-                    Framework.Caspar.Api.Logger.Error(e);
+                    Caspar.Api.Logger.Error(e);
                 }
                 finally
                 {

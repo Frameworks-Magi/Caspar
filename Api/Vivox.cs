@@ -9,7 +9,7 @@ using Newtonsoft.Json;
 using System.Net;
 using System.Xml;
 
-namespace Framework.Caspar
+namespace Caspar
 {
     static public partial class Api
     {

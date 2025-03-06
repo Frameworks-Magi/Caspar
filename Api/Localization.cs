@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Text;
 
-namespace Framework.Caspar
+namespace Caspar
 {
     public static partial class Api
     {
@@ -72,7 +72,7 @@ namespace Framework.Caspar
                 {
 
                 }
-                
+
             }
 
             public static string Localize((string, string) code, string key)
@@ -98,5 +98,5 @@ namespace Framework.Caspar
 
         }
     }
-    
+
 }

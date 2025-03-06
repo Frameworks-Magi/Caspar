@@ -11,7 +11,7 @@ using System.IO.Compression;
 using System.Threading.Tasks;
 using Amazon.Runtime.Internal.Util;
 
-namespace Framework.Caspar.Protocol
+namespace Caspar.Protocol
 {
     public class OldTcp
     {
@@ -79,17 +79,17 @@ namespace Framework.Caspar.Protocol
         {
             if (socket != null)
             {
-                global::Framework.Caspar.Api.Logger.Info("!!!!!!!!!!!!!!! Accept Listen Fail socket == null !!!!!!!!!!!!!!");
+                global::Caspar.Api.Logger.Info("!!!!!!!!!!!!!!! Accept Listen Fail socket == null !!!!!!!!!!!!!!");
                 return false;
             }
-            if (global::Framework.Caspar.Api.IsOpen == false) return false;
+            if (global::Caspar.Api.IsOpen == false) return false;
 
             this.port = port;
 
-            Socket listen = global::Framework.Caspar.Api.Acceptor(port);
+            Socket listen = global::Caspar.Api.Acceptor(port);
             if (listen == null)
             {
-                global::Framework.Caspar.Api.Logger.Info("!!!!!!!!!!!!!!! Accept Listen Fail listen == null !!!!!!!!!!!!!!");
+                global::Caspar.Api.Logger.Info("!!!!!!!!!!!!!!! Accept Listen Fail listen == null !!!!!!!!!!!!!!");
                 return false;
             }
 
@@ -100,13 +100,13 @@ namespace Framework.Caspar.Protocol
             }
             catch (Exception e)
             {
-                global::Framework.Caspar.Api.Logger.Info("!!!!!!!!!!!!!!! Accept Listen Fail !!!!!!!!!!!!!!\n" + e);
+                global::Caspar.Api.Logger.Info("!!!!!!!!!!!!!!! Accept Listen Fail !!!!!!!!!!!!!!\n" + e);
             }
             return false;
         }
         public bool Connect(string ip, ushort port)
         {
-            if (global::Framework.Caspar.Api.IsOpen == false) return false;
+            if (global::Caspar.Api.IsOpen == false) return false;
             try
             {
                 lock (this)
@@ -122,7 +122,7 @@ namespace Framework.Caspar.Protocol
             }
             catch (Exception e)
             {
-                global::Framework.Caspar.Api.Logger.Debug(e);
+                global::Caspar.Api.Logger.Debug(e);
                 Disconnect();
             }
             return false;
@@ -177,7 +177,7 @@ namespace Framework.Caspar.Protocol
         }
 
         protected Queue<object> pendings = new Queue<object>();
-        public bool Write(global::Framework.Caspar.ISerializable msg)
+        public bool Write(global::Caspar.ISerializable msg)
         {
 
 
@@ -193,8 +193,8 @@ namespace Framework.Caspar.Protocol
                 }
                 catch (Exception)
                 {
-                    //Framework.Caspar.Api.Logger.Error(e);
-                    //Framework.Caspar.Api.Logger.Verbose($"Ip = {IP}, Port = {Port}");
+                    //Caspar.Api.Logger.Error(e);
+                    //Caspar.Api.Logger.Verbose($"Ip = {IP}, Port = {Port}");
                 }
 
             }
@@ -235,7 +235,7 @@ namespace Framework.Caspar.Protocol
                 var msg = pendings.Dequeue();
                 switch (msg)
                 {
-                    case global::Framework.Caspar.ISerializable serializable:
+                    case global::Caspar.ISerializable serializable:
                         length += serializable.Length;
                         serializable.Serialize(stream);
                         break;
@@ -248,7 +248,7 @@ namespace Framework.Caspar.Protocol
                         }
                         catch (Exception e)
                         {
-                            global::Framework.Caspar.Api.Logger.Debug(e);
+                            global::Caspar.Api.Logger.Debug(e);
                             Disconnect();
                         }
                         break;
@@ -406,7 +406,7 @@ namespace Framework.Caspar.Protocol
             }
             catch (Exception e)
             {
-                //Framework.Caspar.Api.Logger.Debug(e);
+                //Caspar.Api.Logger.Debug(e);
                 state = (int)EState.Closed;
                 try
                 {
@@ -423,7 +423,7 @@ namespace Framework.Caspar.Protocol
             }
             finally
             {
-                global::Framework.Caspar.Api.Listen(port);
+                global::Caspar.Api.Listen(port);
             }
 
 
@@ -457,7 +457,7 @@ namespace Framework.Caspar.Protocol
             }
             catch (Exception e)
             {
-                global::Framework.Caspar.Api.Logger.Debug(e);
+                global::Caspar.Api.Logger.Debug(e);
             }
             state = (int)EState.Closed;
             OnConnect(false);
@@ -477,7 +477,7 @@ namespace Framework.Caspar.Protocol
                 blockSize = BitConverter.ToInt32(buffer, readBytes);
                 if (blockSize < 1 || blockSize > RecvBufferSize)
                 {
-                    //global::Framework.Caspar.Api.Logger.Error($"Recv huge packet. BlockSize : {blockSize} - {this.GetType().FullName} @{RemoteEndPoint} - [{IP}-{Port}]");
+                    //global::Caspar.Api.Logger.Error($"Recv huge packet. BlockSize : {blockSize} - {this.GetType().FullName} @{RemoteEndPoint} - [{IP}-{Port}]");
                     transferred.Seek(transferred.Length, SeekOrigin.Begin);
                     Disconnect();
                     return;
@@ -532,7 +532,7 @@ namespace Framework.Caspar.Protocol
                 }
                 catch (Exception e)
                 {
-                    global::Framework.Caspar.Api.Logger.Info("OnRead Exception " + e);
+                    global::Caspar.Api.Logger.Info("OnRead Exception " + e);
                 }
 
 
@@ -688,7 +688,7 @@ namespace Framework.Caspar.Protocol
             }
             catch (Exception e)
             {
-                global::Framework.Caspar.Api.Logger.Debug(e);
+                global::Caspar.Api.Logger.Debug(e);
             }
 
             Disconnect();

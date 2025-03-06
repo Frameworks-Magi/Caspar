@@ -1,5 +1,5 @@
 ﻿using Amazon.Auth.AccessControlPolicy.ActionIdentifiers;
-using Framework.Caspar;
+using Caspar;
 using Microsoft.CSharp;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
@@ -27,11 +27,11 @@ using System.Net.Sockets;
 using Amazon;
 using Amazon.DynamoDBv2.DataModel;
 using Amazon.DynamoDBv2.DocumentModel;
-using Framework.Caspar.Container;
+using Caspar.Container;
 using Amazon.S3;
 using System.Net.Http;
 
-namespace Framework.Caspar
+namespace Caspar
 {
     static public partial class Api
     {
@@ -48,10 +48,10 @@ namespace Framework.Caspar
                 }
             }
         }
-        public static uint MaxSession = (uint)global::Framework.Caspar.Api.ThreadCount;
-        // public static async Task QueryAsync(Func<global::Framework.Caspar.Database.Session, Task> func)
+        public static uint MaxSession = (uint)global::Caspar.Api.ThreadCount;
+        // public static async Task QueryAsync(Func<global::Caspar.Database.Session, Task> func)
         // {
-        //     var session = new global::Framework.Caspar.Database.Session();
+        //     var session = new global::Caspar.Database.Session();
         //     session.Command = async () => { await func(session); };
         //     session.TCS = new();
 
@@ -105,26 +105,26 @@ namespace Framework.Caspar
         internal static void StartUpDatabase()
         {
 
-            if (global::Framework.Caspar.Api.Config.Databases.MaxSession == null)
+            if (global::Caspar.Api.Config.Databases.MaxSession == null)
             {
-                global::Framework.Caspar.Api.Config.Databases.MaxSession = global::Framework.Caspar.Api.ThreadCount;
+                global::Caspar.Api.Config.Databases.MaxSession = global::Caspar.Api.ThreadCount;
             }
 
-            Api.MaxSession = (uint)global::Framework.Caspar.Api.Config.Databases.MaxSession;
+            Api.MaxSession = (uint)global::Caspar.Api.Config.Databases.MaxSession;
 
             if (Api.MaxSession < 16)
             {
-                global::Framework.Caspar.Api.Config.Databases.MaxSession = 16;
+                global::Caspar.Api.Config.Databases.MaxSession = 16;
             }
 
-            if (global::Framework.Caspar.Api.Config.Deploy == "QA")
+            if (global::Caspar.Api.Config.Deploy == "QA")
             {
-                global::Framework.Caspar.Api.Config.Databases.MaxSession = 8;
+                global::Caspar.Api.Config.Databases.MaxSession = 8;
             }
 
-            dynamic config = global::Framework.Caspar.Api.Config;
+            dynamic config = global::Caspar.Api.Config;
 
-            Logger.Info($"Database Session Max = {Framework.Caspar.Api.Config.Databases.MaxSession}");
+            Logger.Info($"Database Session Max = {Caspar.Api.Config.Databases.MaxSession}");
 
             try
             {
@@ -138,7 +138,7 @@ namespace Framework.Caspar
                     }
                     else
                     {
-                        var driver = new global::Framework.Caspar.Database.Management.Relational.MySql();
+                        var driver = new global::Caspar.Database.Management.Relational.MySql();
                         driver.Ip = json.Ip;
                         driver.Port = json.Port;
                         driver.Id = json.Id;
@@ -160,8 +160,8 @@ namespace Framework.Caspar
 
                         if (json.Crypt == true)
                         {
-                            driver.Id = global::Framework.Caspar.Api.DesDecrypt(driver.Id, "magimagi");
-                            driver.Pw = global::Framework.Caspar.Api.DesDecrypt(driver.Pw, "magimagi");
+                            driver.Id = global::Caspar.Api.DesDecrypt(driver.Id, "magimagi");
+                            driver.Pw = global::Caspar.Api.DesDecrypt(driver.Pw, "magimagi");
                         }
 
                         try
@@ -192,7 +192,7 @@ namespace Framework.Caspar
                 }
                 else
                 {
-                    var driver = new global::Framework.Caspar.Database.Management.Relational.MsSql();
+                    var driver = new global::Caspar.Database.Management.Relational.MsSql();
                     driver.Ip = session.Ip;
                     driver.Port = session.Port;
                     driver.Id = session.Id;
@@ -226,7 +226,7 @@ namespace Framework.Caspar
                     }
                     else
                     {
-                        var driver = new global::Framework.Caspar.Database.NoSql.Redis();
+                        var driver = new global::Caspar.Database.NoSql.Redis();
 
                         driver.Id = session.Id;
                         driver.Pw = session.Pw;
@@ -275,7 +275,7 @@ namespace Framework.Caspar
                 }
                 else
                 {
-                    var driver = new global::Framework.Caspar.Database.NoSql.DynamoDB();
+                    var driver = new global::Caspar.Database.NoSql.DynamoDB();
 
                     driver.Name = session.Name;
                     driver.AwsAccessKeyId = config.AWS.Access.KeyId;
@@ -298,11 +298,11 @@ namespace Framework.Caspar
             //{
             //    var cosmos = root["Cosmos"];
 
-            //    var driver = new Framework.Caspar.Database.Management.Azure.Cosmos();
+            //    var driver = new Caspar.Database.Management.Azure.Cosmos();
 
             //    driver.EndPoint = cosmos.Attributes["EndPoint"].Value;
             //    driver.Name = cosmos.Attributes["Name"].Value;
-            //    Framework.Caspar.Database.Management.Driver.AddSession(driver.Name, driver);
+            //    Caspar.Database.Management.Driver.AddSession(driver.Name, driver);
 
             //}
 
@@ -360,13 +360,13 @@ namespace Framework.Caspar
         public delegate void ListenCallback();
 
         public delegate void OnDisconnectCallback();
-        //   static internal ConcurrentQueue<Framework.Caspar.Network.Protocol.Tcp.AsyncDisconnectCallback> OnDisconnectCallbacks = new ConcurrentQueue<Protocol.Tcp.AsyncDisconnectCallback>();
+        //   static internal ConcurrentQueue<Caspar.Network.Protocol.Tcp.AsyncDisconnectCallback> OnDisconnectCallbacks = new ConcurrentQueue<Protocol.Tcp.AsyncDisconnectCallback>();
 
 
         static internal Socket Acceptor(ushort port)
         {
 
-            if (global::Framework.Caspar.Api.IsOpen == false) return null;
+            if (global::Caspar.Api.IsOpen == false) return null;
             Socket socket;
             if (listeners.TryGetValue(port, out socket) == true)
             {
@@ -397,7 +397,7 @@ namespace Framework.Caspar
         static public void Listen(ushort port)
         {
 
-            if (global::Framework.Caspar.Api.IsOpen == false) return;
+            if (global::Caspar.Api.IsOpen == false) return;
             ListenCallback callback = null;
             if (listenCallbacks.TryGetValue(port, out callback) == true)
             {
@@ -429,7 +429,7 @@ namespace Framework.Caspar
         static public bool Listen(ushort port, ushort backlog, ListenCallback callback)
         {
 
-            if (global::Framework.Caspar.Api.IsOpen == false) return false;
+            if (global::Caspar.Api.IsOpen == false) return false;
 
             if (listenCallbacks.ContainsKey(port) == true)
             {
@@ -475,7 +475,7 @@ namespace Framework.Caspar
         public static partial class Terminal
         {
 
-            public static void Notify(global::Framework.Caspar.INotifier notifier, string message, bool newLine = true)
+            public static void Notify(global::Caspar.INotifier notifier, string message, bool newLine = true)
             {
                 if (notifier == null) { return; }
                 Protocol.Terminal.Message msg = new Protocol.Terminal.Message();
@@ -487,7 +487,7 @@ namespace Framework.Caspar
                 notifier.Notify(msg);
             }
 
-            public static void Complete(global::Framework.Caspar.INotifier notifier, string message)
+            public static void Complete(global::Caspar.INotifier notifier, string message)
             {
                 if (notifier == null) { return; }
                 Protocol.Terminal.Message msg = new Protocol.Terminal.Message();
@@ -497,7 +497,7 @@ namespace Framework.Caspar
                 notifier.Notify(msg);
             }
 
-            public static void Error(global::Framework.Caspar.INotifier notifier, string message, bool newLine = true)
+            public static void Error(global::Caspar.INotifier notifier, string message, bool newLine = true)
             {
                 if (notifier == null) { return; }
                 Protocol.Terminal.Message msg = new Protocol.Terminal.Message();
@@ -509,7 +509,7 @@ namespace Framework.Caspar
                 notifier.Notify(msg);
             }
 
-            public static void Command(global::Framework.Caspar.INotifier notifier, string message)
+            public static void Command(global::Caspar.INotifier notifier, string message)
             {
                 if (notifier == null) { return; }
                 Protocol.Terminal.Message msg = new Protocol.Terminal.Message();
@@ -537,7 +537,7 @@ namespace Framework.Caspar
 
             public static async Task Run(List<Protocol.Terminal.Callback> callbacks)
             {
-                async Task<bool> ProcessCommand(global::Framework.Caspar.INotifier notifier, Protocol.Terminal.Message msg)
+                async Task<bool> ProcessCommand(global::Caspar.INotifier notifier, Protocol.Terminal.Message msg)
                 {
                     try
                     {
@@ -564,14 +564,14 @@ namespace Framework.Caspar
 
                     while (Exit == false)
                     {
-                        if (global::Framework.Caspar.Api.Config.Service == true) { System.Threading.Thread.Sleep(1000); continue; }
+                        if (global::Caspar.Api.Config.Service == true) { System.Threading.Thread.Sleep(1000); continue; }
                         if (Api.Terminal.IsCommandable > DateTime.UtcNow)
                         {
                             System.Threading.Thread.Sleep(1);
                             continue;
                         }
 
-                        if (global::Framework.Caspar.Api.Logger.Silence == false)
+                        if (global::Caspar.Api.Logger.Silence == false)
                         {
                             var tokens = Api.Terminal.CurrentTerminal.Split('@');
                             if (tokens != null && tokens.Length > 1)
@@ -629,7 +629,7 @@ namespace Framework.Caspar
 
         static public global::Google.Protobuf.ByteString ToByteStringWithCode<T>(this T msg) where T : global::Google.Protobuf.IMessage<T>
         {
-            return ToByteString(global::Framework.Caspar.Id<T>.Value, msg);
+            return ToByteString(global::Caspar.Id<T>.Value, msg);
         }
 
         static public global::Google.Protobuf.ByteString ToByteString<T>(int code, T msg) where T : global::Google.Protobuf.IMessage
@@ -702,7 +702,7 @@ namespace Framework.Caspar
 
         static public int ThreadCount { get; set; } = Math.Min(16, Math.Max(4, Convert.ToInt32(Math.Ceiling((Environment.ProcessorCount * 0.75) * 1.0))));
 
-        internal class Notifier : global::Framework.Caspar.INotifier
+        internal class Notifier : global::Caspar.INotifier
         {
             internal static Notifier Instance = new Notifier();
             public void Response<T>(T msg)
@@ -716,7 +716,7 @@ namespace Framework.Caspar
         }
 
 
-        public static void Add(global::Framework.Caspar.Layer layer)
+        public static void Add(global::Caspar.Layer layer)
         {
             lock (waitLayers)
             {
@@ -725,8 +725,8 @@ namespace Framework.Caspar
             }
 
         }
-        private static List<global::Framework.Caspar.Layer> layers = new List<Caspar.Layer>();
-        private static List<global::Framework.Caspar.Layer> waitLayers = new List<Caspar.Layer>();
+        private static List<global::Caspar.Layer> layers = new List<Caspar.Layer>();
+        private static List<global::Caspar.Layer> waitLayers = new List<Caspar.Layer>();
         public class Watcher
         {
             private FileSystemWatcher watcher;
@@ -1046,11 +1046,11 @@ namespace Framework.Caspar
         private static async Task LayerUpdate()
         {
 
-            //Framework.Caspar.Layers.Action actionLayer = new Framework.Caspar.Layers.Action();
-            //Framework.Caspar.Layers.Entity entityLayer = new Framework.Caspar.Layers.Entity();
-            //Framework.Caspar.Layers.Mediator mediatorLayer = new Framework.Caspar.Layers.Mediator();
-            //Framework.Caspar.Layers.Job jobLayer = new Framework.Caspar.Layers.Job();
-            //Framework.Caspar.Layers.Rpc rpcLayer = new Framework.Caspar.Layers.Rpc();
+            //Caspar.Layers.Action actionLayer = new Caspar.Layers.Action();
+            //Caspar.Layers.Entity entityLayer = new Caspar.Layers.Entity();
+            //Caspar.Layers.Mediator mediatorLayer = new Caspar.Layers.Mediator();
+            //Caspar.Layers.Job jobLayer = new Caspar.Layers.Job();
+            //Caspar.Layers.Rpc rpcLayer = new Caspar.Layers.Rpc();
 
             var sw = Stopwatch.StartNew();
             while (isOpen)
@@ -1160,7 +1160,7 @@ namespace Framework.Caspar
                             if (dll == null) { continue; }
                             if (dll.ToLower() != ".dll" && dll.ToLower() != ".exe") { continue; }
 
-                            if (global::Framework.Caspar.Attributes.Override.IsContain(m.Name.ToLower()) == true) { continue; }
+                            if (global::Caspar.Attributes.Override.IsContain(m.Name.ToLower()) == true) { continue; }
 
                         }
                         catch (ArgumentException)
@@ -1193,7 +1193,7 @@ namespace Framework.Caspar
                 }
 
 
-                global::Framework.Caspar.Attributes.Override.AddReference(parameters);
+                global::Caspar.Attributes.Override.AddReference(parameters);
                 string overrideAssemblePath = System.IO.Path.Combine(Directory.GetCurrentDirectory());
                 var files = Directory.GetFiles(System.IO.Path.Combine(overrideAssemblePath, "Override"), "*.cs", SearchOption.AllDirectories);
 
@@ -1234,7 +1234,7 @@ namespace Framework.Caspar
                     foreach (var c in classes)
                     {
 
-                        var attribute = c.GetCustomAttribute(typeof(global::Framework.Caspar.Attributes.Override), false);
+                        var attribute = c.GetCustomAttribute(typeof(global::Caspar.Attributes.Override), false);
                         if (attribute == null) { continue; }
 
 
@@ -1347,7 +1347,7 @@ namespace Framework.Caspar
                                 if (dll == null) { continue; }
                                 if (dll.ToLower() != ".dll" && dll.ToLower() != ".exe") { continue; }
 
-                                if (global::Framework.Caspar.Attributes.Override.IsContain(m.Name.ToLower()) == true) { continue; }
+                                if (global::Caspar.Attributes.Override.IsContain(m.Name.ToLower()) == true) { continue; }
 
                             }
                             catch (ArgumentException)
@@ -1381,7 +1381,7 @@ namespace Framework.Caspar
                     }
 
 
-                    global::Framework.Caspar.Attributes.Override.AddReference(parameters);
+                    global::Caspar.Attributes.Override.AddReference(parameters);
                     string overrideAssemblePath = System.IO.Path.Combine(Directory.GetCurrentDirectory());
                     var files = Directory.GetFiles(System.IO.Path.Combine(overrideAssemblePath, "Override"), "*.cs", SearchOption.AllDirectories);
 
@@ -1426,7 +1426,7 @@ namespace Framework.Caspar
                         foreach (var c in classes)
                         {
 
-                            var attribute = c.GetCustomAttribute(typeof(global::Framework.Caspar.Attributes.Override), false);
+                            var attribute = c.GetCustomAttribute(typeof(global::Caspar.Attributes.Override), false);
                             if (attribute == null) { continue; }
 
 
@@ -1481,16 +1481,16 @@ namespace Framework.Caspar
                     XmlDocument doc = new XmlDocument();
                     doc.Load(configPath);
 
-                    global::Framework.Caspar.Attributes.Override.Clear();
+                    global::Caspar.Attributes.Override.Clear();
 
                     var root = doc.DocumentElement;
                     foreach (XmlElement e in root["Need"].ChildNodes)
                     {
-                        global::Framework.Caspar.Attributes.Override.AddReference(e.Attributes["Name"].Value);
+                        global::Caspar.Attributes.Override.AddReference(e.Attributes["Name"].Value);
                     }
                     foreach (XmlElement e in root["Ignore"].ChildNodes)
                     {
-                        global::Framework.Caspar.Attributes.Override.RemoveReference(e.Attributes["Name"].Value);
+                        global::Caspar.Attributes.Override.RemoveReference(e.Attributes["Name"].Value);
                     }
 
                 }
@@ -1540,16 +1540,16 @@ namespace Framework.Caspar
                     XmlDocument doc = new XmlDocument();
                     doc.Load(configPath);
 
-                    global::Framework.Caspar.Attributes.Override.Clear();
+                    global::Caspar.Attributes.Override.Clear();
 
                     var root = doc.DocumentElement;
                     foreach (XmlElement e in root["Need"].ChildNodes)
                     {
-                        global::Framework.Caspar.Attributes.Override.AddReference(e.Attributes["Name"].Value);
+                        global::Caspar.Attributes.Override.AddReference(e.Attributes["Name"].Value);
                     }
                     foreach (XmlElement e in root["Ignore"].ChildNodes)
                     {
-                        global::Framework.Caspar.Attributes.Override.RemoveReference(e.Attributes["Name"].Value);
+                        global::Caspar.Attributes.Override.RemoveReference(e.Attributes["Name"].Value);
                     }
 
                 }
@@ -1560,7 +1560,7 @@ namespace Framework.Caspar
 
             }
         };
-        public class MetadataWatcher : global::Framework.Caspar.Api.Watcher
+        public class MetadataWatcher : global::Caspar.Api.Watcher
         {
             public delegate void ReloadCallback(string path);
 
@@ -1604,12 +1604,12 @@ namespace Framework.Caspar
                             }
                             catch (IOException e)
                             {
-                                global::Framework.Caspar.Api.Logger.Debug(e);
+                                global::Caspar.Api.Logger.Debug(e);
                                 data.Enqueue(path);
                             }
                             catch (Exception e)
                             {
-                                global::Framework.Caspar.Api.Logger.Debug(e);
+                                global::Caspar.Api.Logger.Debug(e);
                                 OnCallback(path, false);
                             }
                         }
@@ -1621,13 +1621,13 @@ namespace Framework.Caspar
                                 foreach (var attribute in type.GetCustomAttributes(false))
                                 {
 
-                                    var metadata = attribute as global::Framework.Caspar.Attributes.Metadata;
+                                    var metadata = attribute as global::Caspar.Attributes.Metadata;
                                     if (metadata != null)
                                     {
 
                                         string loader = "LoadXml";
 
-                                        if (metadata.type == global::Framework.Caspar.Attributes.Metadata.Type.Json)
+                                        if (metadata.type == global::Caspar.Attributes.Metadata.Type.Json)
                                         {
                                             loader = "LoadJson";
                                         }
@@ -1657,12 +1657,12 @@ namespace Framework.Caspar
                             }
                             catch (IOException e)
                             {
-                                global::Framework.Caspar.Api.Logger.Debug(e);
+                                global::Caspar.Api.Logger.Debug(e);
                                 data.Enqueue(path);
                             }
                             catch (Exception e)
                             {
-                                global::Framework.Caspar.Api.Logger.Debug(e);
+                                global::Caspar.Api.Logger.Debug(e);
                                 OnCallback(path, false);
                             }
 
@@ -1690,7 +1690,7 @@ namespace Framework.Caspar
 
         public static string BuildVersion4Digit(string before)
         {
-            var date = global::Framework.Caspar.Api.KST;
+            var date = global::Caspar.Api.KST;
             int year = date.Year - 2000;
             int month = date.Month;
             int day = date.Day;
@@ -1749,9 +1749,9 @@ namespace Framework.Caspar
 
         // public static class Session
         // {
-        //     public static Framework.Caspar.Database.Session Create()
+        //     public static Caspar.Database.Session Create()
         //     {
-        //         return new Framework.Caspar.Database.Session();
+        //         return new Caspar.Database.Session();
         //     }
         // }
 
@@ -1873,7 +1873,7 @@ namespace Framework.Caspar
                 }
                 else
                 {
-                    uint ip = global::Framework.Caspar.Api.IPAddressToUInt32(PublicIp);
+                    uint ip = global::Caspar.Api.IPAddressToUInt32(PublicIp);
                     if (AllowDebugLog == true)
                     {
                         Debug = (object msg) =>
@@ -2038,12 +2038,12 @@ namespace Framework.Caspar
         {
             get
             {
-                if (global::Framework.Caspar.Api.Config.ServerStandardTime == null)
+                if (global::Caspar.Api.Config.ServerStandardTime == null)
                 {
                     return DateTime.UtcNow.ConvertTimeFromUtc("Korea Standard Time");
                 }
 
-                return UTC.ConvertTimeFromUtc((string)global::Framework.Caspar.Api.Config.ServerStandardTime);
+                return UTC.ConvertTimeFromUtc((string)global::Caspar.Api.Config.ServerStandardTime);
             }
         }
 
@@ -2071,15 +2071,15 @@ namespace Framework.Caspar
             }
             var connectionString = new MySql.Data.MySqlClient.MySqlConnectionStringBuilder();
 
-            dynamic db = global::Framework.Caspar.Api.Config.Databases.Caspar;
+            dynamic db = global::Caspar.Api.Config.Databases.Caspar;
 
             connectionString.UserID = db.Id;
             connectionString.Password = db.Pw;
 
             if (db.Crypt == true)
             {
-                connectionString.UserID = global::Framework.Caspar.Api.DesDecrypt(connectionString.UserID, "magimagi");
-                connectionString.Password = global::Framework.Caspar.Api.DesDecrypt(connectionString.Password, "magimagi");
+                connectionString.UserID = global::Caspar.Api.DesDecrypt(connectionString.UserID, "magimagi");
+                connectionString.Password = global::Caspar.Api.DesDecrypt(connectionString.Password, "magimagi");
             }
             connectionString.Server = db.Ip;
             try
@@ -2087,7 +2087,7 @@ namespace Framework.Caspar
 
                 if (db.IAM == true)
                 {
-                    var awsCredentials = new Amazon.Runtime.BasicAWSCredentials((string)global::Framework.Caspar.Api.Config.AWS.Access.KeyId, (string)global::Framework.Caspar.Api.Config.AWS.Access.SecretAccessKey);
+                    var awsCredentials = new Amazon.Runtime.BasicAWSCredentials((string)global::Caspar.Api.Config.AWS.Access.KeyId, (string)global::Caspar.Api.Config.AWS.Access.SecretAccessKey);
                     var pwd = Amazon.RDS.Util.RDSAuthTokenGenerator.GenerateAuthToken(awsCredentials, RegionEndpoint.APNortheast2, connectionString.Server, 3306, connectionString.UserID);
                     connectionString.Password = pwd;
                 }
@@ -2128,15 +2128,15 @@ namespace Framework.Caspar
                     command.CommandText += $"SELECT id FROM `caspar`.`deploy` WHERE `provider` = @provider AND `publish` = @publish AND `region` = @region AND `type` = '';";
                     command.CommandText += $"SELECT id FROM `caspar`.`deploy` WHERE `provider` = @provider AND `publish` = @publish AND `region` = @region AND `type` = @type;";
 
-                    command.Parameters.AddWithValue("@provider", (string)global::Framework.Caspar.Api.Config.Provider);
-                    command.Parameters.AddWithValue("@publish", (string)global::Framework.Caspar.Api.Config.Publish);
-                    command.Parameters.AddWithValue("@region", (string)global::Framework.Caspar.Api.Config.Region);
+                    command.Parameters.AddWithValue("@provider", (string)global::Caspar.Api.Config.Provider);
+                    command.Parameters.AddWithValue("@publish", (string)global::Caspar.Api.Config.Publish);
+                    command.Parameters.AddWithValue("@region", (string)global::Caspar.Api.Config.Region);
                     command.Parameters.AddWithValue("@type", ServerType);
                     command.Parameters.AddWithValue("@ip", PublicIp);
 
-                    Logger.Info($"Provider : {Framework.Caspar.Api.Config.Provider}");
-                    Logger.Info($"Publish : {Framework.Caspar.Api.Config.Publish}");
-                    Logger.Info($"Region : {Framework.Caspar.Api.Config.Region}");
+                    Logger.Info($"Provider : {Caspar.Api.Config.Provider}");
+                    Logger.Info($"Publish : {Caspar.Api.Config.Publish}");
+                    Logger.Info($"Region : {Caspar.Api.Config.Region}");
                     Logger.Info($"Type : {ServerType}");
                     Logger.Info($"IP : {PublicIp}");
                     using var reader = command.ExecuteReader();
@@ -2177,9 +2177,9 @@ namespace Framework.Caspar
                         command.CommandText += $"INSERT IGNORE INTO `caspar`.`deploy` (`provider`, `publish`, `region`, `type`, `ip`) VALUES (@provider, @publish, @region, '', @ip);";
                         command.CommandText += $"INSERT IGNORE INTO `caspar`.`deploy` (`provider`, `publish`, `region`, `type`, `ip`) VALUES (@provider, @publish, @region, @type, @ip);";
 
-                        command.Parameters.AddWithValue("@provider", (string)global::Framework.Caspar.Api.Config.Provider);
-                        command.Parameters.AddWithValue("@publish", (string)global::Framework.Caspar.Api.Config.Publish);
-                        command.Parameters.AddWithValue("@region", (string)global::Framework.Caspar.Api.Config.Region);
+                        command.Parameters.AddWithValue("@provider", (string)global::Caspar.Api.Config.Provider);
+                        command.Parameters.AddWithValue("@publish", (string)global::Caspar.Api.Config.Publish);
+                        command.Parameters.AddWithValue("@region", (string)global::Caspar.Api.Config.Region);
                         command.Parameters.AddWithValue("@type", ServerType);
                         command.Parameters.AddWithValue("@ip", PublicIp);
                         command.ExecuteNonQuery();
@@ -2191,9 +2191,9 @@ namespace Framework.Caspar
                         command.CommandText += $"UPDATE `caspar`.`deploy` SET `ip` = @ip WHERE `provider` = @provider AND `publish` = @publish AND `region` = '' AND `type` = '';";
                         command.CommandText += $"UPDATE `caspar`.`deploy` SET `ip` = @ip WHERE `provider` = @provider AND `publish` = @publish AND `region` = @region AND `type` = '';";
                         command.CommandText += $"UPDATE `caspar`.`deploy` SET `ip` = @ip WHERE `provider` = @provider AND `publish` = @publish AND `region` = @region AND `type` = @type;";
-                        command.Parameters.AddWithValue("@provider", (string)global::Framework.Caspar.Api.Config.Provider);
-                        command.Parameters.AddWithValue("@publish", (string)global::Framework.Caspar.Api.Config.Publish);
-                        command.Parameters.AddWithValue("@region", (string)global::Framework.Caspar.Api.Config.Region);
+                        command.Parameters.AddWithValue("@provider", (string)global::Caspar.Api.Config.Provider);
+                        command.Parameters.AddWithValue("@publish", (string)global::Caspar.Api.Config.Publish);
+                        command.Parameters.AddWithValue("@region", (string)global::Caspar.Api.Config.Region);
                         command.Parameters.AddWithValue("@type", ServerType);
                         command.Parameters.AddWithValue("@ip", PublicIp);
                         command.ExecuteNonQuery();
@@ -2283,11 +2283,11 @@ namespace Framework.Caspar
                 Logger.Info("StartUp Framework... local config");
                 var caspar = File.OpenText(Path.Combine(Directory.GetCurrentDirectory(), "Caspar.json"));
                 Config = JObject.Parse(caspar.ReadToEnd());
-                Framework.Caspar.Api.ServerType = Config.ServerType;
+                Caspar.Api.ServerType = Config.ServerType;
                 var field = typeof(RegionEndpoint).GetField((string)Config.AWS.S3.RegionEndpoint);
                 RegionEndpoint endpoint = (RegionEndpoint)field?.GetValue(null) ?? throw new Exception();
-                global::Framework.Caspar.CDN.S3Client = new AmazonS3Client((string)Config.AWS.S3.Key, (string)Config.AWS.S3.Secret, endpoint);
-                Framework.Caspar.CDN.Domain = (string)Config.AWS.S3.Domain;
+                global::Caspar.CDN.S3Client = new AmazonS3Client((string)Config.AWS.S3.Key, (string)Config.AWS.S3.Secret, endpoint);
+                Caspar.CDN.Domain = (string)Config.AWS.S3.Domain;
             }
             catch (System.IO.FileNotFoundException e)
             {
@@ -2302,7 +2302,7 @@ namespace Framework.Caspar
         public static async Task StartUpRemoteConfiguration(string[] args)
         {
             //cdn.Container = "hal";
-            global::Framework.Caspar.Api.Config = null;
+            global::Caspar.Api.Config = null;
             JObject json = null;
 
             Logger.Info("StartUp Framework... config");
@@ -2313,7 +2313,7 @@ namespace Framework.Caspar
                 {
                     if (e.ToLower().StartsWith("s3="))
                     {
-                        var task = await global::Framework.Caspar.CDN.Get($"{e.Split('=')[1]}.json");
+                        var task = await global::Caspar.CDN.Get($"{e.Split('=')[1]}.json");
 
                         json = JObject.Parse(new StreamReader(task).ReadToEnd());
                         break;
@@ -2419,7 +2419,7 @@ namespace Framework.Caspar
             {
                 Config.Silence = false;
                 Config.Service = false;
-                global::Framework.Caspar.Api.Config.Provider = $"{PublicIp}-{PrivateIp}";
+                global::Caspar.Api.Config.Provider = $"{PublicIp}-{PrivateIp}";
                 foreach (NetworkInterface ni in NetworkInterface.GetAllNetworkInterfaces())
                 {
                     if (ni.NetworkInterfaceType == NetworkInterfaceType.Wireless80211 || ni.NetworkInterfaceType == NetworkInterfaceType.Ethernet)
@@ -2428,16 +2428,16 @@ namespace Framework.Caspar
                         {
                             if (ip.Address.AddressFamily == System.Net.Sockets.AddressFamily.InterNetwork && ni.OperationalStatus == OperationalStatus.Up)
                             {
-                                global::Framework.Caspar.Api.Config.Publish = $"{ip.Address.ToString()}"; ;
+                                global::Caspar.Api.Config.Publish = $"{ip.Address.ToString()}"; ;
                             }
                         }
                     }
                 }
-                global::Framework.Caspar.Api.Config.Region = "KR";
-                global::Framework.Caspar.Api.ServerType = "StandAlone";
+                global::Caspar.Api.Config.Region = "KR";
+                global::Caspar.Api.ServerType = "StandAlone";
             }
 
-            global::Framework.Caspar.Api.Logger.Silence = (bool)Config.Silence;
+            global::Caspar.Api.Logger.Silence = (bool)Config.Silence;
             Logger.Info($"Public Ip : {PublicIp}");
             Logger.Info($"PrivateIp Ip : {PrivateIp}");
             Logger.Info($"ServiceIp Ip : {ServiceIp}");
@@ -2514,20 +2514,20 @@ namespace Framework.Caspar
         {
             try
             {
-                dynamic vivox = global::Framework.Caspar.Api.Config.Vivox;
-                global::Framework.Caspar.Api.Vivox.API = vivox.API;
-                global::Framework.Caspar.Api.Vivox.Domain = vivox.Domain;
-                global::Framework.Caspar.Api.Vivox.Issuer = vivox.Issuer;
-                global::Framework.Caspar.Api.Vivox.Secret = vivox.Secret;
-                global::Framework.Caspar.Api.Vivox.Admin = vivox.Admin;
-                global::Framework.Caspar.Api.Vivox.Password = vivox.Password;
+                dynamic vivox = global::Caspar.Api.Config.Vivox;
+                global::Caspar.Api.Vivox.API = vivox.API;
+                global::Caspar.Api.Vivox.Domain = vivox.Domain;
+                global::Caspar.Api.Vivox.Issuer = vivox.Issuer;
+                global::Caspar.Api.Vivox.Secret = vivox.Secret;
+                global::Caspar.Api.Vivox.Admin = vivox.Admin;
+                global::Caspar.Api.Vivox.Password = vivox.Password;
             }
             catch
             {
 
             }
 
-            global::Framework.Caspar.Api.Vivox.Key = Encoding.UTF8.GetBytes(global::Framework.Caspar.Api.Vivox.Secret);
+            global::Caspar.Api.Vivox.Key = Encoding.UTF8.GetBytes(global::Caspar.Api.Vivox.Secret);
 
         }
 
@@ -2546,7 +2546,7 @@ namespace Framework.Caspar
             ThreadPool.SetMaxThreads(64, 64);
             ThreadPool.SetMinThreads(8, 8);
 
-            global::Framework.Caspar.Attributes.Override.StartUp();
+            global::Caspar.Attributes.Override.StartUp();
             AppDomain.CurrentDomain.UnhandledException += App_UnhandledException;
 
             TaskScheduler.UnobservedTaskException += OnUnobservedTaskException;
@@ -2571,7 +2571,7 @@ namespace Framework.Caspar
                     foreach (var attribute in c.GetCustomAttributes(false))
                     {
 
-                        var startUp = attribute as global::Framework.Caspar.Attributes.StartUp;
+                        var startUp = attribute as global::Caspar.Attributes.StartUp;
                         if (startUp != null)
                         {
                             attributes.Add(new KeyValuePair<int, System.Type>(startUp.Priority, c));
@@ -2585,8 +2585,8 @@ namespace Framework.Caspar
             }
 
 
-            global::Framework.Caspar.Attributes.GenerateId.StartUp();
-            global::Framework.Caspar.Attributes.Initialize.StartUp();
+            global::Caspar.Attributes.GenerateId.StartUp();
+            global::Caspar.Attributes.Initialize.StartUp();
 
             var list = attributes.OrderBy(x => x.Key).ToList();
             foreach (var c in list)
@@ -2602,15 +2602,15 @@ namespace Framework.Caspar
 
                 string pem = (string)Config.AWS.CloudFront.PEM;
                 var bytes = Encoding.UTF8.GetBytes(pem);
-                Framework.Caspar.CDN.PEM = () =>
+                Caspar.CDN.PEM = () =>
                 {
                     return new MemoryStream(bytes);
                 };
 
-                global::Framework.Caspar.CDN.CloudFront = (string)Config.AWS.CloudFront.Domain;
-                global::Framework.Caspar.CDN.CFKeyId = (string)Config.AWS.CloudFront.Key;
+                global::Caspar.CDN.CloudFront = (string)Config.AWS.CloudFront.Domain;
+                global::Caspar.CDN.CFKeyId = (string)Config.AWS.CloudFront.Key;
 
-                //    await global::Framework.Caspar.CDN.Get($"QA/Lobby/24.12.18.00", "temp");
+                //    await global::Caspar.CDN.Get($"QA/Lobby/24.12.18.00", "temp");
 
 
             }
@@ -2621,12 +2621,12 @@ namespace Framework.Caspar
 
             try
             {
-                string keyId = (string)global::Framework.Caspar.Api.Config.AWS.Access.KeyId;
-                string secretAccessKey = (string)global::Framework.Caspar.Api.Config.AWS.Access.SecretAccessKey;
+                string keyId = (string)global::Caspar.Api.Config.AWS.Access.KeyId;
+                string secretAccessKey = (string)global::Caspar.Api.Config.AWS.Access.SecretAccessKey;
 
                 try
                 {
-                    JObject s3 = global::Framework.Caspar.Api.Config.AWS.S3;
+                    JObject s3 = global::Caspar.Api.Config.AWS.S3;
                     foreach (dynamic e in s3.Children())
                     {
                         try
@@ -2636,7 +2636,7 @@ namespace Framework.Caspar
                             {
                                 continue;
                             }
-                            Framework.Caspar.Platform.AWS.S3.Add(e.Name, new Platform.AWS.S3()
+                            Caspar.Platform.AWS.S3.Add(e.Name, new Platform.AWS.S3()
                             {
                                 KeyId = keyId,
                                 SecretAccessKey = secretAccessKey,
@@ -2658,7 +2658,7 @@ namespace Framework.Caspar
 
                 try
                 {
-                    JObject sqs = global::Framework.Caspar.Api.Config.AWS.SQS;
+                    JObject sqs = global::Caspar.Api.Config.AWS.SQS;
                     foreach (dynamic e in sqs.Children())
                     {
                         try
@@ -2669,7 +2669,7 @@ namespace Framework.Caspar
                                 continue;
                             }
 
-                            Framework.Caspar.Platform.AWS.SQS.Add(e.Name, new Platform.AWS.SQS()
+                            Caspar.Platform.AWS.SQS.Add(e.Name, new Platform.AWS.SQS()
                             {
                                 KeyId = keyId,
                                 SecretAccessKey = secretAccessKey,

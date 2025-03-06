@@ -5,7 +5,7 @@ using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 
-namespace Framework.Caspar.Database.NoSql
+namespace Caspar.Database.NoSql
 {
     public class Cosmos : IConnection
     {

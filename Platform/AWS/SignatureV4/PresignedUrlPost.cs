@@ -10,7 +10,7 @@ using Newtonsoft.Json.Linq;
 using NSec.Cryptography;
 
 
-namespace Framework.Caspar.Platform
+namespace Caspar.Platform
 {
     public static partial class AWS
     {

@@ -1,11 +1,11 @@
 ﻿using System;
 using System.Collections.Concurrent;
 using System.Threading.Tasks;
-using static Framework.Caspar.Api;
+using static Caspar.Api;
 
-namespace Framework.Caspar
+namespace Caspar
 {
-    public class Scheduler : global::Framework.Caspar.Layer.Frame
+    public class Scheduler : global::Caspar.Layer.Frame
     {
         //internal static ConcurrentBag<Scheduler> Elements { get; } = new();
         //internal static System.Collections.Generic.List<Scheduler> Elements { get; } = new();
@@ -14,7 +14,7 @@ namespace Framework.Caspar
         }
 
 
-        public Scheduler() : base(Singleton<global::Framework.Caspar.Layer>.Instance)
+        public Scheduler() : base(Singleton<global::Caspar.Layer>.Instance)
         {
 
         }
@@ -64,7 +64,7 @@ namespace Framework.Caspar
             timer.Enabled = true;
 
             //if (millisecond != 4000) { return; }
-            // Next = Framework.Caspar.Api.KST.AddMilliseconds(millisecond).Ticks;
+            // Next = Caspar.Api.KST.AddMilliseconds(millisecond).Ticks;
             Next = DateTime.UtcNow.AddMilliseconds(millisecond).Ticks;
             interval = millisecond;
 

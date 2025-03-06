@@ -1,4 +1,4 @@
-﻿using Framework.Caspar;
+﻿using Caspar;
 using Newtonsoft.Json;
 using System;
 using System.Collections.Generic;
@@ -7,9 +7,9 @@ using System.Net;
 using System.Net.Http;
 using System.Text;
 using System.Threading.Tasks;
-using static Framework.Caspar.Api;
+using static Caspar.Api;
 
-namespace Framework.Caspar.Platform
+namespace Caspar.Platform
 {
     public class Steam
     {
@@ -17,15 +17,15 @@ namespace Framework.Caspar.Platform
         //public const string WebApiBaseUrl = "https://api.steampowered.com/";
         public const string WebApiPartnerUrl = "https://partner.steam-api.com/";
 
-        // public static string AppId => Framework.Caspar.Api.Config.Steam[(string)Config.Deploy].AppId;
-        // public static string MicroTxn => Framework.Caspar.Api.Config.Steam[(string)Config.Deploy].MicroTxn;
-        // //public static string MicroTxn => Framework.Caspar.Api.Config.Steam[(string)"PD"].MicroTxn;
-        // public static string ApiKey => Framework.Caspar.Api.Config.Steam[(string)Config.Deploy].ApiKey;
+        // public static string AppId => Caspar.Api.Config.Steam[(string)Config.Deploy].AppId;
+        // public static string MicroTxn => Caspar.Api.Config.Steam[(string)Config.Deploy].MicroTxn;
+        // //public static string MicroTxn => Caspar.Api.Config.Steam[(string)"PD"].MicroTxn;
+        // public static string ApiKey => Caspar.Api.Config.Steam[(string)Config.Deploy].ApiKey;
 
-        public static string AppId => global::Framework.Caspar.Api.Config.Steam[(string)Config.Deploy].AppId;
-        public static string MicroTxn => global::Framework.Caspar.Api.Config.Steam[(string)Config.Deploy].MicroTxn;
-        //public static string MicroTxn => Framework.Caspar.Api.Config.Steam[(string)"PD"].MicroTxn;
-        public static string ApiKey => global::Framework.Caspar.Api.Config.Steam[(string)Config.Deploy].ApiKey;
+        public static string AppId => global::Caspar.Api.Config.Steam[(string)Config.Deploy].AppId;
+        public static string MicroTxn => global::Caspar.Api.Config.Steam[(string)Config.Deploy].MicroTxn;
+        //public static string MicroTxn => Caspar.Api.Config.Steam[(string)"PD"].MicroTxn;
+        public static string ApiKey => global::Caspar.Api.Config.Steam[(string)Config.Deploy].ApiKey;
         /// <summary>
         /// 스팀 서버에 유저 인증 요청.
         /// </summary>
@@ -340,12 +340,12 @@ namespace Framework.Caspar.Platform
 
                 if (ip.IsNullOrEmpty() == true || ip == "127.0.0.1")
                 {
-                    ip = global::Framework.Caspar.Api.PublicIp;
+                    ip = global::Caspar.Api.PublicIp;
                 }
 
                 if (ip.StartsWith("172") || ip.StartsWith("192"))
                 {
-                    ip = global::Framework.Caspar.Api.PublicIp;
+                    ip = global::Caspar.Api.PublicIp;
                 }
 
                 var userInfo = new { response = new { result = "", @params = new UserInfo(), @error = new { errorcode = "", errordesc = "" } } };
@@ -388,15 +388,15 @@ namespace Framework.Caspar.Platform
             {
                 if (ip.IsNullOrEmpty() || ip == "127.0.0.1")
                 {
-                    ip = global::Framework.Caspar.Api.PublicIp;
+                    ip = global::Caspar.Api.PublicIp;
                 }
                 if (ip.StartsWith("172") || ip.StartsWith("192"))
                 {
-                    ip = global::Framework.Caspar.Api.PublicIp;
+                    ip = global::Caspar.Api.PublicIp;
                 }
 
 
-                long orderId = global::Framework.Caspar.Api.UniqueKey;
+                long orderId = global::Caspar.Api.UniqueKey;
                 UserInfo userInfo = await GetUserInfo(steamId, ip);
                 if (userInfo == null)
                 {

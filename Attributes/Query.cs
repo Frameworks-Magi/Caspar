@@ -4,7 +4,7 @@ using System.Linq;
 using System.Text;
 using System.Reflection;
 
-namespace Framework.Caspar.Database.Attributes
+namespace Caspar.Database.Attributes
 {
     [AttributeUsage(AttributeTargets.Class | AttributeTargets.Method)]
     public class Query : Attribute
@@ -36,16 +36,16 @@ namespace Framework.Caspar.Database.Attributes
                 {
 
 
-                    var query = attribute as global::Framework.Caspar.Database.Attributes.Query;
+                    var query = attribute as global::Caspar.Database.Attributes.Query;
 
                     if (query != null)
                     {
 
-                        global::Framework.Caspar.Api.Logger.Info("Resist DB - " + query.provider + " " + c.Namespace + ":" + c.Name);
+                        global::Caspar.Api.Logger.Info("Resist DB - " + query.provider + " " + c.Namespace + ":" + c.Name);
 
-                        //Framework.Caspar.Database.Management.Provider driver = null;
-                        //if (query.provider == typeof(Framework.Caspar.Database.Management.Relational.MySql)) {
-                        //	driver = Framework.Caspar.Database.Api.Db(query.provider);
+                        //Caspar.Database.Management.Provider driver = null;
+                        //if (query.provider == typeof(Caspar.Database.Management.Relational.MySql)) {
+                        //	driver = Caspar.Database.Api.Db(query.provider);
                         //}
 
 
@@ -54,12 +54,12 @@ namespace Framework.Caspar.Database.Attributes
                         //foreach (var m in c.GetMethods()) {
 
 
-                        //	var ma = m.GetCustomAttribute(typeof(Framework.Caspar.Database.Attributes.Query)) as Framework.Caspar.Database.Attributes.Query;
+                        //	var ma = m.GetCustomAttribute(typeof(Caspar.Database.Attributes.Query)) as Caspar.Database.Attributes.Query;
                         //	if (ma == null) { continue; }
 
                         //	string procedure = (c.Name + "." + m.Name);
-                        //	var callback = (Framework.Caspar.Database.Management.Provider.ProcedureOld)Delegate.CreateDelegate(typeof(Framework.Caspar.Database.Management.Provider.ProcedureOld), m);
-                        //	Framework.Caspar.Database.Management.Provider.Add(procedure, callback);
+                        //	var callback = (Caspar.Database.Management.Provider.ProcedureOld)Delegate.CreateDelegate(typeof(Caspar.Database.Management.Provider.ProcedureOld), m);
+                        //	Caspar.Database.Management.Provider.Add(procedure, callback);
 
                         //}
                     }

@@ -4,7 +4,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace Framework.Caspar.Terminal
+namespace Caspar.Terminal
 {
     public class Server
     {

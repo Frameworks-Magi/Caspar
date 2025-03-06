@@ -4,7 +4,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace Framework.Caspar
+namespace Caspar
 {
     public static partial class Extension
     {
@@ -23,8 +23,8 @@ namespace Framework.Caspar
         {
             var ip = (value as System.Net.IPEndPoint).Address.ToString();
             var port = (value as System.Net.IPEndPoint).Port;
-            return global::Framework.Caspar.Api.AddressToInt64(ip, (ushort)port);
+            return global::Caspar.Api.AddressToInt64(ip, (ushort)port);
         }
     }
-        
+
 }

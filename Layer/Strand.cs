@@ -2,9 +2,9 @@ using System;
 using System.Runtime.CompilerServices;
 using System.Threading;
 using System.Threading.Tasks;
-using static Framework.Caspar.Api;
+using static Caspar.Api;
 
-namespace Framework.Caspar
+namespace Caspar
 {
 
     public struct AsyncStrandTaskMethodBuilder
@@ -267,7 +267,7 @@ namespace Framework.Caspar
     public struct Lock
     {
         System.Threading.Tasks.Task task { get; set; }
-        global::Framework.Caspar.Layer.Frame with { get; set; }
+        global::Caspar.Layer.Frame with { get; set; }
         public Lock(System.Threading.Tasks.Task task)
         {
             this.task = task;
@@ -286,7 +286,7 @@ namespace Framework.Caspar
 
         }
 
-        public Lock With(global::Framework.Caspar.Layer.Frame entity)
+        public Lock With(global::Caspar.Layer.Frame entity)
         {
             with = entity;
             return this;
@@ -299,7 +299,7 @@ namespace Framework.Caspar
     {
 
         System.Threading.Tasks.Task<T> task { get; set; }
-        global::Framework.Caspar.Layer.Frame with { get; set; }
+        global::Caspar.Layer.Frame with { get; set; }
 
         public Lock(System.Threading.Tasks.Task<T> task)
         {
@@ -318,7 +318,7 @@ namespace Framework.Caspar
             }
 
         }
-        public Lock<T> With(global::Framework.Caspar.Layer.Frame entity)
+        public Lock<T> With(global::Caspar.Layer.Frame entity)
         {
             with = entity;
             return this;

@@ -2,9 +2,9 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
-using static Framework.Caspar.Api;
+using static Caspar.Api;
 
-namespace Framework.Caspar.Container
+namespace Caspar.Container
 {
     public class ConcurrentList<T> where T : new()
     {

@@ -10,12 +10,12 @@ using MySqlConnector;
 using System.Threading;
 using System.Data;
 using System.Collections;
-using static Framework.Caspar.Api;
+using static Caspar.Api;
 using Amazon;
 using System.Data.SqlClient;
 using System.Data.Odbc;
 
-namespace Framework.Caspar.Database.Management.Relational
+namespace Caspar.Database.Management.Relational
 {
     public sealed class MySql : IConnection
     {
@@ -28,7 +28,7 @@ namespace Framework.Caspar.Database.Management.Relational
                 var sw = System.Diagnostics.Stopwatch.StartNew();
                 var ret = Command.ExecuteNonQuery();
                 long ms = sw.ElapsedMilliseconds;
-                if (ms > global::Framework.Caspar.Extensions.Database.SlowQueryMilliseconds)
+                if (ms > global::Caspar.Extensions.Database.SlowQueryMilliseconds)
                 {
                     Logger.Info($"{Command.CommandText} - {ms}ms");
                 }
@@ -40,7 +40,7 @@ namespace Framework.Caspar.Database.Management.Relational
                 var sw = System.Diagnostics.Stopwatch.StartNew();
                 var ret = Command.ExecuteReader();
                 long ms = sw.ElapsedMilliseconds;
-                if (ms > global::Framework.Caspar.Extensions.Database.SlowQueryMilliseconds)
+                if (ms > global::Caspar.Extensions.Database.SlowQueryMilliseconds)
                 {
                     Logger.Info($"{Command.CommandText} - {ms}ms");
                 }
@@ -52,7 +52,7 @@ namespace Framework.Caspar.Database.Management.Relational
                 var sw = System.Diagnostics.Stopwatch.StartNew();
                 var ret = Command.ExecuteScalar();
                 long ms = sw.ElapsedMilliseconds;
-                if (ms > global::Framework.Caspar.Extensions.Database.SlowQueryMilliseconds)
+                if (ms > global::Caspar.Extensions.Database.SlowQueryMilliseconds)
                 {
                     Logger.Info($"{Command.CommandText} - {ms}ms");
                 }
@@ -80,7 +80,7 @@ namespace Framework.Caspar.Database.Management.Relational
                 //         var sw = System.Diagnostics.Stopwatch.StartNew();
                 //         var ret = Command.ExecuteReader();
                 //         long ms = sw.ElapsedMilliseconds;
-                //         if (ms > global::Framework.Caspar.Extensions.Database.SlowQueryMilliseconds)
+                //         if (ms > global::Caspar.Extensions.Database.SlowQueryMilliseconds)
                 //         {
                 //             Logger.Info($"{Command.CommandText} - {ms}ms");
                 //         }
@@ -103,7 +103,7 @@ namespace Framework.Caspar.Database.Management.Relational
                 //         var sw = System.Diagnostics.Stopwatch.StartNew();
                 //         var ret = Command.ExecuteScalar();
                 //         long ms = sw.ElapsedMilliseconds;
-                //         if (ms > global::Framework.Caspar.Extensions.Database.SlowQueryMilliseconds)
+                //         if (ms > global::Caspar.Extensions.Database.SlowQueryMilliseconds)
                 //         {
                 //             Logger.Info($"{Command.CommandText} - {ms}ms");
                 //         }
@@ -285,7 +285,7 @@ namespace Framework.Caspar.Database.Management.Relational
                         connectionString.MinimumPoolSize = 2;
                     }
 
-                    if (Framework.Caspar.Api.ServerType == "Agent")
+                    if (Caspar.Api.ServerType == "Agent")
                     {
                         connectionString.MinimumPoolSize = 1;
                         connectionString.MaximumPoolSize = 8;
@@ -313,7 +313,7 @@ namespace Framework.Caspar.Database.Management.Relational
                     {
                         if (IAM == true)
                         {
-                            var awsCredentials = new Amazon.Runtime.BasicAWSCredentials((string)global::Framework.Caspar.Api.Config.AWS.Access.KeyId, (string)global::Framework.Caspar.Api.Config.AWS.Access.SecretAccessKey);
+                            var awsCredentials = new Amazon.Runtime.BasicAWSCredentials((string)global::Caspar.Api.Config.AWS.Access.KeyId, (string)global::Caspar.Api.Config.AWS.Access.SecretAccessKey);
                             var pwd = Amazon.RDS.Util.RDSAuthTokenGenerator.GenerateAuthToken(awsCredentials, Ip, 3306, Id);
                             // Logger.Info("mysql ProvidePasswordCallback");
                             // Logger.Info($"connectionStringValue: {connectionStringValue}");
@@ -354,7 +354,7 @@ namespace Framework.Caspar.Database.Management.Relational
             }
             catch (Exception ex)
             {
-                global::Framework.Caspar.Api.Logger.Info("Driver Level Rollback Exception " + ex);
+                global::Caspar.Api.Logger.Info("Driver Level Rollback Exception " + ex);
             }
 
         }

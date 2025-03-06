@@ -9,7 +9,7 @@ using System.IO;
 //using Thrift.Transport;
 //using Thrift.Protocol;
 
-//namespace Framework.Caspar.Database.Management.NoSql
+//namespace Caspar.Database.Management.NoSql
 //{
 //  public sealed class Cassandra : Driver
 //  {

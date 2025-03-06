@@ -11,10 +11,10 @@ using System.IO.Compression;
 using System.Threading.Tasks;
 using Microsoft.Extensions.ObjectPool;
 using System.Buffers;
-using static Framework.Caspar.Api;
+using static Caspar.Api;
 using System.Text;
 
-namespace Framework.Caspar.Protocol
+namespace Caspar.Protocol
 {
 
     public class WebSocket
@@ -25,7 +25,7 @@ namespace Framework.Caspar.Protocol
         //     socket.SendAsync()
         // }
 
-        public bool Write(global::Framework.Caspar.ISerializable msg)
+        public bool Write(global::Caspar.ISerializable msg)
         {
             lock (this)
             {
@@ -45,7 +45,7 @@ namespace Framework.Caspar.Protocol
                 }
                 catch (Exception e)
                 {
-                    //Framework.Caspar.Api.Logger.Verbose($"Ip = {IP}, Port = {Port}");
+                    //Caspar.Api.Logger.Verbose($"Ip = {IP}, Port = {Port}");
                 }
             }
             _ = Disconnect();
@@ -140,7 +140,7 @@ namespace Framework.Caspar.Protocol
                 var msg = pendings.Dequeue();
                 switch (msg)
                 {
-                    case global::Framework.Caspar.ISerializable serializable:
+                    case global::Caspar.ISerializable serializable:
                         length += serializable.Length;
                         serializable.Serialize(stream);
                         break;
@@ -153,7 +153,7 @@ namespace Framework.Caspar.Protocol
                         }
                         catch (Exception e)
                         {
-                            global::Framework.Caspar.Api.Logger.Debug(e);
+                            global::Caspar.Api.Logger.Debug(e);
                             _ = Disconnect();
                         }
                         break;

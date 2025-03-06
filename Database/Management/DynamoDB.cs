@@ -7,9 +7,9 @@ using System.Collections.Generic;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
-using static Framework.Caspar.Api;
+using static Caspar.Api;
 
-namespace Framework.Caspar.Database.NoSql
+namespace Caspar.Database.NoSql
 {
     public class DynamoDB : IConnection
     {

@@ -4,9 +4,9 @@ using System.Linq;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
-using static Framework.Caspar.Api;
+using static Caspar.Api;
 
-namespace Framework.Caspar
+namespace Caspar
 {
     public class Dice
     {
@@ -116,7 +116,7 @@ namespace Framework.Caspar
             {
 
                 if (candidates.Value.Count == 0) { return default(T); }
-                var dice = global::Framework.Caspar.Dice.Roll(0, MaxPER.Value);
+                var dice = global::Caspar.Dice.Roll(0, MaxPER.Value);
                 var pick = candidates.Value.First(e => e.Key >= dice).Value;
 
                 picked.Value.Add(pick);
@@ -168,7 +168,7 @@ namespace Framework.Caspar
             public T Pick()
             {
                 if (origin.Count == 0) { return default(T); }
-                var dice = global::Framework.Caspar.Dice.Roll();
+                var dice = global::Caspar.Dice.Roll();
 
                 var temp = shuffled;
                 var picked = temp.First(e => e.Key >= dice).Value;

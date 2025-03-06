@@ -4,7 +4,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace Framework.Caspar.Network
+namespace Caspar.Network
 {
     public interface IRpc
     {

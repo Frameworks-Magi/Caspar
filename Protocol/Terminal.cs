@@ -1,5 +1,5 @@
-﻿using Framework.Caspar;
-using Framework.Caspar.Container;
+﻿using Caspar;
+using Caspar.Container;
 using System;
 using System.Collections.Concurrent;
 using System.IO;
@@ -7,11 +7,11 @@ using System.Linq;
 using System.Net;
 using System.Text;
 using System.Threading.Tasks;
-using static Framework.Caspar.Api;
+using static Caspar.Api;
 
-namespace Framework.Caspar.Protocol
+namespace Caspar.Protocol
 {
-    public class Terminal : global::Framework.Caspar.Scheduler, global::Framework.Caspar.INotifier
+    public class Terminal : global::Caspar.Scheduler, global::Caspar.INotifier
     {
         public class Message
         {
@@ -31,12 +31,12 @@ namespace Framework.Caspar.Protocol
 
         }
 
-        public class DelegateNotifier : global::Framework.Caspar.INotifier
+        public class DelegateNotifier : global::Caspar.INotifier
         {
             public DelegateNotifier(long uid)
             {
                 FromUID = uid;
-                ToUID = global::Framework.Caspar.Api.UniqueKey;
+                ToUID = global::Caspar.Api.UniqueKey;
                 HeartBeat = DateTime.UtcNow.AddSeconds(15);
                 delegateNotifiers.TryAdd(ToUID, this);
                 Terminal.ClearDelegateNotifier();
@@ -58,11 +58,11 @@ namespace Framework.Caspar.Protocol
             }
             public long FromUID { get; set; }
             public long ToUID { get; set; }
-            public global::Framework.Caspar.INotifier To { get; set; }
-            public global::Framework.Caspar.INotifier From { get; set; }
+            public global::Caspar.INotifier To { get; set; }
+            public global::Caspar.INotifier From { get; set; }
             public DateTime HeartBeat { get; set; }
         }
-        public class ConsoleNotifier : global::Framework.Caspar.INotifier
+        public class ConsoleNotifier : global::Caspar.INotifier
         {
             public static ConsoleNotifier Instance
             {
@@ -97,7 +97,7 @@ namespace Framework.Caspar.Protocol
                 }
             }
         }
-        public class DefaultNotifier : global::Framework.Caspar.INotifier
+        public class DefaultNotifier : global::Caspar.INotifier
         {
             public void Response<T>(T msg)
             {
@@ -117,10 +117,10 @@ namespace Framework.Caspar.Protocol
                 From.Notify(msg);
             }
             public long UID { get; set; }
-            public global::Framework.Caspar.INotifier From { get; set; }
+            public global::Caspar.INotifier From { get; set; }
         }
 
-        public class StringNotifier : global::Framework.Caspar.INotifier
+        public class StringNotifier : global::Caspar.INotifier
         {
             public string Buffer { get; set; }
 
@@ -149,7 +149,7 @@ namespace Framework.Caspar.Protocol
         }
         internal static ConcurrentDictionary<long, DelegateNotifier> delegateNotifiers = new ConcurrentDictionary<long, DelegateNotifier>();
 
-        //public static async Task<bool> DelegateCommand(Framework.Caspar.INotifier, Message msg)
+        //public static async Task<bool> DelegateCommand(Caspar.INotifier, Message msg)
         //{
 
         //    return true;
@@ -320,7 +320,7 @@ namespace Framework.Caspar.Protocol
 
                 if (protocol.IP != "127.0.0.1")
                 {
-                    global::Framework.Caspar.Api.Logger.Info($"OnDisconnect Terminal Retry {protocol.IP}");
+                    global::Caspar.Api.Logger.Info($"OnDisconnect Terminal Retry {protocol.IP}");
                 }
 
                 OnDisconnect?.Invoke();
@@ -347,7 +347,7 @@ namespace Framework.Caspar.Protocol
         public CallbackCompletion OnConnect { get; set; }
         public CallbackCompletion OnDisconnect { get; set; }
 
-        public delegate Task<bool> Callback(global::Framework.Caspar.INotifier notifier, Message msg);
+        public delegate Task<bool> Callback(global::Caspar.INotifier notifier, Message msg);
 
         public Callback OnCommand { get; set; }
         public Callback OnMessage { get; set; }
@@ -387,7 +387,7 @@ namespace Framework.Caspar.Protocol
                     msg.UID = BitConverter.ToInt64(buffer, offset + UIDOffset);
                     msg.Address = BitConverter.ToInt64(buffer, offset + AddressOffset);
 
-                    var notifier = new global::Framework.Caspar.Protocol.Terminal.DefaultNotifier();
+                    var notifier = new global::Caspar.Protocol.Terminal.DefaultNotifier();
                     notifier.UID = msg.UID;
                     notifier.From = this;
 
@@ -402,7 +402,7 @@ namespace Framework.Caspar.Protocol
                 }
                 catch (Exception e)
                 {
-                    global::Framework.Caspar.Api.Logger.Info(e);
+                    global::Caspar.Api.Logger.Info(e);
                     protocol.Disconnect();
                 }
 

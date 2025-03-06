@@ -7,9 +7,9 @@ using System.Net.Http.Headers;
 using System.Runtime.CompilerServices;
 using System.Text;
 using System.Threading.Tasks;
-using static Framework.Caspar.Api;
+using static Caspar.Api;
 
-namespace Framework.Caspar.Platform
+namespace Caspar.Platform
 {
     public static class POD
     {
@@ -21,7 +21,7 @@ namespace Framework.Caspar.Platform
             {
                 try
                 {
-                    var r = global::Framework.Caspar.Api.Config.POD[(string)global::Framework.Caspar.Api.Config.Deploy].ClientSecret;
+                    var r = global::Caspar.Api.Config.POD[(string)global::Caspar.Api.Config.Deploy].ClientSecret;
                     if (r != null)
                     {
                         return r;
@@ -34,8 +34,8 @@ namespace Framework.Caspar.Platform
                 }
 
 
-                //if (Framework.Caspar.Api.Config.POD != null)
-                //    return Framework.Caspar.Api.Config.POD.ClientSecret;
+                //if (Caspar.Api.Config.POD != null)
+                //    return Caspar.Api.Config.POD.ClientSecret;
 
                 //return "0937d74a2ee1409ea9e293ddcc4f92e0"; // qa
                 return "ef133fd17ed044be8a5a9b49376b3981"; //live
@@ -47,7 +47,7 @@ namespace Framework.Caspar.Platform
             {
                 try
                 {
-                    var r = global::Framework.Caspar.Api.Config.POD[(string)global::Framework.Caspar.Api.Config.Deploy].Login;
+                    var r = global::Caspar.Api.Config.POD[(string)global::Caspar.Api.Config.Deploy].Login;
                     if (r != null)
                     {
                         return r;
@@ -72,7 +72,7 @@ namespace Framework.Caspar.Platform
             {
                 try
                 {
-                    var r = global::Framework.Caspar.Api.Config.POD[(string)global::Framework.Caspar.Api.Config.Deploy].Growthy;
+                    var r = global::Caspar.Api.Config.POD[(string)global::Caspar.Api.Config.Deploy].Growthy;
                     if (r != null)
                     {
                         return r;
@@ -85,8 +85,8 @@ namespace Framework.Caspar.Platform
                 }
 
 
-                //if (Framework.Caspar.Api.Config.POD != null)
-                //return Framework.Caspar.Api.Config.POD.Growthy;
+                //if (Caspar.Api.Config.POD != null)
+                //return Caspar.Api.Config.POD.Growthy;
                 //return "growthy-sandbox-growthywebcollector-80.gcld-line.com";
                 return "growthy-release-growthywebcollector-80.gcld-line.com";
             }
@@ -100,7 +100,7 @@ namespace Framework.Caspar.Platform
             {
                 try
                 {
-                    var r = global::Framework.Caspar.Api.Config.POD[(string)global::Framework.Caspar.Api.Config.Deploy].AchievementURI;
+                    var r = global::Caspar.Api.Config.POD[(string)global::Caspar.Api.Config.Deploy].AchievementURI;
                     if (r != null)
                     {
                         return r;
@@ -159,7 +159,7 @@ namespace Framework.Caspar.Platform
             {
                 using (HttpClient httpClient = new HttpClient())
                 {
-                    var uri = global::Framework.Caspar.Api.Config.POD[deploy].Login;
+                    var uri = global::Caspar.Api.Config.POD[deploy].Login;
                     var addr = $"https://{uri}/api/v1/auth/exchange";
 
                     //Logger.Error($"Exchange addr : {addr}");
@@ -296,7 +296,7 @@ namespace Framework.Caspar.Platform
                     {
                         request.Headers.TryAddWithoutValidation("X-Linegame-AppId", AppId);
                         request.Headers.TryAddWithoutValidation("X-Linegame-UserToken", token);
-                        request.Content = new StringContent($"{{\n \"transactionId\":\"{(global::Framework.Caspar.Api.UniqueKey)}\",\n \"productId\":\"{id}\",\n \"useAmount\": {price},\n \"productName\":\"{name}\"\n}}");
+                        request.Content = new StringContent($"{{\n \"transactionId\":\"{(global::Caspar.Api.UniqueKey)}\",\n \"productId\":\"{id}\",\n \"useAmount\": {price},\n \"productName\":\"{name}\"\n}}");
                         request.Content.Headers.ContentType = MediaTypeHeaderValue.Parse("application/json");
 
                         var response = await httpClient.SendAsync(request);

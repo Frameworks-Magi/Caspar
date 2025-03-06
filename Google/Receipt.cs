@@ -4,7 +4,7 @@ using System.Collections.Generic;
 using System.Security.Cryptography;
 using System.Text;
 
-namespace Framework.Caspar.Google
+namespace Caspar.Google
 {
     public class Receipt
     {
@@ -12,7 +12,7 @@ namespace Framework.Caspar.Google
         public static void Initialize(string MY_BASE64_PUBLIC_KEY)
         {
             cryptoServiceProviderXml = PEMKeyLoader.CryptoServiceProviderFromPublicKeyInfo(MY_BASE64_PUBLIC_KEY).ToXmlString(false);
-            if(null == cryptoServiceProviderXml) throw new Exception("Failed : Framework.Caspar.Google.Initialize");
+            if (null == cryptoServiceProviderXml) throw new Exception("Failed : Caspar.Google.Initialize");
         }
 
         public static string cryptoServiceProviderXml = null;
@@ -30,7 +30,7 @@ namespace Framework.Caspar.Google
 
         public static Result GetPurchaseResult(string message)
         {
-            return JsonConvert.DeserializeObject<Framework.Caspar.Google.Receipt.Result>(message);
+            return JsonConvert.DeserializeObject<Caspar.Google.Receipt.Result>(message);
         }
 
         public static Result GetPurchaseResult(byte[] message)

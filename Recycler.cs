@@ -1,7 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 
-namespace Framework.Caspar
+namespace Caspar
 {
     public class Recycler
     {

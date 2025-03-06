@@ -3,7 +3,7 @@ using Amazon.S3;
 using Amazon.S3.Model;
 using Amazon.SQS;
 using Amazon.SQS.Model;
-using Framework.Caspar.Container;
+using Caspar.Container;
 using Org.BouncyCastle.Ocsp;
 using System;
 using System.Collections.Concurrent;
@@ -14,9 +14,9 @@ using System.IO.Compression;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
-using static Framework.Caspar.Api;
+using static Caspar.Api;
 
-namespace Framework.Caspar.Platform
+namespace Caspar.Platform
 {
     public static partial class AWS
     {
@@ -42,7 +42,7 @@ namespace Framework.Caspar.Platform
             }
 
             public IAmazonS3 S3Client { get; set; }
-            //{ get { return new AmazonS3Client(global::Framework.Caspar.CDN.Amazon.KeyId, global::Framework.Caspar.CDN.Amazon.SecretAccessKey, RegionEndpoint.APNortheast2); } }
+            //{ get { return new AmazonS3Client(global::Caspar.CDN.Amazon.KeyId, global::Caspar.CDN.Amazon.SecretAccessKey, RegionEndpoint.APNortheast2); } }
 
             public async Task Upload(string key, Stream stream)
             {

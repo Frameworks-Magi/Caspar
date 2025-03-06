@@ -5,7 +5,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace Framework.Caspar
+namespace Caspar
 {
     public delegate void AsyncCallback<T>(T msg);
     public delegate void AsyncCallback();
@@ -16,6 +16,6 @@ namespace Framework.Caspar
         //object Args { get; set; }
     }
 
-    
+
 
 }

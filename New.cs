@@ -4,12 +4,13 @@ using System.Linq;
 using System.Linq.Expressions;
 using System.Text;
 
-namespace Framework.Caspar
+namespace Caspar
 {
     public static class New<T> where T : new()
     {
         [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
-        public static T Instantiate {
+        public static T Instantiate
+        {
             get
             {
                 return instance();

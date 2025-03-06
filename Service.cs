@@ -1,11 +1,11 @@
 using System;
 using System.Threading.Tasks;
 
-namespace Framework.Caspar
+namespace Caspar
 {
     public class Service : Layer.Frame
     {
-        public class Layer : global::Framework.Caspar.Layer { }
+        public class Layer : global::Caspar.Layer { }
 
         public Service(long UID) : base(Api.Singleton<Service.Layer>.Instance)
         {

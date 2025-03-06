@@ -7,13 +7,13 @@ using System.Text;
 using System.Threading.Tasks;
 using System.Threading;
 using System.IO;
-using Framework.Caspar;
-using static Framework.Caspar.Api;
+using Caspar;
+using static Caspar.Api;
 using System.Diagnostics;
-using Framework.Caspar.Container;
+using Caspar.Container;
 
 
-namespace Framework.Caspar.Database
+namespace Caspar.Database
 {
     public class Driver
     {
@@ -100,7 +100,7 @@ namespace Framework.Caspar.Database
         {
             isOpen = false;
 
-            //         for (int i = 0; i < Framework.Caspar.Api.ThreadCount; ++i)
+            //         for (int i = 0; i < Caspar.Api.ThreadCount; ++i)
             //{
 
             //	threads[i].Join();
@@ -162,7 +162,7 @@ namespace Framework.Caspar.Database
                     {
                         try
                         {
-                            query.CTS.CancelAfter(global::Framework.Caspar.Extensions.Database.QueryTimeoutSec);
+                            query.CTS.CancelAfter(global::Caspar.Extensions.Database.QueryTimeoutSec);
                             //    await query.Command();
                         }
                         catch (Exception e)

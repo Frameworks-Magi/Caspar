@@ -4,9 +4,9 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using System.Collections;
-using static Framework.Caspar.Api;
+using static Caspar.Api;
 
-namespace Framework.Caspar.Database
+namespace Caspar.Database
 {
     public class ResultSet : IEnumerable<ResultSet.Cursor>
     {

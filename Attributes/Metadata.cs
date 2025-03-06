@@ -1,5 +1,5 @@
 ﻿using Amazon.CloudFront;
-using Framework.Caspar;
+using Caspar;
 //using Microsoft.WindowsAzure.Storage;
 //using Microsoft.WindowsAzure.Storage.Auth;
 //using Microsoft.WindowsAzure.Storage.Blob;
@@ -10,9 +10,9 @@ using System.Linq;
 using System.Net;
 using System.Text;
 using System.Threading.Tasks;
-using static Framework.Caspar.Api;
+using static Caspar.Api;
 
-namespace Framework.Caspar.Attributes
+namespace Caspar.Attributes
 {
     [AttributeUsage(AttributeTargets.Class)]
     public class Metadata : Attribute
@@ -43,18 +43,18 @@ namespace Framework.Caspar.Attributes
             this.Extension = extension;
         }
 
-        public class Layer : global::Framework.Caspar.Layer { }
-        public class Loader : global::Framework.Caspar.Layer.Frame
+        public class Layer : global::Caspar.Layer { }
+        public class Loader : global::Caspar.Layer.Frame
         {
             public Loader() : base(Singleton<Layer>.Instance) { }
-            public static string Path { get; set; } = $"{(string)Framework.Caspar.Api.Config.Deploy}/Metadata";
+            public static string Path { get; set; } = $"{(string)Caspar.Api.Config.Deploy}/Metadata";
             public async Task Load()
             {
 
                 var Assemblies = new Queue<(string, System.Reflection.MethodInfo, System.Reflection.MethodInfo, Metadata)>();
                 var Metadatas = new Queue<(string, System.Reflection.MethodInfo, System.Reflection.MethodInfo, Metadata, byte[])>();
 
-                global::Framework.Caspar.Api.Logger.Info($"Load Metadata Version {Version}");
+                global::Caspar.Api.Logger.Info($"Load Metadata Version {Version}");
                 var classes = (from asm in AppDomain.CurrentDomain.GetAssemblies()
                                from type in asm.GetTypes()
                                where type.IsClass
@@ -68,7 +68,7 @@ namespace Framework.Caspar.Attributes
                         foreach (var attribute in c.GetCustomAttributes(false))
                         {
 
-                            var metadata = attribute as global::Framework.Caspar.Attributes.Metadata;
+                            var metadata = attribute as global::Caspar.Attributes.Metadata;
                             if (metadata != null)
                             {
 
@@ -133,10 +133,10 @@ namespace Framework.Caspar.Attributes
                     (string Key, System.Reflection.MethodInfo Method, System.Reflection.MethodInfo Callback, Metadata Metadata) e = Assemblies.Dequeue();
                     string uri = "";
 
-                    if (Framework.Caspar.Metadata.LocalPath.IsNullOrEmpty() == false)
+                    if (Caspar.Metadata.LocalPath.IsNullOrEmpty() == false)
                     {
                         var filename = global::System.IO.Path.GetFileName(e.Key);
-                        var fullpath = global::System.IO.Path.Combine(Framework.Caspar.Metadata.LocalPath, filename);
+                        var fullpath = global::System.IO.Path.Combine(Caspar.Metadata.LocalPath, filename);
                         if (File.Exists(fullpath) == true)
                         {
                             try
@@ -164,7 +164,7 @@ namespace Framework.Caspar.Attributes
 
                     }
 
-                    var PEM = Framework.Caspar.CDN.PEM;
+                    var PEM = Caspar.CDN.PEM;
                     using (var stream = PEM())
                     {
                         using (var reader = new StreamReader(stream))

@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 
-namespace Framework.Caspar.Attributes
+namespace Caspar.Attributes
 {
     [AttributeUsage(AttributeTargets.Class)]
     public class GenerateId : Attribute
@@ -26,7 +26,7 @@ namespace Framework.Caspar.Attributes
                     foreach (var attribute in c.GetCustomAttributes(false))
                     {
 
-                        var initialize = attribute as global::Framework.Caspar.Attributes.GenerateId;
+                        var initialize = attribute as global::Caspar.Attributes.GenerateId;
                         if (initialize != null)
                         {
 

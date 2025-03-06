@@ -5,7 +5,7 @@ using System.Linq;
 using System.Numerics;
 using System.Text;
 
-namespace Framework.Caspar
+namespace Caspar
 {
     public static partial class Extension
     {
@@ -35,7 +35,7 @@ namespace Framework.Caspar
         public static void Shuffle<T>(this IList<T> list)
         {
             for (var i = 0; i < list.Count; i++)
-                list.Swap(i, global::Framework.Caspar.Dice.Roll(i, list.Count));
+                list.Swap(i, global::Caspar.Dice.Roll(i, list.Count));
         }
 
         public static long ToByte(this string value)
@@ -160,7 +160,7 @@ namespace Framework.Caspar
 
         public static int Code<T>(this T msg) where T : class
         {
-            return global::Framework.Caspar.Id<T>.Value;
+            return global::Caspar.Id<T>.Value;
         }
 
         public static T ToProtobuf<T>(this string value) where T : global::Google.Protobuf.IMessage, new()
@@ -229,7 +229,7 @@ namespace Framework.Caspar
 
         public static string ToJson(this global::Google.Protobuf.IMessage value)
         {
-            return Framework.Caspar.Api.JsonFormatter.Format(value);
+            return Caspar.Api.JsonFormatter.Format(value);
         }
 
         public static string ToJson(this object value)
@@ -317,11 +317,11 @@ namespace Framework.Caspar
         {
             if (@public == true)
             {
-                return global::Framework.Caspar.Api.UInt32ToIPAddress((uint)value);
+                return global::Caspar.Api.UInt32ToIPAddress((uint)value);
             }
             else
             {
-                return global::Framework.Caspar.Api.UInt32ToIPAddress((uint)(value >> 32));
+                return global::Caspar.Api.UInt32ToIPAddress((uint)(value >> 32));
             }
         }
 
@@ -340,12 +340,12 @@ namespace Framework.Caspar
 
         public static MemoryStream Compress(this Stream stream)
         {
-            return global::Framework.Caspar.Api.Compress(stream);
+            return global::Caspar.Api.Compress(stream);
         }
 
         public static MemoryStream Decompress(this Stream stream)
         {
-            return global::Framework.Caspar.Api.Decompress(stream);
+            return global::Caspar.Api.Decompress(stream);
         }
 
         public static MemoryStream ToMemoryStream(this global::Google.Protobuf.IMessage msg)
@@ -378,7 +378,7 @@ namespace Framework.Caspar
 
         public static int Id<T>(this T msg) where T : global::Google.Protobuf.IMessage<T>
         {
-            return global::Framework.Caspar.Id<T>.Value;
+            return global::Caspar.Id<T>.Value;
         }
 
 
@@ -429,13 +429,13 @@ namespace Framework.Caspar
         public static DateTime ConvertTimeFromUtc(this DateTime UtcNow)
         {
             string TimeZone = "";
-            if (global::Framework.Caspar.Api.Config.ServerStandardTime == null)
+            if (global::Caspar.Api.Config.ServerStandardTime == null)
             {
                 TimeZone = "Korea Standard Time";
             }
             else
             {
-                TimeZone = global::Framework.Caspar.Api.Config.ServerStandardTime;
+                TimeZone = global::Caspar.Api.Config.ServerStandardTime;
             }
 
             var timezone = TimeZoneConverter.TZConvert.GetTimeZoneInfo(TimeZone);
@@ -446,13 +446,13 @@ namespace Framework.Caspar
         public static DateTime ConvertTimeToUtc(this DateTime SST)
         {
             string TimeZone = "";
-            if (global::Framework.Caspar.Api.Config.ServerStandardTime == null)
+            if (global::Caspar.Api.Config.ServerStandardTime == null)
             {
                 TimeZone = "Korea Standard Time";
             }
             else
             {
-                TimeZone = global::Framework.Caspar.Api.Config.ServerStandardTime;
+                TimeZone = global::Caspar.Api.Config.ServerStandardTime;
             }
 
             var timezone = TimeZoneConverter.TZConvert.GetTimeZoneInfo(TimeZone);

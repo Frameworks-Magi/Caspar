@@ -6,7 +6,7 @@ using FirebaseAdmin.Auth;
 using System.Threading.Tasks;
 using System;
 
-namespace Framework.Caspar.Platform.Firebase
+namespace Caspar.Platform.Firebase
 {
     public static class Auth
     {

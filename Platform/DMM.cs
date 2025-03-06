@@ -8,9 +8,9 @@ using System.Text;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 using System.Web;
-using static Framework.Caspar.Api;
+using static Caspar.Api;
 
-namespace Framework.Caspar.Platform
+namespace Caspar.Platform
 {
     public static class DMM
     {
@@ -21,7 +21,7 @@ namespace Framework.Caspar.Platform
 
                 try
                 {
-                    return global::Framework.Caspar.Api.Config.DMM[(string)global::Framework.Caspar.Api.Config.Deploy].ConsumerKey;
+                    return global::Caspar.Api.Config.DMM[(string)global::Caspar.Api.Config.Deploy].ConsumerKey;
                 }
                 catch (Exception)
                 {
@@ -38,7 +38,7 @@ namespace Framework.Caspar.Platform
             {
                 try
                 {
-                    return global::Framework.Caspar.Api.Config.DMM[(string)global::Framework.Caspar.Api.Config.Deploy].ConsumerSecret;
+                    return global::Caspar.Api.Config.DMM[(string)global::Caspar.Api.Config.Deploy].ConsumerSecret;
                 }
                 catch (Exception)
                 {
@@ -55,7 +55,7 @@ namespace Framework.Caspar.Platform
             {
                 try
                 {
-                    return global::Framework.Caspar.Api.Config.DMM[(string)global::Framework.Caspar.Api.Config.Deploy].AppID;
+                    return global::Caspar.Api.Config.DMM[(string)global::Caspar.Api.Config.Deploy].AppID;
                 }
                 catch (Exception)
                 {
@@ -73,7 +73,7 @@ namespace Framework.Caspar.Platform
             {
                 try
                 {
-                    return global::Framework.Caspar.Api.Config.DMM[(string)global::Framework.Caspar.Api.Config.Deploy].AuthURL;
+                    return global::Caspar.Api.Config.DMM[(string)global::Caspar.Api.Config.Deploy].AuthURL;
                 }
                 catch (Exception)
                 {
@@ -150,7 +150,7 @@ namespace Framework.Caspar.Platform
                     using (var request = new HttpRequestMessage(new HttpMethod("POST"), url))
                     {
 
-                        var header = $"OAuth {(GetAuthorization(url, global::Framework.Caspar.Api.UniqueKey, DateTime.UtcNow.ToUnixTime()))}";
+                        var header = $"OAuth {(GetAuthorization(url, global::Caspar.Api.UniqueKey, DateTime.UtcNow.ToUnixTime()))}";
                         request.Headers.TryAddWithoutValidation("Authorization", header);
                         var form = new MultipartFormDataContent();
                         form.Add(new StringContent(app_id.ToString()), "app_id");
@@ -190,7 +190,7 @@ namespace Framework.Caspar.Platform
                     using (var request = new HttpRequestMessage(new HttpMethod("POST"), url))
                     {
 
-                        var header = $"OAuth {(GetAuthorization(url, global::Framework.Caspar.Api.UniqueKey, DateTime.UtcNow.ToUnixTime()))}";
+                        var header = $"OAuth {(GetAuthorization(url, global::Caspar.Api.UniqueKey, DateTime.UtcNow.ToUnixTime()))}";
 
                         Logger.Info($"DMM {header}");
 
@@ -228,7 +228,7 @@ namespace Framework.Caspar.Platform
                     using (var request = new HttpRequestMessage(new HttpMethod("POST"), url))
                     {
 
-                        var header = $"OAuth {(GetAuthorization(url, global::Framework.Caspar.Api.UniqueKey, DateTime.UtcNow.ToUnixTime()))}";
+                        var header = $"OAuth {(GetAuthorization(url, global::Caspar.Api.UniqueKey, DateTime.UtcNow.ToUnixTime()))}";
                         request.Headers.TryAddWithoutValidation("Authorization", header);
                         var form = new MultipartFormDataContent();
                         form.Add(new StringContent(app_id.ToString()), "app_id");
@@ -278,7 +278,7 @@ namespace Framework.Caspar.Platform
                         //test code
                         //onetime_token = "28460fa359476bb18da7f10f2a98c103";
 
-                        var header = $"OAuth {(GetAuthorization(url, global::Framework.Caspar.Api.UniqueKey, DateTime.UtcNow.ToUnixTime()))}";
+                        var header = $"OAuth {(GetAuthorization(url, global::Caspar.Api.UniqueKey, DateTime.UtcNow.ToUnixTime()))}";
                         request.Headers.TryAddWithoutValidation("Authorization", header);
                         var form = new MultipartFormDataContent();
                         form.Add(new StringContent(app_id.ToString()), "app_id");
@@ -314,7 +314,7 @@ namespace Framework.Caspar.Platform
                     using (var request = new HttpRequestMessage(new HttpMethod("POST"), url))
                     {
 
-                        var header = $"OAuth {(GetAuthorization(url, global::Framework.Caspar.Api.UniqueKey, DateTime.UtcNow.ToUnixTime()))}";
+                        var header = $"OAuth {(GetAuthorization(url, global::Caspar.Api.UniqueKey, DateTime.UtcNow.ToUnixTime()))}";
                         request.Headers.TryAddWithoutValidation("Authorization", header);
                         var form = new MultipartFormDataContent();
                         form.Add(new StringContent(app_id.ToString()), "app_id");

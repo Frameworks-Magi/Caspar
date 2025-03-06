@@ -5,13 +5,13 @@ using System.Linq;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
-using Framework.Caspar;
+using Caspar;
 using StackExchange.Redis;
 
-using static Framework.Caspar.Api;
+using static Caspar.Api;
 
 
-namespace Framework.Caspar.Database.NoSql
+namespace Caspar.Database.NoSql
 {
     public sealed class Redis : IConnection
     {

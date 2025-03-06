@@ -6,7 +6,7 @@ using System.Text;
 using System.Text.Json;
 using PeterO.Cbor;
 
-namespace Framework.Caspar
+namespace Caspar
 {
     public static partial class Api
     {

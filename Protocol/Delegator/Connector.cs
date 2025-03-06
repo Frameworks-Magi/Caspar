@@ -1,18 +1,18 @@
 using System;
 using System.Collections.Generic;
 using System.Text;
-using dbms = Framework.Caspar.Database.Management;
-using Framework.Caspar.Database;
-using Framework.Caspar;
+using dbms = Caspar.Database.Management;
+using Caspar.Database;
+using Caspar;
 using System.Threading.Tasks;
-using static Framework.Caspar.Extensions.Database;
+using static Caspar.Extensions.Database;
 using Newtonsoft.Json.Linq;
 
-namespace Framework.Caspar.Protocol
+namespace Caspar.Protocol
 {
     public partial class Delegator<D>
     {
-        public class Connector : Framework.Caspar.Scheduler
+        public class Connector : Caspar.Scheduler
         {
             public class Server
             {
@@ -36,8 +36,8 @@ namespace Framework.Caspar.Protocol
                 {
                     get
                     {
-                        uint privateIp = Framework.Caspar.Api.IPAddressToUInt32(PrivateIp);
-                        uint publicIp = Framework.Caspar.Api.IPAddressToUInt32(PublicIp);
+                        uint privateIp = Caspar.Api.IPAddressToUInt32(PrivateIp);
+                        uint publicIp = Caspar.Api.IPAddressToUInt32(PublicIp);
                         return (long)publicIp << 32 | privateIp;
                     }
                 }
@@ -45,7 +45,7 @@ namespace Framework.Caspar.Protocol
                 public string GetConnectionString()
                 {
 
-                    if (CloudPlatform.ToString() == (string)Framework.Caspar.Api.Config.CloudPlatform)
+                    if (CloudPlatform.ToString() == (string)Caspar.Api.Config.CloudPlatform)
                     {
                         return PrivateIp;
                     }
@@ -67,14 +67,14 @@ namespace Framework.Caspar.Protocol
                 try
                 {
 
-                    if (Framework.Caspar.Api.StandAlone == true)
+                    if (Caspar.Api.StandAlone == true)
                     {
                         return;
                     }
 
-                    using var session = new Framework.Caspar.Database.Session();
+                    using var session = new Caspar.Database.Session();
 
-                    JObject obj = global::Framework.Caspar.Api.Config.Databases.MySql;
+                    JObject obj = global::Caspar.Api.Config.Databases.MySql;
                     dynamic db = obj.First;
                     DB = db.Name;
 
@@ -87,14 +87,14 @@ namespace Framework.Caspar.Protocol
 
                     //서버들을 받아온다.
                     command.Parameters.Clear();
-                    command.CommandText = $"SELECT * FROM `caspar`.`delegator` WHERE provider = '{Framework.Caspar.Api.Config.Provider}' AND type = '{RemoteType}';";
+                    command.CommandText = $"SELECT * FROM `caspar`.`delegator` WHERE provider = '{Caspar.Api.Config.Provider}' AND type = '{RemoteType}';";
                     session.ResultSet = (await command.ExecuteReaderAsync()).ToResultSet();
 
 
                     List<Server> servers = new List<Server>();
 
 
-                    Framework.Caspar.Database.ResultSet resultSet = session.ResultSet;
+                    Caspar.Database.ResultSet resultSet = session.ResultSet;
 
                     foreach (var row in resultSet[0])
                     {
@@ -126,7 +126,7 @@ namespace Framework.Caspar.Protocol
                 }
                 catch (Exception e)
                 {
-                    Framework.Caspar.Api.Logger.Error(e);
+                    Caspar.Api.Logger.Error(e);
                 }
                 finally
                 {
@@ -150,7 +150,7 @@ namespace Framework.Caspar.Protocol
                     {
                         var delegator = Delegator<D>.Create(item.UID, Self);
                         if (delegator.IsClosed() == false) { continue; }
-                        delegator.UID = Framework.Caspar.Api.Idx;
+                        delegator.UID = Caspar.Api.Idx;
                         var ip = item.GetConnectionString();
                         delegator.Connect(ip, Port);
                     }

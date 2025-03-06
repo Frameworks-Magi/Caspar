@@ -6,15 +6,15 @@ using System.Threading.Tasks;
 using Amazon.CloudFront;
 using Amazon.S3;
 using Amazon.S3.Transfer;
-using Framework.Caspar;
-using Framework.Caspar.Container;
-using static Framework.Caspar.Api;
+using Caspar;
+using Caspar.Container;
+using static Caspar.Api;
 
-namespace Framework.Caspar
+namespace Caspar
 {
     public static partial class Api
     {
-        //         public static async Task<bool> SetVersion(Framework.Caspar.INotifier notifier, Framework.Caspar.Protocol.Terminal.Message msg)
+        //         public static async Task<bool> SetVersion(Caspar.INotifier notifier, Caspar.Protocol.Terminal.Message msg)
         //         {
         //             var tokens = msg.Command.Split(' ');
         //             if (tokens.Length > 1)
@@ -33,13 +33,13 @@ namespace Framework.Caspar
         public static async Task<IList<string>> GetVersions(string path)
         {
 
-            var S3 = Framework.Caspar.Platform.AWS.S3.Get("Caspar");
+            var S3 = Caspar.Platform.AWS.S3.Get("Caspar");
             IAmazonS3 s3Client = S3.S3Client;
             IList<string> versions = new List<string>();
 
             try
             {
-                IList<string> temp = await s3Client.GetAllObjectKeysAsync((string)global::Framework.Caspar.Api.Config.AWS.S3.Global.Domain, $"{(string)Framework.Caspar.Api.Config.Deploy}/{path}/", null);
+                IList<string> temp = await s3Client.GetAllObjectKeysAsync((string)global::Caspar.Api.Config.AWS.S3.Global.Domain, $"{(string)Caspar.Api.Config.Deploy}/{path}/", null);
                 temp.Sort((r, l) =>
                 {
                     try

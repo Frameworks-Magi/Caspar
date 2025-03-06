@@ -4,7 +4,7 @@ using System.IO;
 using System.Linq;
 using System.Text;
 
-namespace Framework.Caspar.Attributes
+namespace Caspar.Attributes
 {
     [AttributeUsage(AttributeTargets.Class)]
     public class Override : Attribute
@@ -20,7 +20,7 @@ namespace Framework.Caspar.Attributes
 
             //FileInfo fi = new FileInfo(path);
             //if (fi == null) { return; }
-            //Framework.Caspar.Api.OverrideConfigWatcher.Update(path);
+            //Caspar.Api.OverrideConfigWatcher.Update(path);
 
         }
 

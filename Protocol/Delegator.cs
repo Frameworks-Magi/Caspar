@@ -1,5 +1,5 @@
-﻿using Framework.Caspar;
-using Framework.Caspar.Container;
+﻿using Caspar;
+using Caspar.Container;
 using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
@@ -9,9 +9,9 @@ using System.Linq;
 using System.Net;
 using System.Threading;
 using System.Threading.Tasks;
-using static Framework.Caspar.Api;
+using static Caspar.Api;
 
-namespace Framework.Caspar.Protocol
+namespace Caspar.Protocol
 {
 
     public interface IDelegator
@@ -27,12 +27,12 @@ namespace Framework.Caspar.Protocol
         public void Connect(string ip, ushort port) { }
 
         public void Close() { }
-        public void Delegate(long from, long to, global::Framework.Caspar.ISerializable serializable) { }
-        public void Delegate<T, R>(global::Framework.Caspar.Layer.Frame task, long to, T msg, AsyncCallback<R> callback, Action fallback = null)
+        public void Delegate(long from, long to, global::Caspar.ISerializable serializable) { }
+        public void Delegate<T, R>(global::Caspar.Layer.Frame task, long to, T msg, AsyncCallback<R> callback, Action fallback = null)
            where T : global::Google.Protobuf.IMessage<T>
            where R : global::Google.Protobuf.IMessage<R>
         { }
-        public void Delegate<T>(global::Framework.Caspar.Layer.Frame task, long to, T msg, AsyncCallback<T> callback, Action fallback = null)
+        public void Delegate<T>(global::Caspar.Layer.Frame task, long to, T msg, AsyncCallback<T> callback, Action fallback = null)
            where T : global::Google.Protobuf.IMessage<T>
         { }
         public async Task<T> DelegateAsync<T>(long from, long to, T msg)
@@ -52,8 +52,8 @@ namespace Framework.Caspar.Protocol
             where T : global::Google.Protobuf.IMessage<T>
         { }
         public void Delegate(long from, long to, int code, MemoryStream stream) { }
-        //void Attach(Framework.Caspar.IDelegatable from);
-        //void Detach(Framework.Caspar.IDelegatable from);
+        //void Attach(Caspar.IDelegatable from);
+        //void Detach(Caspar.IDelegatable from);
         public long GetSequence() { return 0; }
 
         public EndPoint RemoteEndPoint
@@ -69,7 +69,7 @@ namespace Framework.Caspar.Protocol
 
 
 
-    public partial class Delegator<D> : global::Framework.Caspar.Scheduler, IDelegator where D : Delegator<D>.IDelegatable, new()
+    public partial class Delegator<D> : global::Caspar.Scheduler, IDelegator where D : Delegator<D>.IDelegatable, new()
     {
         public static Delegator<D> Singleton { get; set; }
 
@@ -83,9 +83,9 @@ namespace Framework.Caspar.Protocol
             void OnDelegate(Notifier notifier, int code, MemoryStream stream);
         }
 
-        public class Null : global::Framework.Caspar.INotifier
+        public class Null : global::Caspar.INotifier
         {
-            public Null(global::Framework.Caspar.Protocol.Delegator<D>.Notifier notifier)
+            public Null(global::Caspar.Protocol.Delegator<D>.Notifier notifier)
             {
                 Notifier = notifier;
             }
@@ -97,13 +97,13 @@ namespace Framework.Caspar.Protocol
             {
                 Notifier.Notify(msg);
             }
-            protected global::Framework.Caspar.Protocol.Delegator<D>.Notifier Notifier;
+            protected global::Caspar.Protocol.Delegator<D>.Notifier Notifier;
             public long To => Notifier.To;
             public long From => Notifier.From;
         }
 
         public Delegator()
-        //: base(Framework.Caspar.Api.Singleton<Framework.Caspar.Api.ScheduleLayer>.Instance)
+        //: base(Caspar.Api.Singleton<Caspar.Api.ScheduleLayer>.Instance)
         {
 
         }
@@ -156,7 +156,7 @@ namespace Framework.Caspar.Protocol
 #if !DEBUG
             if (lastHeartBeat < DateTime.UtcNow)
             {
-                if (Framework.Caspar.Api.Config.HeartBeat == true)
+                if (Caspar.Api.Config.HeartBeat == true)
                 {
                     Protocol.Disconnect();
                     return;
@@ -195,7 +195,7 @@ namespace Framework.Caspar.Protocol
                     Remove(Id);
                 }
 
-                Logger.Info($"OnClose Delegator<{typeof(D).FullName}> From {(global::Framework.Caspar.Api.UInt32ToIPAddress((uint)UID))} Self {Self}");
+                Logger.Info($"OnClose Delegator<{typeof(D).FullName}> From {(global::Caspar.Api.UInt32ToIPAddress((uint)UID))} Self {Self}");
                 await base.OnClose();
             }
             catch
@@ -287,7 +287,7 @@ namespace Framework.Caspar.Protocol
         private ConcurrentDictionary<long, (ResponseCallback, ResponseFallback)> waitResponse = new ConcurrentDictionary<long, (ResponseCallback, ResponseFallback)>();
         private ConcurrentQueue<(long, long)> waitTimeout = new ConcurrentQueue<(long, long)>();
 
-        public class Serializer : global::Framework.Caspar.ISerializable
+        public class Serializer : global::Caspar.ISerializable
         {
             public void Serialize(Stream output)
             {
@@ -320,7 +320,7 @@ namespace Framework.Caspar.Protocol
             public long Responsable;
         }
 
-        public class Serializer<T> : global::Framework.Caspar.ISerializable
+        public class Serializer<T> : global::Caspar.ISerializable
         {
             public void Serialize(Stream output)
             {
@@ -330,7 +330,7 @@ namespace Framework.Caspar.Protocol
                 output.Write(BitConverter.GetBytes(From), 0, 8);
                 output.Write(BitConverter.GetBytes(To), 0, 8);
                 output.Write(BitConverter.GetBytes(Sequence), 0, 8);
-                output.Write(BitConverter.GetBytes(global::Framework.Caspar.Id<T>.Value), 0, 4);
+                output.Write(BitConverter.GetBytes(global::Caspar.Id<T>.Value), 0, 4);
                 output.Write(BitConverter.GetBytes(Responsable), 0, 8);
 
                 proto.Serialize(output, true);
@@ -366,7 +366,7 @@ namespace Framework.Caspar.Protocol
             }
         }
 
-        public class Notifier : global::Framework.Caspar.INotifier
+        public class Notifier : global::Caspar.INotifier
         {
             public virtual void Response<T>(T msg)
             {
@@ -423,7 +423,7 @@ namespace Framework.Caspar.Protocol
                         var header = new MemoryStream(10);
                         BinaryWriter binaryWriter = new BinaryWriter(header);
                         binaryWriter.Write((int)10);
-                        binaryWriter.Write((uint)global::Framework.Caspar.Api.IPAddressToUInt32(tokens[1]));
+                        binaryWriter.Write((uint)global::Caspar.Api.IPAddressToUInt32(tokens[1]));
                         binaryWriter.Write(Port);
                         binaryWriter.Flush();
                         header.Seek(0, SeekOrigin.Begin);
@@ -578,7 +578,7 @@ namespace Framework.Caspar.Protocol
 
 
 
-        public void Delegate<T>(global::Framework.Caspar.Layer.Frame task, long to, T msg, global::Framework.Caspar.AsyncCallback<T> callback, Action fallback = null)
+        public void Delegate<T>(global::Caspar.Layer.Frame task, long to, T msg, global::Caspar.AsyncCallback<T> callback, Action fallback = null)
             where T : global::Google.Protobuf.IMessage<T>
         {
 
@@ -632,7 +632,7 @@ namespace Framework.Caspar.Protocol
             }
         }
 
-        public void Delegate<T, R>(global::Framework.Caspar.Layer.Frame task, long to, T msg, global::Framework.Caspar.AsyncCallback<R> callback, Action fallback = null)
+        public void Delegate<T, R>(global::Caspar.Layer.Frame task, long to, T msg, global::Caspar.AsyncCallback<R> callback, Action fallback = null)
             where T : global::Google.Protobuf.IMessage<T>
             where R : global::Google.Protobuf.IMessage<R>
         {
@@ -681,7 +681,7 @@ namespace Framework.Caspar.Protocol
 
         }
 
-        public void Delegate(long from, long to, int code, MemoryStream stream, global::Framework.Caspar.AsyncCallback<Stream> callback, global::Framework.Caspar.AsyncCallback fallback = null)
+        public void Delegate(long from, long to, int code, MemoryStream stream, global::Caspar.AsyncCallback<Stream> callback, global::Caspar.AsyncCallback fallback = null)
         {
             //        lock (this)
             {
@@ -757,7 +757,7 @@ namespace Framework.Caspar.Protocol
             }
         }
 
-        public void Delegate(long from, long to, global::Framework.Caspar.ISerializable serializable)
+        public void Delegate(long from, long to, global::Caspar.ISerializable serializable)
         {
             //       lock (this)
             {
@@ -805,7 +805,7 @@ namespace Framework.Caspar.Protocol
             notifier.From = from;
             notifier.To = to;
             notifier.Responsible = res;
-            global::Framework.Caspar.Layer.FromDelegateUID.Value = from;
+            global::Caspar.Layer.FromDelegateUID.Value = from;
             Singleton<D>.Instance.OnDelegate(notifier, code, stream);
 
         }
@@ -848,7 +848,7 @@ namespace Framework.Caspar.Protocol
             this.Port = port;
 
 
-            Logger.Info($"Try Delegator Connect To {Ip}:{Port} {this.GetType().FullName} - Id:[{Framework.Caspar.Api.PublicIp}]");
+            Logger.Info($"Try Delegator Connect To {Ip}:{Port} {this.GetType().FullName} - Id:[{Caspar.Api.PublicIp}]");
             Protocol.Connect(ip, port);
 
         }
@@ -868,9 +868,9 @@ namespace Framework.Caspar.Protocol
 
         public static void Listen(ushort port)
         {
-            global::Framework.Caspar.Api.Listen(port, () =>
+            global::Caspar.Api.Listen(port, () =>
             {
-                new global::Framework.Caspar.Protocol.Delegator<D>().Accept(port);
+                new global::Caspar.Protocol.Delegator<D>().Accept(port);
             });
         }
 
@@ -886,11 +886,11 @@ namespace Framework.Caspar.Protocol
 
             if (string.IsNullOrEmpty(Ip) == true)
             {
-                Logger.Info($"Server Delegator<{typeof(D).FullName}> Disconnected. UID : {UID} -> {(global::Framework.Caspar.Api.UInt32ToIPAddress((uint)(UID >> 32)))}, {(global::Framework.Caspar.Api.UInt32ToIPAddress((uint)UID))} Self {Self}");
+                Logger.Info($"Server Delegator<{typeof(D).FullName}> Disconnected. UID : {UID} -> {(global::Caspar.Api.UInt32ToIPAddress((uint)(UID >> 32)))}, {(global::Caspar.Api.UInt32ToIPAddress((uint)UID))} Self {Self}");
             }
             else
             {
-                Logger.Info($"Client Delegator<{typeof(D).FullName}> Disconnected From {Ip} Self {Self} - Id:[{Framework.Caspar.Api.PublicIp}]");
+                Logger.Info($"Client Delegator<{typeof(D).FullName}> Disconnected From {Ip} Self {Self} - Id:[{Caspar.Api.PublicIp}]");
             }
 
             var waits = waitResponse.Values.ToArray();
@@ -906,7 +906,7 @@ namespace Framework.Caspar.Protocol
                 if (IsClose() == true) { return; }
                 Task.Run(async () =>
                 {
-                    if (global::Framework.Caspar.Api.IsOpen == false) return;
+                    if (global::Caspar.Api.IsOpen == false) return;
                     await Task.Delay(10000);
                     Connect(this.Ip, Port);
                 });
@@ -1012,7 +1012,7 @@ namespace Framework.Caspar.Protocol
             return 0;
         }
 
-        public global::Framework.Caspar.Layer.Frame Handler { get; set; }
+        public global::Caspar.Layer.Frame Handler { get; set; }
 
     }
 }

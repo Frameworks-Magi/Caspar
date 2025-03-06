@@ -7,7 +7,7 @@ using System.Data.SqlClient;
 using System.Threading;
 
 
-namespace Framework.Caspar.Database.Management.Relational
+namespace Caspar.Database.Management.Relational
 {
     public class MsSql : IConnection
     {
@@ -49,8 +49,8 @@ namespace Framework.Caspar.Database.Management.Relational
             //connectionStringBuilder.UseCompression = false;
             connectionStringBuilder.ConnectTimeout = 5;
             //            connectionStringBuilder.MinPoolSize = 
-            //connectionStringBuilder.MinPoolSize = (int)Framework.Caspar.Api.ThreadCount;
-            //connectionStringBuilder.MaxPoolSize = (int)(Framework.Caspar.Api.ThreadCount * Database.SessionCount * 2);
+            //connectionStringBuilder.MinPoolSize = (int)Caspar.Api.ThreadCount;
+            //connectionStringBuilder.MaxPoolSize = (int)(Caspar.Api.ThreadCount * Database.SessionCount * 2);
 
             //connectionString.SslMode = MySqlSslMode.None;
             connectionStringBuilder.Encrypt = true;
@@ -157,7 +157,7 @@ namespace Framework.Caspar.Database.Management.Relational
             }
             catch (Exception ex)
             {
-                global::Framework.Caspar.Api.Logger.Info("Driver Level Rollback Exception " + ex);
+                global::Caspar.Api.Logger.Info("Driver Level Rollback Exception " + ex);
             }
         }
         public void Dispose()
