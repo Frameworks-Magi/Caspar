@@ -138,6 +138,7 @@ namespace Caspar.Database
 
         public static ThreadLocal<Session> CurrentSession = new ThreadLocal<Session>();
 
+        private IConnection _connection = null;
 
         public static async ValueTask<IConnection> GetConnection(string name, bool transaction = true)
         {
@@ -146,6 +147,20 @@ namespace Caspar.Database
             var connection = await session.GetConnection(name, transaction);
             if (connection == null) { return null; }
             return connection;
+        }
+
+        public static IConnection Connection
+        {
+            get
+            {
+                var session = Session.CurrentSession.Value;
+                return session._connection;
+            }
+        }
+
+        public static ICommandable CreateCommandable()
+        {
+            return Session.Connection.CreateCommand();
         }
 
         public static async ValueTask<ICommandable> GetCommandable(string name, bool transaction = true)
@@ -158,15 +173,23 @@ namespace Caspar.Database
         }
 
 
+        public static async ValueTask<Session> Create(string name, bool transaction = true)
+        {
+            var session = new Session();
+            var connection = await session.GetConnection(name, transaction: transaction);
+            if (connection == null) { throw new Exception("Connection not found"); }
+            return session;
+        }
+
         public static Session Create()
         {
-            return new Session();
+            var session = new Session();
+            return session;
         }
         private SynchronizationContext parentContext = null;
 
         public Session()
         {
-
             parentContext = SynchronizationContext.Current;
             SynchronizationContext.SetSynchronizationContext(this);
             CurrentSession.Value = this;
@@ -344,8 +367,6 @@ namespace Caspar.Database
                 return;
             }
 
-            Logger.Debug($"Dispose Session: {UID}");
-
             SynchronizationContext.SetSynchronizationContext(parentContext);
             Session.CurrentSession.Value = null;
             parentContext = null;
@@ -410,6 +431,7 @@ namespace Caspar.Database
                 connection = connection.Create();
                 await connection.Open(this.CancellationToken, transaction);
                 _connections.Add(name, connection);
+                _connection ??= connection;
                 return connection;
             }
             catch (Exception e)
