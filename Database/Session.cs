@@ -167,7 +167,7 @@ namespace Caspar.Database
         {
             var session = Session.CurrentSession.Value;
             if (session == null) { return null; }
-            var connection = await session.GetConnection(name, transaction);
+            var connection = await session.GetConnection(name, transaction: transaction);
             if (connection == null) { return null; }
             return connection.CreateCommand();
         }
