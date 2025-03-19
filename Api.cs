@@ -2872,6 +2872,8 @@ namespace Caspar
             {
                 Logger.Error(e);
             }
+
+            Platform.AWS.SES.StartUp();
         }
 
         public static void CleanUp()

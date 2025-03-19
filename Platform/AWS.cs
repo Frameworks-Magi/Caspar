@@ -1,4 +1,5 @@
-﻿using Amazon;
+﻿using Aliyun.Acs.Cdn;
+using Amazon;
 using Amazon.S3;
 using Amazon.S3.Model;
 using Amazon.SQS;
@@ -12,6 +13,7 @@ using System.Diagnostics;
 using System.IO;
 using System.IO.Compression;
 using System.Linq;
+using System.Net.Sockets;
 using System.Text;
 using System.Threading.Tasks;
 using static Caspar.Api;
@@ -20,6 +22,53 @@ namespace Caspar.Platform
 {
     public static partial class AWS
     {
+
+        public static class SES
+        {
+            public static string IAM { get; set; }
+            public static string EndPoint { get; set; }
+            public static string Id { get; set; }
+            public static string Pw { get; set; }
+            public static string From { get; set; }
+            public static void StartUp()
+            {
+                try
+                {
+                    SES.EndPoint = Caspar.Api.Config.AWS.SES.EndPoint;
+                    SES.Id = Caspar.Api.Config.AWS.SES.Id;
+                    SES.Pw = Caspar.Api.Config.AWS.SES.Pw;
+                    SES.From = Caspar.Api.Config.AWS.SES.From;
+                    SES.IAM = Caspar.Api.Config.AWS.SES.IAM;
+                }
+                catch (Exception e)
+                {
+                    Logger.Error(e);
+                }
+
+            }
+
+            public static async ValueTask SendEmail(string subject, string body, string email)
+            {
+                using var smtpClient = new System.Net.Mail.SmtpClient(SES.EndPoint, 587)
+                {
+                    EnableSsl = true,
+                    Credentials = new System.Net.NetworkCredential(
+                (string)SES.Id,
+                (string)SES.Pw)
+                };
+
+                using var mailMessage = new System.Net.Mail.MailMessage
+                {
+                    From = new System.Net.Mail.MailAddress(SES.From),
+                    Subject = subject,
+                    Body = body,
+                    IsBodyHtml = true
+                };
+
+                mailMessage.To.Add(email);
+                await smtpClient.SendMailAsync(mailMessage);
+            }
+        }
         public class S3
         {
             public string KeyId { get; set; }

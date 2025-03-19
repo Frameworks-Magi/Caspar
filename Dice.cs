@@ -19,7 +19,7 @@ namespace Caspar
             //return System.Random.Shared.Next(from, to);
             return random.Value.Next(from, toExclusive);
         }
-        public static string Digit(int length)
+        public static string Digits(int length)
         {
             string digits = string.Empty;
             digits = Roll(1, 10).ToString();
