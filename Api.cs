@@ -797,7 +797,6 @@ namespace Caspar
             }
         }
 
-        private static long _offset = 0;
 
         public static string PublicIp { get; private set; }
         public static string PrivateIp { get; private set; }
@@ -806,7 +805,6 @@ namespace Caspar
         {
             get { return StandAlone == true ? PrivateIp : PublicIp; }
         }
-        private static long uniqueKey = 1;
 
         static public int ThreadCount { get; set; } = Math.Min(16, Math.Max(4, Convert.ToInt32(Math.Ceiling((Environment.ProcessorCount * 0.75) * 1.0))));
 
@@ -2341,46 +2339,46 @@ namespace Caspar
                     //     }
 
                     // }
-                    command.Parameters.Clear();
-                    command.Transaction = connection.BeginTransaction();
-                    command.CommandText = "UPDATE `caspar`.`seed` SET `value` = `value` + 10 WHERE `id` = 1;";
-                    if (command.ExecuteNonQuery() == 0)
-                    {
-                        command.Transaction.Rollback();
-                        continue;
-                    }
-                    command.CommandText = "SELECT `value` FROM `caspar`.`seed` WHERE `id` = 1 FOR UPDATE;";
-                    using (var reader = command.ExecuteReader())
-                    {
-                        try
-                        {
-                            if (reader.Read() == true)
-                            {
-                                Api.Seed.Value = reader[0].ToInt32();
-                            }
-                        }
-                        catch (Exception e)
-                        {
-                            Logger.Error(e);
-                        }
-                        finally
-                        {
-                            reader.Close();
-                        }
-                    }
+                    // command.Parameters.Clear();
+                    // command.Transaction = connection.BeginTransaction();
+                    // command.CommandText = "UPDATE `caspar`.`seed` SET `value` = `value` + 10 WHERE `id` = 1;";
+                    // if (command.ExecuteNonQuery() == 0)
+                    // {
+                    //     command.Transaction.Rollback();
+                    //     continue;
+                    // }
+                    // command.CommandText = "SELECT `value` FROM `caspar`.`seed` WHERE `id` = 1 FOR UPDATE;";
+                    // using (var reader = command.ExecuteReader())
+                    // {
+                    //     try
+                    //     {
+                    //         if (reader.Read() == true)
+                    //         {
+                    //             Api.Seed.Value = reader[0].ToInt32();
+                    //         }
+                    //     }
+                    //     catch (Exception e)
+                    //     {
+                    //         Logger.Error(e);
+                    //     }
+                    //     finally
+                    //     {
+                    //         reader.Close();
+                    //     }
+                    // }
 
-                    command.Transaction.Commit();
-                    connection.Close();
+                    // command.Transaction.Commit();
+                    // connection.Close();
 
-                    // if (Api.Snowflake.Instance == 0)
+                    // // if (Api.Snowflake.Instance == 0)
+                    // // {
+                    // //     continue;
+                    // // }
+                    // // Api.Snowflake.StartUp();
+                    // if (Api.Seed.Value == 0)
                     // {
                     //     continue;
                     // }
-                    // Api.Snowflake.StartUp();
-                    if (Api.Seed.Value == 0)
-                    {
-                        continue;
-                    }
                     if (Deploy.PPRT != 0) { break; }
                 }
                 catch (Exception e)
@@ -2532,7 +2530,6 @@ namespace Caspar
             if (seed == true)
             {
                 PublicIp = "127.0.0.1";
-                _offset = DateTime.UtcNow.ToUnixTime();
             }
 
             while (PublicIp.IsNullOrEmpty() == true)
@@ -2544,15 +2541,13 @@ namespace Caspar
                         var res = await httpClient.GetAsync($"{Config.Seed}");
                         var content = await res.Content.ReadAsStringAsync();
                         var ret = JObject.Parse(content);
-                        _offset = (int)ret.GetValue("Offset");
+                        Api.Seed.Value = (int)ret.GetValue("Offset");
                         PublicIp = (string)ret.GetValue("RemoteIp");
                     }
-                    var temp = _offset << 32 | (int)1;
-                    Interlocked.Exchange(ref uniqueKey, temp);
                 }
                 catch (Exception e)
                 {
-                    _offset = DateTime.UtcNow.ToUnixTime();
+                    Logger.Error(e);
                 }
 
                 if (seed == true)
