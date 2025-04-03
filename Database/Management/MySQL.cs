@@ -67,11 +67,19 @@ namespace Caspar.Database.Management.Relational
                 // query.command = Command;
                 // Queries.Add(query);
                 // return await query.TCS.Task;
-                return await Command.ExecuteNonQueryAsync();
+                return await Task.Run(() =>
+                {
+                    return Command.ExecuteNonQuery();
+                });
+
             }
             public async Task<System.Data.Common.DbDataReader> ExecuteReaderAsync()
             {
-                return await Command.ExecuteReaderAsync();
+                return await Task.Run(() =>
+                {
+                    return Command.ExecuteReader();
+                });
+                //return await Command.ExecuteReaderAsync();
 
                 // return await Task.Run(() =>
                 // {
@@ -94,7 +102,11 @@ namespace Caspar.Database.Management.Relational
             }
             public async Task<object> ExecuteScalarAsync()
             {
-                return await Command.ExecuteScalarAsync();
+                return await Task.Run(() =>
+                {
+                    return Command.ExecuteScalar();
+                });
+                //return await Command.ExecuteScalarAsync();
 
                 // return await Task.Run(() =>
                 // {
@@ -293,6 +305,7 @@ namespace Caspar.Database.Management.Relational
                     Logger.Info($"Database Session Initialize {Name} MaximumPoolSize is {connectionString.MaximumPoolSize}");
 
                     connectionString.ConnectionIdleTimeout = 60;
+                    connectionString.ConnectionTimeout = 60;
 
                     connectionString.AllowZeroDateTime = true;
                     connectionString.CharacterSet = "utf8";
@@ -326,8 +339,13 @@ namespace Caspar.Database.Management.Relational
                         }
                     };
 
-
-                    await Connection.OpenAsync();
+                    //  if (Connection.State != ConnectionState.Open)
+                    {
+                        await Task.Run(() =>
+                                           {
+                                               Connection.Open();
+                                           });
+                    }
                 }
                 if (transaction == true)
                 {

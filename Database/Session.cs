@@ -1,15 +1,10 @@
-﻿using Caspar;
-using System;
+﻿using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
-using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using static Caspar.Api;
-using Caspar.Container;
 using MySqlConnector;
-using Pipelines.Sockets.Unofficial;
-//using MySql.Data.MySqlClient;
 
 namespace Caspar.Database
 {
@@ -166,9 +161,17 @@ namespace Caspar.Database
         public static async ValueTask<ICommandable> GetCommandable(string name, bool transaction = true)
         {
             var session = Session.CurrentSession.Value;
-            if (session == null) { return null; }
+            if (session == null)
+            {
+                Logger.Error($"Session is null Session UID: {session.UID} ThreadId: {Thread.CurrentThread.ManagedThreadId}");
+                return null;
+            }
             var connection = await session.GetConnection(name, transaction: transaction);
-            if (connection == null) { return null; }
+            if (connection == null)
+            {
+                Logger.Error($"Connection is null Session UID: {session.UID} ThreadId: {Thread.CurrentThread.ManagedThreadId}");
+                return null;
+            }
             return connection.CreateCommand();
         }
 
@@ -177,7 +180,11 @@ namespace Caspar.Database
         {
             var session = new Session();
             var connection = await session.GetConnection(name, transaction: transaction);
-            if (connection == null) { throw new Exception("Connection not found"); }
+            if (connection == null)
+            {
+                Logger.Error($"Connection2 is null Session UID: {session.UID} ThreadId: {Thread.CurrentThread.ManagedThreadId}");
+                return null;
+            }
             return session;
         }
 
@@ -201,6 +208,7 @@ namespace Caspar.Database
             }
             else
             {
+                Logger.Info($"Session Created [{Layer.CurrentEntity.Value.UID}] ThreadId: {Thread.CurrentThread.ManagedThreadId}");
                 UID = Layer.CurrentEntity.Value.UID;
                 frame = Layer.CurrentEntity.Value;
                 Layer.CurrentEntity.Value.Add(this);
@@ -212,17 +220,22 @@ namespace Caspar.Database
         {
             if (frame != null)
             {
+                Logger.Info($"Post Message from Session [{frame.UID}]");
                 frame.PostMessage(() =>
                 {
+                    Logger.Info($"Post Message processing from Session [{frame.UID}] ThreadId: {Thread.CurrentThread.ManagedThreadId}");
                     SynchronizationContext.SetSynchronizationContext(this);
                     Session.CurrentSession.Value = this;
+                    Layer.CurrentEntity.Value = frame;
                     d(state);
                 });
             }
             else
             {
+                Logger.Info($"Post Message from Session but frame is null");
                 ThreadPool.QueueUserWorkItem(static s =>
                 {
+                    Logger.Info($"Post Message processing from Session but frame is null");
                     var tuple = s as Tuple<Session, SendOrPostCallback, object>;
                     var context = tuple.Item1;
                     SynchronizationContext.SetSynchronizationContext(context);
@@ -233,8 +246,10 @@ namespace Caspar.Database
 
         public override void Send(SendOrPostCallback d, object? state)
         {
+            Logger.Info($"Send Message from Session");
             SynchronizationContext.SetSynchronizationContext(this);
             Session.CurrentSession.Value = this;
+            Layer.CurrentEntity.Value = frame;
             base.Send(d, state);
         }
 
@@ -366,6 +381,7 @@ namespace Caspar.Database
             {
                 return;
             }
+            Logger.Info($"[Dispose Session] {UID} ThreadId: {Thread.CurrentThread.ManagedThreadId}");
 
             SynchronizationContext.SetSynchronizationContext(parentContext);
             Session.CurrentSession.Value = null;
@@ -413,7 +429,11 @@ namespace Caspar.Database
         {
             try
             {
-                if (this.IsDisposed == true) { return null; }
+                if (this.IsDisposed == true)
+                {
+                    Logger.Error($"GetConnection but Session is disposed. UID: {UID} ThreadId: {Thread.CurrentThread.ManagedThreadId}");
+                    return null;
+                }
                 if (_connections.TryGetValue(name, out var connection) == true)
                 {
                     if (transaction == true)
