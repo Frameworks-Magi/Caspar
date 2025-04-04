@@ -208,7 +208,6 @@ namespace Caspar.Database
             }
             else
             {
-                Logger.Info($"Session Created [{Layer.CurrentEntity.Value.UID}] ThreadId: {Thread.CurrentThread.ManagedThreadId}");
                 UID = Layer.CurrentEntity.Value.UID;
                 frame = Layer.CurrentEntity.Value;
                 Layer.CurrentEntity.Value.Add(this);
@@ -220,10 +219,8 @@ namespace Caspar.Database
         {
             if (frame != null)
             {
-                Logger.Info($"Post Message from Session [{frame.UID}]");
                 frame.PostMessage(() =>
                 {
-                    Logger.Info($"Post Message processing from Session [{frame.UID}] ThreadId: {Thread.CurrentThread.ManagedThreadId}");
                     SynchronizationContext.SetSynchronizationContext(this);
                     Session.CurrentSession.Value = this;
                     Layer.CurrentEntity.Value = frame;
@@ -381,8 +378,6 @@ namespace Caspar.Database
             {
                 return;
             }
-            Logger.Info($"[Dispose Session] {UID} ThreadId: {Thread.CurrentThread.ManagedThreadId}");
-
             SynchronizationContext.SetSynchronizationContext(parentContext);
             Session.CurrentSession.Value = null;
             parentContext = null;
