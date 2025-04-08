@@ -261,6 +261,21 @@ namespace Caspar.Database
 
         }
 
+        public void BeginTransaction()
+        {
+            foreach (var e in _connections.Values)
+            {
+                try
+                {
+                    e.BeginTransaction();
+                }
+                catch
+                {
+
+                }
+            }
+        }
+
 
         public void Rollback()
         {
