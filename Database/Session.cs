@@ -38,7 +38,7 @@ namespace Caspar.Database
         Task CommitAsync();
         void Rollback();
         Task RollbackAsync();
-        Task<IConnection> Open(CancellationToken token = default, bool transaction = true);
+        Task<IConnection> Open(CancellationToken token = default);
         void Close();
         void CopyFrom(IConnection value);
         IConnection Create();
@@ -135,11 +135,11 @@ namespace Caspar.Database
 
         private IConnection _connection = null;
 
-        public static async ValueTask<IConnection> GetConnection(string name, bool transaction = true)
+        public static async ValueTask<IConnection> GetConnection(string name)
         {
             var session = Session.CurrentSession.Value;
             if (session == null) { return null; }
-            var connection = await session.GetConnection(name, transaction);
+            var connection = await session.GetConnection(name, true);
             if (connection == null) { return null; }
             return connection;
         }
@@ -158,7 +158,7 @@ namespace Caspar.Database
             return Session.Connection.CreateCommand();
         }
 
-        public static async ValueTask<ICommandable> GetCommandable(string name, bool transaction = true)
+        public static async ValueTask<ICommandable> GetCommandable(string name)
         {
             var session = Session.CurrentSession.Value;
             if (session == null)
@@ -166,7 +166,7 @@ namespace Caspar.Database
                 Logger.Error($"Session is null Session UID: {session.UID} ThreadId: {Thread.CurrentThread.ManagedThreadId}");
                 return null;
             }
-            var connection = await session.GetConnection(name, transaction: transaction);
+            var connection = await session.GetConnection(name);
             if (connection == null)
             {
                 Logger.Error($"Connection is null Session UID: {session.UID} ThreadId: {Thread.CurrentThread.ManagedThreadId}");
@@ -179,11 +179,15 @@ namespace Caspar.Database
         public static async ValueTask<Session> Create(string name, bool transaction = true)
         {
             var session = new Session();
-            var connection = await session.GetConnection(name, transaction: transaction);
+            var connection = await session.GetConnection(name);
             if (connection == null)
             {
                 Logger.Error($"Connection2 is null Session UID: {session.UID} ThreadId: {Thread.CurrentThread.ManagedThreadId}");
                 return null;
+            }
+            if (transaction == true)
+            {
+                session.BeginTransaction();
             }
             return session;
         }
@@ -435,7 +439,7 @@ namespace Caspar.Database
         public static ConcurrentQueue<Session> Timeouts = new();
         private Dictionary<string, IConnection> _connections = new();
 
-        public async Task<IConnection> GetConnection(string name, bool open = true, bool transaction = true)
+        public async ValueTask<IConnection> GetConnection(string name, bool open = true)
         {
             try
             {
@@ -446,10 +450,6 @@ namespace Caspar.Database
                 }
                 if (_connections.TryGetValue(name, out var connection) == true)
                 {
-                    if (transaction == true)
-                    {
-                        connection.BeginTransaction();
-                    }
                     return connection;
                 }
                 if (Driver.Databases.TryGetValue(name, out connection) == false)
@@ -459,9 +459,9 @@ namespace Caspar.Database
                 }
 
                 connection = connection.Create();
-                await connection.Open(this.CancellationToken, transaction);
                 _connections.Add(name, connection);
                 _connection ??= connection;
+                await connection.Open(this.CancellationToken);
                 return connection;
             }
             catch (Exception e)

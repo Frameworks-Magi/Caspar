@@ -59,7 +59,8 @@ namespace Caspar.Database.Management.Relational
             connectionString = connectionStringBuilder.ToString();
         }
         public void CopyFrom(IConnection value) { }
-        public async Task<IConnection> Open(CancellationToken token = default, bool transaction = true)
+
+        public async Task<IConnection> Open(CancellationToken token = default)
         {
 
             int max = 10;
@@ -71,11 +72,6 @@ namespace Caspar.Database.Management.Relational
                     {
                         Connection = new SqlConnection(connectionString);
                         await Connection.OpenAsync(token);
-                    }
-
-                    if (transaction == true)
-                    {
-                        BeginTransaction();
                     }
                 }
                 catch

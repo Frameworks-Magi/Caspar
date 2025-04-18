@@ -315,7 +315,7 @@ namespace Caspar.Database.Management.Relational
         }
 
 
-        public async Task<IConnection> Open(CancellationToken token = default, bool transaction = true)
+        public async Task<IConnection> Open(CancellationToken token = default)
         {
             try
             {
@@ -339,17 +339,13 @@ namespace Caspar.Database.Management.Relational
                         }
                     };
 
-                    //  if (Connection.State != ConnectionState.Open)
+                    if (Connection.State != ConnectionState.Open)
                     {
                         await Task.Run(() =>
                                            {
                                                Connection.Open();
                                            });
                     }
-                }
-                if (transaction == true)
-                {
-                    BeginTransaction();
                 }
             }
             catch (Exception e)
