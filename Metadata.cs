@@ -368,6 +368,22 @@ namespace Caspar
                     }
                 }
 
+                var properties = metadata.GetType().GetProperties();
+                foreach (var property in properties)
+                {
+                    var primary = property.GetCustomAttributes(typeof(Metadata.Element.PrimaryKey), false);
+                    var secondary = property.GetCustomAttributes(typeof(Metadata.Element.SecondaryKey), false);
+
+                    if (primary != null && primary.Length > 0)
+                    {
+                        primaryKey = property.GetValue(metadata);
+                    }
+                    if (secondary != null && secondary.Length > 0)
+                    {
+                        secondaryKey = property.GetValue(metadata);
+                    }
+                }
+
                 table.array.Add(metadata);
                 object key = null;
                 if (primaryKey != null && secondaryKey != null)
@@ -385,7 +401,7 @@ namespace Caspar
 
                 if (key == null)
                 {
-                    global::Caspar.Api.Logger.Info($"Not found {nameof(T)}'s Key");
+                    global::Caspar.Api.Logger.Info($"Not found {typeof(T)}'s Key");
                     continue;
                 }
 
