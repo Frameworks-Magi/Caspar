@@ -8,6 +8,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Net;
+using System.Net.Http;
 using System.Text;
 using System.Threading.Tasks;
 using static Caspar.Api;
@@ -179,21 +180,25 @@ namespace Caspar.Attributes
                         }
                     }
 
-                    WebClient webClient = new WebClient();
-
-
-                    try
+                    // HttpClient를 사용하여 메타데이터 다운로드
+                    using (HttpClient httpClient = new HttpClient())
                     {
-                        var data = await webClient.DownloadDataTaskAsync(new Uri(uri));
-                        Metadatas.Enqueue((e.Key, e.Method, e.Callback, e.Metadata, data));
+                        try
+                        {
+                            Logger.Info($"Download Metadata: {System.IO.Path.GetFileName(e.Key)}");
+                            var response = await httpClient.GetAsync(new Uri(uri));
+                            response.EnsureSuccessStatusCode();
+                            var data = await response.Content.ReadAsByteArrayAsync();
+                            Metadatas.Enqueue((e.Key, e.Method, e.Callback, e.Metadata, data));
+                        }
+                        catch (Exception ex)
+                        {
+                            Logger.Error(ex);
+                            await Task.Delay(10);
+                            Assemblies.Enqueue(e);
+                        }
+                    }
 
-                    }
-                    catch (Exception ex)
-                    {
-                        Logger.Error($"Failed Load Metadata: {System.IO.Path.GetFileName(e.Key)}");
-                        await Task.Delay(10);
-                        Assemblies.Enqueue(e);
-                    }
                 }
 
                 await Task.Delay(10);
@@ -206,23 +211,22 @@ namespace Caspar.Attributes
                         using (var sr = new StreamReader(new MemoryStream(e.bytes)))
                         {
                             e.Method.Invoke(null, new object[] { sr });
+                            Logger.Info($"Read Metadata: {System.IO.Path.GetFileName(e.Key)}");
                         }
-
                     }
-                    catch (Exception ie)
+                    catch (Exception ex)
                     {
-                        Logger.Error(ie);
+                        Logger.Error(ex);
                     }
 
                     try
                     {
                         e.Callback?.Invoke(null, null);
                     }
-                    catch (Exception ie)
+                    catch (Exception ex)
                     {
-                        Logger.Error(ie);
+                        Logger.Error(ex);
                     }
-                    Logger.Info($"Load Metadata: {System.IO.Path.GetFileName(e.Key)}");
                 }
             }
 
