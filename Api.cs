@@ -437,6 +437,7 @@ namespace Caspar
         }
 
         public static global::Google.Protobuf.JsonFormatter JsonFormatter { get; set; }
+        public static bool OnLambda { get; set; } = false;
     }
 
     public static partial class Api
@@ -2172,6 +2173,11 @@ namespace Caspar
         public static void Registration(bool seed)
         {
             if (seed == true)
+            {
+                return;
+            }
+
+            if (Caspar.Api.OnLambda == true)
             {
                 return;
             }

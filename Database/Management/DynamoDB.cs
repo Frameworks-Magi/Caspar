@@ -67,7 +67,7 @@ namespace Caspar.Database.NoSql
         public async Task<IConnection> Open(CancellationToken token = default)
         {
             await System.Threading.Tasks.Task.CompletedTask;
-            return null;
+            return this;
         }
         public void Close() { }
         public void CopyFrom(IConnection value) { }

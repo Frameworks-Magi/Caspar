@@ -300,19 +300,28 @@ namespace Caspar
                 //     continuations.Enqueue(callback);
                 // }
                 // else 
-                if (FromDelegateUID.Value == UID)
+
+                // if (Caspar.NoLayer == true)
+                // {
+
+                // }
+                // else
                 {
-                    continuations.Enqueue(callback);
-                }
-                else
-                {
-                    messages.Enqueue(callback);
+                    if (FromDelegateUID.Value == UID)
+                    {
+                        continuations.Enqueue(callback);
+                    }
+                    else
+                    {
+                        messages.Enqueue(callback);
+                    }
+
+                    if (ToWait())
+                    {
+                        layer.Post(this);
+                    }
                 }
 
-                if (ToWait())
-                {
-                    layer.Post(this);
-                }
                 return true;
             }
 
