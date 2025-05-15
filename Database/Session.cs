@@ -240,6 +240,7 @@ namespace Caspar.Database
                     var tuple = s as Tuple<Session, SendOrPostCallback, object>;
                     var context = tuple.Item1;
                     SynchronizationContext.SetSynchronizationContext(context);
+                    Session.CurrentSession.Value = context;
                     tuple.Item2(tuple.Item3);
                 }, new Tuple<Session, SendOrPostCallback, object>(this, d, state));
             }
