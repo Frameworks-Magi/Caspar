@@ -15,6 +15,13 @@ namespace Caspar
 {
     public class Metadata
     {
+        public class Elementable<T> where T : class
+        {
+            public static T Get(object key)
+            {
+                return Metadata.GetElement<T>(key);
+            }
+        }
         public static string LocalPath
         {
             set
