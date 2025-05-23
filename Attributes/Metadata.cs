@@ -29,6 +29,8 @@ namespace Caspar.Attributes
         public string Extension;
         public string Builder { get; private set; }
         public string Filename { get; private set; }
+        public string LocalPath { get; private set; } = "";
+        public dynamic Json { get; private set; } = null;
 
         public static async Task Reload()
         {
@@ -43,6 +45,19 @@ namespace Caspar.Attributes
             this.Filename = filename;
             this.Extension = extension;
         }
+        public Metadata(string localpath, Type type = Type.Xml, string filename = "", string builder = "", string extension = "")
+        {
+            this.type = type;
+            this.Builder = builder;
+            this.Filename = filename;
+            this.Extension = extension;
+            this.LocalPath = localpath;
+        }
+
+        public Metadata(dynamic json)
+        {
+            this.Json = json;
+        }
 
         public class Layer : global::Caspar.Layer { }
         public class Loader : global::Caspar.Layer.Frame
@@ -52,20 +67,22 @@ namespace Caspar.Attributes
             public async Task Load()
             {
 
-                var Assemblies = new Queue<(string, System.Reflection.MethodInfo, System.Reflection.MethodInfo, Metadata)>();
+                var Assemblies = new Queue<(string, string, System.Reflection.MethodInfo, System.Reflection.MethodInfo, Metadata)>();
                 var Metadatas = new Queue<(string, System.Reflection.MethodInfo, System.Reflection.MethodInfo, Metadata, byte[])>();
 
+                // find Schema.Metadata assembly
+                var assembly = AppDomain.CurrentDomain.GetAssemblies().Where(x => x.FullName.Contains("Schema.Metadata")).FirstOrDefault();
+                //var assembly = AppDomain.CurrentDomain.GetAssemblies();
+
                 global::Caspar.Api.Logger.Info($"Load Metadata Version {Version}");
-                var classes = (from asm in AppDomain.CurrentDomain.GetAssemblies()
-                               from type in asm.GetTypes()
-                               where type.IsClass
-                               select type);
+                var classes = from type in assembly.GetTypes()
+                              where type.IsClass
+                              select type;
 
                 foreach (var c in classes)
                 {
                     try
                     {
-
                         foreach (var attribute in c.GetCustomAttributes(false))
                         {
 
@@ -119,7 +136,7 @@ namespace Caspar.Attributes
                                     callback = c.GetMethod(metadata.Builder, System.Reflection.BindingFlags.Static | System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.NonPublic);
                                 }
 
-                                Assemblies.Enqueue(($"{Path}/{Version}/{filename}{extension}", method, callback, metadata));
+                                Assemblies.Enqueue((c.Name, $"{Path}/{Version}/{filename}{extension}", method, callback, metadata));
                             }
                         }
                     }
@@ -131,8 +148,42 @@ namespace Caspar.Attributes
 
                 while (Assemblies.Count > 0)
                 {
-                    (string Key, System.Reflection.MethodInfo Method, System.Reflection.MethodInfo Callback, Metadata Metadata) e = Assemblies.Dequeue();
+                    (string name, string Key, System.Reflection.MethodInfo Method, System.Reflection.MethodInfo Callback, Metadata Metadata) e = Assemblies.Dequeue();
                     string uri = "";
+
+                    if (e.Metadata.LocalPath.IsNullOrEmpty() == false)
+                    {
+                        var filename = global::System.IO.Path.GetFileName(e.Key);
+                        var path = global::System.IO.Path.Combine(e.Metadata.LocalPath, filename);
+                        if (File.Exists(path) == true)
+                        {
+                            try
+                            {
+                                using var fs = File.OpenRead(path);
+                                byte[] data = null;
+                                using (var ms = new MemoryStream())
+                                {
+                                    fs.CopyTo(ms);
+                                    data = ms.ToArray();
+                                }
+
+                                Metadatas.Enqueue((e.Key, e.Method, e.Callback, e.Metadata, data));
+                            }
+                            catch
+                            {
+                                Assemblies.Enqueue(e);
+                            }
+                            finally
+                            {
+
+                            }
+                            continue;
+                        }
+                        else
+                        {
+                            Logger.Warning($"Metadata {e.name}  Private LocalPath has set but file not found.");
+                        }
+                    }
 
                     if (Caspar.Metadata.LocalPath.IsNullOrEmpty() == false)
                     {
@@ -162,7 +213,10 @@ namespace Caspar.Attributes
                             }
                             continue;
                         }
-
+                        else
+                        {
+                            Logger.Warning($"Metadata {e.name}  Global LocalPath has set but file not found.");
+                        }
                     }
 
                     var PEM = Caspar.CDN.PEM;
@@ -210,8 +264,8 @@ namespace Caspar.Attributes
                     {
                         using (var sr = new StreamReader(new MemoryStream(e.bytes)))
                         {
-                            e.Method.Invoke(null, new object[] { sr });
                             Logger.Info($"Read Metadata: {System.IO.Path.GetFileName(e.Key)}");
+                            e.Method.Invoke(null, new object[] { sr });
                         }
                     }
                     catch (Exception ex)
