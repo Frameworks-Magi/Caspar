@@ -523,6 +523,58 @@ namespace Caspar.Protocol
             return await TCS.Task;
         }
 
+        public async Task<R> DelegateAsync<T, R>(long from, long to, T msg)
+            where T : global::Google.Protobuf.IMessage<T>
+            where R : global::Google.Protobuf.IMessage<R>
+        {
+
+            global::System.Threading.Tasks.TaskCompletionSource<R> TCS = new TaskCompletionSource<R>();
+
+            //       lock (this)
+            {
+                ResponseCallback responder = (cis) =>
+                {
+                    R ret = Api.ProtobufParser<R>.Parser.ParseFrom(cis);
+                    TCS.SetResult(ret);
+                    //task.PostMessage(() => { callback(ret); });
+                };
+
+
+                ResponseFallback responseFallback = null;
+                responseFallback = () => { TCS.SetException(new Exception("FallBack")); };
+                //responseFallback = () => { TCS.SetResult(new T()); };
+
+
+                var timeout = DateTime.UtcNow.AddSeconds(30).Ticks;
+                var serialzable = new Serializer<T>();
+                serialzable.From = from;
+                serialzable.To = to;
+                serialzable.Message = msg;
+                serialzable.Sequence = GetSequence();
+                serialzable.Responsable = GetSequence();
+                serialzable.Lock = TCS.Task.Id;
+                if (waitResponse.TryAdd(serialzable.Responsable, (responder, responseFallback)) == false)
+                {
+                    waitTimeout.Enqueue((timeout, serialzable.Responsable));
+                    Logger.Error($"{this.GetType()} waitResponse Add Fail. msg : {msg.GetType()}, json : {msg.ToJson()}");
+                    //responseFallback?.Invoke();
+                    throw new Exception();
+                    //return default(T);
+                }
+
+                if (Protocol.Write(serialzable) == false)
+                {
+                    Logger.Error($"{this.GetType()} Write Fail. msg : {msg.GetType()}, json : {msg.ToJson()}");
+                    waitResponse.TryRemove(serialzable.Responsable, out (ResponseCallback, ResponseFallback) failed);
+                    //failed.Item2?.Invoke();
+                    throw new Exception();
+                }
+
+
+            }
+            return await TCS.Task;
+        }
+
         public async Task<T> DelegateAsync<T>(T msg)
             where T : global::Google.Protobuf.IMessage<T>
         {

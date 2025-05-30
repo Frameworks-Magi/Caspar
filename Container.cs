@@ -17,7 +17,7 @@ namespace Caspar.Container
         }
 
 
-        public static void AddOrUpdate<TKey, TValue>(this Dictionary<TKey, TValue> container, TKey key, TValue value) where TValue : new()
+        public static void AddOrUpdate<TKey, TValue>(this Dictionary<TKey, TValue> container, TKey key, TValue value)
         {
             container.Remove(key);
             container.Add(key, value);

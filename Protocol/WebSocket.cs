@@ -52,6 +52,33 @@ namespace Caspar.Protocol
             return false;
         }
 
+        public bool Write(byte[] msg)
+        {
+            lock (this)
+            {
+                if (socket == null)
+                {
+                    return false;
+                }
+                pendings.Enqueue(msg);
+                if (sendBuffer != null)
+                {
+                    return true;
+                }
+                try
+                {
+                    flush();
+                    return true;
+                }
+                catch (Exception e)
+                {
+                    //Caspar.Api.Logger.Verbose($"Ip = {IP}, Port = {Port}");
+                }
+            }
+            _ = Disconnect();
+            return false;
+        }
+
         protected virtual void OnConnect()
         {
 
@@ -83,6 +110,10 @@ namespace Caspar.Protocol
         protected virtual void OnRead(MemoryStream transferred)
         {
             transferred.Seek(0, SeekOrigin.End);
+
+            var buffer = ("Received " + transferred.Length + " bytes").ToBytes();
+            Write(buffer);
+
         }
 
         public async Task<bool> ReceiveAsync()

@@ -96,28 +96,28 @@ namespace Caspar.Protocol
 
                     Caspar.Database.ResultSet resultSet = session.ResultSet;
 
-                    foreach (var row in resultSet[0])
+                    foreach (dynamic row in resultSet[0])
                     {
                         Server server = new Server();
 
-                        server.Provider = row[0].ToString();
-                        server.Publish = row[1].ToString();
-                        server.Region = row[2].ToString();
+                        server.Provider = row.provider;
+                        server.Publish = row.publish;
+                        server.Region = row.region;
 
-                        server.Type = row[3].ToString();
-                        server.CloudPlatform = row[4].ToString();
+                        server.Type = row.type;
+                        server.CloudPlatform = row.platform;
 
                         // state
-                        if (row[5].ToInt32() != 1) { server.Health = false; }
+                        if (row.state != 1) { server.Health = false; }
 
-                        server.PublicIp = row[6].ToString();
-                        server.PrivateIp = row[7].ToString();
-                        server.HeartBeat = row[8].ToDateTime();
+                        server.PublicIp = row.public_ip;
+                        server.PrivateIp = row.private_ip;
+                        server.HeartBeat = (DateTime)row.heartbeat;
 
                         if (server.HeartBeat < DateTime.UtcNow) { server.Health = false; }
 
-                        server.Latitude = row[9].ToDouble();
-                        server.Longitude = row[10].ToDouble();
+                        server.Latitude = row.latitude;
+                        server.Longitude = row.longitude;
                         servers.Add(server);
                     }
 
