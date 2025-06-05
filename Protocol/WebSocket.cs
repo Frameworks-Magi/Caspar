@@ -48,7 +48,7 @@ namespace Caspar.Protocol
                     //Caspar.Api.Logger.Verbose($"Ip = {IP}, Port = {Port}");
                 }
             }
-            _ = Disconnect();
+            Disconnect();
             return false;
         }
 
@@ -75,7 +75,7 @@ namespace Caspar.Protocol
                     //Caspar.Api.Logger.Verbose($"Ip = {IP}, Port = {Port}");
                 }
             }
-            _ = Disconnect();
+            Disconnect();
             return false;
         }
 
@@ -97,7 +97,8 @@ namespace Caspar.Protocol
             }
             catch
             {
-
+                //Logger.Debug(e);
+                Disconnect();
             }
             finally
             {
@@ -126,7 +127,7 @@ namespace Caspar.Protocol
 
                 if (ret.Count == 0)
                 {
-                    await Disconnect();
+                    Disconnect();
                 }
                 else
                 {
@@ -137,7 +138,7 @@ namespace Caspar.Protocol
             catch (Exception e)
             {
                 //  Logger.Debug(e);
-                await Disconnect();
+                Disconnect();
             }
             finally
             {
@@ -185,7 +186,7 @@ namespace Caspar.Protocol
                         catch (Exception e)
                         {
                             global::Caspar.Api.Logger.Debug(e);
-                            _ = Disconnect();
+                            Disconnect();
                         }
                         break;
                     case byte[] array:
@@ -206,7 +207,7 @@ namespace Caspar.Protocol
                 }
                 catch
                 {
-                    _ = Disconnect();
+                    Disconnect();
                 }
                 finally
                 {
@@ -256,7 +257,7 @@ namespace Caspar.Protocol
 
         }
 
-        public async Task Disconnect()
+        public void Disconnect()
         {
             try
             {
@@ -269,9 +270,13 @@ namespace Caspar.Protocol
 
                 }
                 OnDisconnect();
-                await temp.CloseAsync(System.Net.WebSockets.WebSocketCloseStatus.Empty, "", CancellationToken.None);
+                temp.Abort();
             }
-            catch
+            catch (Exception e)
+            {
+                Logger.Debug(e);
+            }
+            finally
             {
 
             }

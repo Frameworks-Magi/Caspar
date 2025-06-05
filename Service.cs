@@ -13,7 +13,7 @@ namespace Caspar
         }
         protected async ValueTask Do(Func<Task> job)
         {
-            await PostMessage(job);
+            //    await PostMessage(job);
         }
 
         protected async ValueTask<T> Do<T>(Func<Task<T>> job)

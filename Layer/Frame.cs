@@ -146,7 +146,7 @@ namespace Caspar
 
             public override void Post(SendOrPostCallback d, object state)
             {
-                PostMessage(() => { d(state); });
+                PostContinuation(null, () => { d(state); });
             }
 
             public override void Send(SendOrPostCallback d, object state)
@@ -310,6 +310,7 @@ namespace Caspar
                     if (FromDelegateUID.Value == UID)
                     {
                         continuations.Enqueue(callback);
+                        FromDelegateUID.Value = 0;
                     }
                     else
                     {
@@ -335,7 +336,6 @@ namespace Caspar
                 }
 
                 global::System.Threading.Tasks.TaskCompletionSource<bool> TCS = new TaskCompletionSource<bool>();
-
                 asynchronouslies.Enqueue(async () =>
                 {
                     try
@@ -355,7 +355,7 @@ namespace Caspar
                     layer.Post(this);
                 }
 
-                return await TCS.Task;
+                return await TCS.Task.ConfigureAwait(true);
             }
 
 
@@ -396,7 +396,19 @@ namespace Caspar
 
             protected internal bool IsPost()
             {
-                return (post > 0) || (messages.Count > 0) || (continuations.Count > 0);
+                if (messages.Count > 0 && locks.Count() == 0)
+                {
+                    return true;
+                }
+                if (asynchronouslies.Count > 0)
+                {
+                    return true;
+                }
+                if (continuations.Count > 0)
+                {
+                    return true;
+                }
+                return post > 0;
             }
 
         }

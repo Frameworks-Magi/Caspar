@@ -5,6 +5,8 @@ using System.IO;
 using System.Linq;
 using System.Runtime.CompilerServices;
 using System.Text;
+using System.Threading;
+using System.Threading.Tasks;
 using static Caspar.Api;
 
 namespace Caspar
@@ -236,8 +238,6 @@ namespace Caspar
                     {
                         Console.WriteLine(ex);
                     }
-
-
                 }
 
                 public bool IsCompleted { get { return task.IsCompleted; } }

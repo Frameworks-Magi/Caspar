@@ -1,5 +1,7 @@
 ﻿using Caspar;
 using Caspar.Container;
+using Microsoft.Azure.Cosmos.Serialization.HybridRow.Schemas;
+using Mysqlx.Notice;
 using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
@@ -35,13 +37,13 @@ namespace Caspar.Protocol
         public void Delegate<T>(global::Caspar.Layer.Frame task, long to, T msg, AsyncCallback<T> callback, Action fallback = null)
            where T : global::Google.Protobuf.IMessage<T>
         { }
-        public async Task<T> DelegateAsync<T>(long from, long to, T msg)
+        public async Task<object> DelegateAsync<T>(long from, long to, T msg)
            where T : global::Google.Protobuf.IMessage<T>
         { await Task.CompletedTask; return default(T); }
-        public async Task<T> DelegateAsync<T>(T msg)
+        public async Task<object> DelegateAsync<T>(T msg)
            where T : global::Google.Protobuf.IMessage<T>
         { await Task.CompletedTask; return default(T); }
-        public async Task<MemoryStream> DelegateAsync(int id, MemoryStream msg) { await Task.CompletedTask; return null; }
+        public async Task<object> DelegateAsync(int id, MemoryStream msg) { await Task.CompletedTask; return null; }
         public void Delegate<T>(long from, long to, T msg)
             where T : global::Google.Protobuf.IMessage<T>
         { }
@@ -173,9 +175,22 @@ namespace Caspar.Protocol
                 if (waitTimeout.TryPeek(out wait) == true)
                 {
                     if (wait.Item1 > now) { break; }
-                    if (waitResponse.TryRemove(wait.Item2, out var responder) == true)
+                }
+
+                if (waitTimeout.TryDequeue(out wait) == false)
+                {
+                    break;
+                }
+
+                if (waitResponse.TryRemove(wait.Item2, out var responder) == true)
+                {
+                    try
                     {
                         responder.Item2?.Invoke();
+                    }
+                    catch (Exception ex)
+                    {
+                        Logger.Error($"Delegator<{typeof(D).FullName}> waitResponse TryRemove Fail {ex.Message}");
                     }
                 }
 
@@ -282,9 +297,9 @@ namespace Caspar.Protocol
             return delegator;
         }
 
-        private delegate void ResponseCallback(global::System.IO.MemoryStream stream);
+        private delegate void ResponseCallback(int code, global::System.IO.MemoryStream stream);
         private delegate void ResponseFallback();
-        private ConcurrentDictionary<long, (ResponseCallback, ResponseFallback)> waitResponse = new ConcurrentDictionary<long, (ResponseCallback, ResponseFallback)>();
+        private ConcurrentDictionary<long, (ResponseCallback, ResponseFallback, Caspar.Layer.Frame)> waitResponse = new ConcurrentDictionary<long, (ResponseCallback, ResponseFallback, Caspar.Layer.Frame)>();
         private ConcurrentQueue<(long, long)> waitTimeout = new ConcurrentQueue<(long, long)>();
 
         public class Serializer : global::Caspar.ISerializable
@@ -402,7 +417,7 @@ namespace Caspar.Protocol
 
             public IDelegator Delegator;
             public long UID;
-            internal protected long Responsible;
+            public long Responsible { get; internal protected set; } = 0;
             public long From;
             public long To;
         }
@@ -472,19 +487,21 @@ namespace Caspar.Protocol
             }
         }
 
-        public async Task<T> DelegateAsync<T>(long from, long to, T msg)
+
+
+        public async Task<object> DelegateAsync<T>(long from, long to, T msg)
             where T : global::Google.Protobuf.IMessage<T>
         {
 
-            global::System.Threading.Tasks.TaskCompletionSource<T> TCS = new TaskCompletionSource<T>();
+            global::System.Threading.Tasks.TaskCompletionSource<object> TCS = new TaskCompletionSource<object>();
 
             //       lock (this)
             {
-                ResponseCallback responder = (cis) =>
+                ResponseCallback responder = (code, cis) =>
                 {
-                    T ret = Api.ProtobufParser<T>.Parser.ParseFrom(cis);
+                    // T ret = Api.ProtobufParser<T>.Parser.ParseFrom(cis);
+                    var ret = Caspar.Api.Protobuf.Deserialize(code, cis);
                     TCS.SetResult(ret);
-                    //task.PostMessage(() => { callback(ret); });
                 };
 
 
@@ -501,95 +518,42 @@ namespace Caspar.Protocol
                 serialzable.Sequence = GetSequence();
                 serialzable.Responsable = GetSequence();
                 serialzable.Lock = TCS.Task.Id;
-                if (waitResponse.TryAdd(serialzable.Responsable, (responder, responseFallback)) == false)
+                if (waitResponse.TryAdd(serialzable.Responsable, (responder, responseFallback, Layer.CurrentEntity.Value)) == false)
                 {
-                    waitTimeout.Enqueue((timeout, serialzable.Responsable));
-                    Logger.Error($"{this.GetType()} waitResponse Add Fail. msg : {msg.GetType()}, json : {msg.ToJson()}");
-                    //responseFallback?.Invoke();
                     throw new Exception();
-                    //return default(T);
                 }
 
                 if (Protocol.Write(serialzable) == false)
                 {
-                    Logger.Error($"{this.GetType()} Write Fail. msg : {msg.GetType()}, json : {msg.ToJson()}");
-                    waitResponse.TryRemove(serialzable.Responsable, out (ResponseCallback, ResponseFallback) failed);
-                    //failed.Item2?.Invoke();
+                    waitResponse.TryRemove(serialzable.Responsable, out (ResponseCallback, ResponseFallback, Caspar.Layer.Frame) failed);
                     throw new Exception();
                 }
 
+                waitTimeout.Enqueue((timeout, serialzable.Responsable));
 
             }
+            //return await TCS.Task.ConfigureAwait(true);
             return await TCS.Task;
         }
 
-        public async Task<R> DelegateAsync<T, R>(long from, long to, T msg)
-            where T : global::Google.Protobuf.IMessage<T>
-            where R : global::Google.Protobuf.IMessage<R>
-        {
-
-            global::System.Threading.Tasks.TaskCompletionSource<R> TCS = new TaskCompletionSource<R>();
-
-            //       lock (this)
-            {
-                ResponseCallback responder = (cis) =>
-                {
-                    R ret = Api.ProtobufParser<R>.Parser.ParseFrom(cis);
-                    TCS.SetResult(ret);
-                    //task.PostMessage(() => { callback(ret); });
-                };
 
 
-                ResponseFallback responseFallback = null;
-                responseFallback = () => { TCS.SetException(new Exception("FallBack")); };
-                //responseFallback = () => { TCS.SetResult(new T()); };
-
-
-                var timeout = DateTime.UtcNow.AddSeconds(30).Ticks;
-                var serialzable = new Serializer<T>();
-                serialzable.From = from;
-                serialzable.To = to;
-                serialzable.Message = msg;
-                serialzable.Sequence = GetSequence();
-                serialzable.Responsable = GetSequence();
-                serialzable.Lock = TCS.Task.Id;
-                if (waitResponse.TryAdd(serialzable.Responsable, (responder, responseFallback)) == false)
-                {
-                    waitTimeout.Enqueue((timeout, serialzable.Responsable));
-                    Logger.Error($"{this.GetType()} waitResponse Add Fail. msg : {msg.GetType()}, json : {msg.ToJson()}");
-                    //responseFallback?.Invoke();
-                    throw new Exception();
-                    //return default(T);
-                }
-
-                if (Protocol.Write(serialzable) == false)
-                {
-                    Logger.Error($"{this.GetType()} Write Fail. msg : {msg.GetType()}, json : {msg.ToJson()}");
-                    waitResponse.TryRemove(serialzable.Responsable, out (ResponseCallback, ResponseFallback) failed);
-                    //failed.Item2?.Invoke();
-                    throw new Exception();
-                }
-
-
-            }
-            return await TCS.Task;
-        }
-
-        public async Task<T> DelegateAsync<T>(T msg)
+        public async Task<object> DelegateAsync<T>(T msg)
             where T : global::Google.Protobuf.IMessage<T>
         {
             return await DelegateAsync(UID, UID, msg);
         }
 
-        public async Task<MemoryStream> DelegateAsync(int code, MemoryStream msg)
+        public async Task<object> DelegateAsync(int code, MemoryStream msg)
         {
 
-            global::System.Threading.Tasks.TaskCompletionSource<MemoryStream> TCS = new TaskCompletionSource<MemoryStream>();
+            global::System.Threading.Tasks.TaskCompletionSource<object> TCS = new TaskCompletionSource<object>();
             //    lock (this)
             {
-                ResponseCallback responder = (cis) =>
+                ResponseCallback responder = (code, cis) =>
                 {
-                    TCS.SetResult(cis);
+                    var ret = Caspar.Api.Protobuf.Deserialize(code, cis);
+                    TCS.SetResult(ret);
                 };
 
 
@@ -606,7 +570,7 @@ namespace Caspar.Protocol
                 serialzable.Responsable = GetSequence();
                 serialzable.Code = code;
 
-                if (waitResponse.TryAdd(serialzable.Responsable, (responder, responseFallback)) == false)
+                if (waitResponse.TryAdd(serialzable.Responsable, (responder, responseFallback, Layer.CurrentEntity.Value)) == false)
                 {
                     waitTimeout.Enqueue((timeout, serialzable.Responsable));
                     Logger.Error($"{this.GetType()} waitResponse Add Fail.");
@@ -618,7 +582,7 @@ namespace Caspar.Protocol
                 if (Protocol.Write(serialzable) == false)
                 {
                     Logger.Error($"{this.GetType()} Write Fail.");
-                    waitResponse.TryRemove(serialzable.Responsable, out (ResponseCallback, ResponseFallback) failed);
+                    waitResponse.TryRemove(serialzable.Responsable, out (ResponseCallback, ResponseFallback, Caspar.Layer.Frame) failed);
                     //failed.Item2?.Invoke();
                     throw new Exception();
                 }
@@ -636,7 +600,7 @@ namespace Caspar.Protocol
 
             //      lock (this)
             {
-                ResponseCallback responder = (cis) =>
+                ResponseCallback responder = (code, cis) =>
                 {
                     T ret = Api.ProtobufParser<T>.Parser.ParseFrom(cis);
                     task.PostMessage(() => { callback(ret); });
@@ -656,7 +620,7 @@ namespace Caspar.Protocol
                 serialzable.Message = msg;
                 serialzable.Sequence = GetSequence();
                 serialzable.Responsable = GetSequence();
-                if (waitResponse.TryAdd(serialzable.Responsable, (responder, responseFallback)) == false)
+                if (waitResponse.TryAdd(serialzable.Responsable, (responder, responseFallback, Layer.CurrentEntity.Value)) == false)
                 {
                     waitTimeout.Enqueue((timeout, serialzable.Responsable));
 
@@ -669,7 +633,7 @@ namespace Caspar.Protocol
                 {
 
                     Logger.Error($"{this.GetType()} Write Fail. msg : {msg.GetType()}, json : {msg.ToJson()}");
-                    waitResponse.TryRemove(serialzable.Responsable, out (ResponseCallback, ResponseFallback) failed);
+                    waitResponse.TryRemove(serialzable.Responsable, out (ResponseCallback, ResponseFallback, Caspar.Layer.Frame) failed);
                     failed.Item2?.Invoke();
                     return;
                 }
@@ -691,7 +655,7 @@ namespace Caspar.Protocol
 
             //       lock (this)
             {
-                ResponseCallback responder = (cis) =>
+                ResponseCallback responder = (code, cis) =>
                 {
                     var ret = Api.ProtobufParser<R>.Parser.ParseFrom(cis);
                     task.PostMessage(() => { callback(ret); });
@@ -712,7 +676,7 @@ namespace Caspar.Protocol
                 serialzable.Responsable = GetSequence();
                 var timeout = DateTime.UtcNow.AddSeconds(30).Ticks;
 
-                if (waitResponse.TryAdd(serialzable.Responsable, (responder, responseFallback)) == false)
+                if (waitResponse.TryAdd(serialzable.Responsable, (responder, responseFallback, Layer.CurrentEntity.Value)) == false)
                 {
                     waitTimeout.Enqueue((timeout, serialzable.Responsable));
                     Logger.Error($"{this.GetType()} waitResponse Add Fail. msg : {msg.GetType()}, json : {msg.ToJson()}");
@@ -724,7 +688,7 @@ namespace Caspar.Protocol
                 {
 
                     Logger.Error($"{this.GetType()} Write Fail. msg : {msg.GetType()}, json : {msg.ToJson()}");
-                    waitResponse.TryRemove(serialzable.Responsable, out (ResponseCallback, ResponseFallback) failed);
+                    waitResponse.TryRemove(serialzable.Responsable, out (ResponseCallback, ResponseFallback, Caspar.Layer.Frame) failed);
                     failed.Item2?.Invoke();
                     return;
                 }
@@ -738,7 +702,7 @@ namespace Caspar.Protocol
             //        lock (this)
             {
 
-                ResponseCallback responder = (cis) =>
+                ResponseCallback responder = (code, cis) =>
                 {
                     callback(cis);
                 };
@@ -759,10 +723,10 @@ namespace Caspar.Protocol
                 binaryWriter.Write((long)response);
                 var timeout = DateTime.UtcNow.AddSeconds(30).Ticks;
 
-                waitResponse.TryAdd(response, (responder, responseFallback));
+                waitResponse.TryAdd(response, (responder, responseFallback, Layer.CurrentEntity.Value));
                 if (Protocol.Write(header, stream) == false)
                 {
-                    waitResponse.TryRemove(response, out (ResponseCallback, ResponseFallback) failed);
+                    waitResponse.TryRemove(response, out (ResponseCallback, ResponseFallback, Caspar.Layer.Frame) failed);
                     failed.Item2?.Invoke();
                 }
 
@@ -785,7 +749,8 @@ namespace Caspar.Protocol
         public virtual void Delegate<T>(long to, T msg)
             where T : global::Google.Protobuf.IMessage<T>
         {
-            Delegate<T>(UID, to, msg);
+            var from = Caspar.Layer.CurrentEntity.Value == null ? UID : Caspar.Layer.CurrentEntity.Value.UID;
+            Delegate<T>(from, to, msg);
         }
         public virtual void Delegate<T>(T msg)
             where T : global::Google.Protobuf.IMessage<T>
@@ -836,13 +801,26 @@ namespace Caspar.Protocol
         {
             if (seq == 0)
             {
-                if (waitResponse.TryRemove(res, out (ResponseCallback, ResponseFallback) responder) == true)
+                if (waitResponse.TryRemove(res, out (ResponseCallback, ResponseFallback, Caspar.Layer.Frame) responder) == true)
                 {
-                    responder.Item1?.Invoke(stream);
-                    if (code == int.MaxValue || code == 0)
+                    if (responder.Item3 != null)
                     {
-                        responder.Item2?.Invoke();
+                        responder.Item1?.Invoke(code, stream);
+
+                        // responder.Item3.PostMessage(() =>
+                        // {
+                        //     responder.Item1?.Invoke(stream);
+                        // });
                     }
+                    else
+                    {
+                        responder.Item1?.Invoke(code, stream);
+                        if (code == int.MaxValue || code == 0)
+                        {
+                            responder.Item2?.Invoke();
+                        }
+                    }
+
                 }
                 else
                 {
@@ -859,6 +837,7 @@ namespace Caspar.Protocol
             notifier.Responsible = res;
             global::Caspar.Layer.FromDelegateUID.Value = from;
             Singleton<D>.Instance.OnDelegate(notifier, code, stream);
+            global::Caspar.Layer.FromDelegateUID.Value = 0;
 
         }
 
@@ -1024,6 +1003,7 @@ namespace Caspar.Protocol
                         else
                         {
                             Self = true;
+                            UID = res;
                             Logger.Debug($"Self Delegator<{typeof(D).FullName}> Accepted {Protocol.RemoteEndPoint.GetIp()}");
                         }
                     }

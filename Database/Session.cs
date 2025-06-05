@@ -223,7 +223,7 @@ namespace Caspar.Database
         {
             if (frame != null)
             {
-                frame.PostMessage(() =>
+                frame.PostContinuation(null, () =>
                 {
                     SynchronizationContext.SetSynchronizationContext(this);
                     Session.CurrentSession.Value = this;

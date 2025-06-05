@@ -438,6 +438,25 @@ namespace Caspar
 
         public static global::Google.Protobuf.JsonFormatter JsonFormatter { get; set; }
         public static bool OnLambda { get; set; } = false;
+
+        public static partial class Protobuf
+        {
+            public delegate global::Google.Protobuf.IMessage Deserializer(int code, global::System.IO.MemoryStream stream);
+            public static Deserializer DeserializeCallback { get; set; } = null;
+            public static global::Google.Protobuf.IMessage Deserialize(int code, global::System.IO.MemoryStream stream)
+            {
+                if (DeserializeCallback != null)
+                {
+                    return DeserializeCallback(code, stream);
+                }
+                else
+                {
+                    Logger.Error($"Deserialize Callback is not set. Code : {code}");
+                    return null;
+                }
+            }
+        }
+
     }
 
     public static partial class Api
