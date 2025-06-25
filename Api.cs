@@ -1042,6 +1042,71 @@ namespace Caspar
             }
         }
 
+        private static byte[]? _rsaPrivateKey = null;
+        private static readonly Aes aes = Aes.Create();
+        private static byte[]? aesKey; // 256 bits
+        private static byte[]? aesIV; // 128 bits
+
+        public static string AesEncrypt(string value)
+        {
+            aesKey ??= ((string)Caspar.Api.Config.Encrypt.AES.Key).FromBase64ToBytes();
+            aesIV ??= ((string)Caspar.Api.Config.Encrypt.AES.IV).FromBase64ToBytes();
+            using ICryptoTransform encryptor = aes.CreateEncryptor(aesKey, aesIV);
+            using (MemoryStream msEncrypt = new MemoryStream())
+            {
+                using (CryptoStream csEncrypt = new CryptoStream(msEncrypt, encryptor, CryptoStreamMode.Write))
+                {
+                    using (StreamWriter swEncrypt = new StreamWriter(csEncrypt))
+                    {
+                        swEncrypt.Write(value);
+                    }
+                    byte[] encrypted = msEncrypt.ToArray();
+                    return encrypted.ToBase64String();
+                }
+            }
+        }
+
+        public static string AesDecrypt(string value)
+        {
+            aesKey ??= ((string)Caspar.Api.Config.Encrypt.AES.Key).FromBase64ToBytes();
+            aesIV ??= ((string)Caspar.Api.Config.Encrypt.AES.IV).FromBase64ToBytes();
+            using ICryptoTransform decryptor = aes.CreateDecryptor(aesKey, aesIV);
+            byte[] buffer = value.FromBase64ToBytes();
+            using (MemoryStream msDecrypt = new MemoryStream(buffer))
+            {
+                using (CryptoStream csDecrypt = new CryptoStream(msDecrypt, decryptor, CryptoStreamMode.Read))
+                {
+                    using (StreamReader srDecrypt = new StreamReader(csDecrypt))
+                    {
+                        string plaintext = srDecrypt.ReadToEnd();
+                        return plaintext;
+                    }
+                }
+            }
+        }
+
+        public static string RsaEncrypt(string value)
+        {
+            using (var rsa = System.Security.Cryptography.RSA.Create())
+            {
+                _rsaPrivateKey ??= ((string)Caspar.Api.Config.Encrypt.RSA).FromBase64ToBytes();
+                rsa.ImportRSAPrivateKey(_rsaPrivateKey, out _);
+                var encrypted = rsa.Encrypt(value.ToBytes(), System.Security.Cryptography.RSAEncryptionPadding.Pkcs1);
+                return encrypted.ToBase64String();
+            }
+        }
+
+        public static string RsaDecrypt(string value)
+        {
+            using (var rsa = System.Security.Cryptography.RSA.Create())
+            {
+                _rsaPrivateKey ??= ((string)Caspar.Api.Config.Encrypt.RSA).FromBase64ToBytes();
+                rsa.ImportRSAPrivateKey(_rsaPrivateKey, out _);
+                var decrypted = rsa.Decrypt(value.FromBase64ToBytes(), System.Security.Cryptography.RSAEncryptionPadding.Pkcs1);
+                return Encoding.UTF8.GetString(decrypted);
+            }
+        }
+
         public static string DesEncrypt(string value, string key)
         {
             //키 유효성 검사
