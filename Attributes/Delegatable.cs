@@ -1,5 +1,7 @@
 using System;
+using System.Collections.Generic;
 using System.Linq;
+using System.Reflection;
 
 namespace Caspar.Attributes
 {
@@ -24,17 +26,53 @@ namespace Caspar.Attributes
             Port = port;
         }
 
+        private static IEnumerable<Type> GetLoadableTypes(Assembly[] assemblies)
+        {
+            var allTypes = new List<Type>();
+
+            foreach (var assembly in assemblies)
+            {
+                try
+                {
+                    var types = assembly.GetTypes();
+                    allTypes.AddRange(types);
+                }
+                catch (ReflectionTypeLoadException ex)
+                {
+                    // 로드 가능한 타입만 추가
+                    // var loadableTypes = ex.Types.Where(t => t != null);
+                    // allTypes.AddRange(loadableTypes);
+
+                    // // 로드 실패한 타입들에 대한 정보 로깅 (선택사항)
+                    // Console.WriteLine($"Assembly: {assembly.FullName}");
+                    // foreach (var loaderException in ex.LoaderExceptions)
+                    // {
+                    //     Console.WriteLine($"Loader Exception: {loaderException?.Message}");
+                    // }
+                }
+                catch (Exception ex)
+                {
+                    // 다른 예외는 로깅만 하고 계속 진행
+                    //Console.WriteLine($"Failed to load types from assembly {assembly.FullName}: {ex.Message}");
+                }
+            }
+
+            return allTypes;
+        }
         static public void StartUp()
         {
-
 
             var caspar = typeof(Caspar.Api);
             var assembly = System.Reflection.Assembly.GetAssembly(caspar);
 
-            var classes = (from asm in AppDomain.CurrentDomain.GetAssemblies()
-                           from type in asm.GetTypes()
-                           where type.IsClass
-                           select type);
+            // // 안전한 타입 로드 메서드
+            var types = GetLoadableTypes(AppDomain.CurrentDomain.GetAssemblies());
+            var classes = types.Where(t => t.IsClass && t.GetCustomAttributes(typeof(Delegatable), false).Length > 0);
+
+            // var classes = (from asm in AppDomain.CurrentDomain.GetAssemblies()
+            //                from type in asm.GetTypes()
+            //                where type.IsClass
+            //                select type);
 
 
             void listen(global::Caspar.Attributes.Delegatable delegatable, Type c)

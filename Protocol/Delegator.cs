@@ -43,7 +43,7 @@ namespace Caspar.Protocol
         public async Task<object> DelegateAsync<T>(T msg)
            where T : global::Google.Protobuf.IMessage<T>
         { await Task.CompletedTask; return default(T); }
-        public async Task<object> DelegateAsync(int id, MemoryStream msg) { await Task.CompletedTask; return null; }
+        public async Task<MemoryStream> DelegateAsync(int id, MemoryStream msg) { await Task.CompletedTask; return null; }
         public void Delegate<T>(long from, long to, T msg)
             where T : global::Google.Protobuf.IMessage<T>
         { }
@@ -544,16 +544,15 @@ namespace Caspar.Protocol
             return await DelegateAsync(UID, UID, msg);
         }
 
-        public async Task<object> DelegateAsync(int code, MemoryStream msg)
+        public async Task<MemoryStream> DelegateAsync(int code, MemoryStream msg)
         {
 
-            global::System.Threading.Tasks.TaskCompletionSource<object> TCS = new TaskCompletionSource<object>();
+            global::System.Threading.Tasks.TaskCompletionSource<MemoryStream> TCS = new TaskCompletionSource<MemoryStream>();
             //    lock (this)
             {
                 ResponseCallback responder = (code, cis) =>
                 {
-                    var ret = Caspar.Api.Protobuf.Deserialize(code, cis);
-                    TCS.SetResult(ret);
+                    TCS.SetResult(cis);
                 };
 
 
