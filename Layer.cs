@@ -36,7 +36,14 @@ namespace Caspar
         internal int TotalQueued = 0;
         public Layer()
         {
-            global::Caspar.Api.ThreadCount = 16;
+            global::Caspar.Api.ThreadCount = 2;
+
+            if (Api.OnLambda == false)
+            {
+                global::Caspar.Api.ThreadCount = Math.Min(16, Math.Max(4, Convert.ToInt32(Math.Ceiling((Environment.ProcessorCount * 0.75) * 1.0))));
+            }
+
+
             if (options.MaxDegreeOfParallelism != global::Caspar.Api.ThreadCount)
             {
                 options = new System.Threading.Tasks.ParallelOptions() { MaxDegreeOfParallelism = global::Caspar.Api.ThreadCount };

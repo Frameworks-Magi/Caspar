@@ -282,20 +282,28 @@ namespace Caspar.Database.Management.Relational
                     connectionString.Database = Db;
 
                     connectionString.Pooling = true;
-                    connectionString.MinimumPoolSize = (uint)ThreadCount;
-                    if (MaxSession > 32)
+                    connectionString.MinimumPoolSize = 2;
+                    connectionString.MaximumPoolSize = (uint)MaxSession;
+
+                    if (connectionString.MaximumPoolSize > Api.MaxSession)
                     {
-                        connectionString.MaximumPoolSize = (uint)MaxSession;
-                    }
-                    else
-                    {
-                        connectionString.MaximumPoolSize = 32;
+                        connectionString.MaximumPoolSize = (uint)Api.MaxSession;
                     }
 
-                    if (connectionString.MinimumPoolSize < 2)
+                    if (connectionString.MaximumPoolSize < connectionString.MinimumPoolSize)
                     {
-                        connectionString.MinimumPoolSize = 2;
+                        connectionString.MaximumPoolSize = connectionString.MinimumPoolSize;
                     }
+
+                    // if (MaxSession > 32)
+                    // {
+                    //     connectionString.MaximumPoolSize = (uint)MaxSession;
+                    // }
+                    // else
+                    // {
+                    //     connectionString.MaximumPoolSize = 32;
+                    // }
+
 
                     if (Caspar.Api.ServerType == "Agent")
                     {

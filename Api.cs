@@ -120,6 +120,14 @@ namespace Caspar
                 global::Caspar.Api.Config.Databases.MaxSession = 8;
             }
 
+            if (global::Caspar.Api.OnLambda == true)
+            {
+                global::Caspar.Api.Config.Databases.MaxSession = 3;
+            }
+
+            Api.MaxSession = (uint)global::Caspar.Api.Config.Databases.MaxSession;
+
+
             dynamic config = global::Caspar.Api.Config;
 
             Logger.Info($"Database Session Max = {Caspar.Api.Config.Databases.MaxSession}");
@@ -154,6 +162,11 @@ namespace Caspar
                         finally
                         {
                             Logger.Info($"Database {e.Name} Session Max = {driver.MaxSession}");
+                        }
+
+                        if (driver.MaxSession > Api.MaxSession)
+                        {
+                            driver.MaxSession = (int)Api.MaxSession;
                         }
 
                         if (json.Crypt == true)
