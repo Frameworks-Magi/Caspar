@@ -27,7 +27,7 @@ namespace Caspar.Protocol
                     DB = db.Name;
 
                     using var session = new Caspar.Database.Session();
-                    var connection = await session.GetConnection(DB);
+                    var connection = await session.CreateConnection(DB);
                     var command = connection.CreateCommand();
                     command.Parameters.Clear();
                     command.CommandText = string.Empty;

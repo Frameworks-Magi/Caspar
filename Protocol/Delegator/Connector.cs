@@ -78,7 +78,7 @@ namespace Caspar.Protocol
                     dynamic db = obj.First;
                     DB = db.Name;
 
-                    var connection = await session.GetConnection(DB);
+                    var connection = await session.CreateConnection(DB);
                     var command = connection.CreateCommand();
 
                     // 자신을 등록하고.

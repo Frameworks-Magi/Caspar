@@ -139,8 +139,19 @@ namespace Caspar.Database
         {
             var session = Session.CurrentSession.Value;
             if (session == null) { return null; }
-            var connection = await session.GetConnection(name, true);
+            var connection = await session.CreateConnection(name);
             if (connection == null) { return null; }
+            return connection;
+        }
+
+        public async ValueTask<IConnection> CreateConnection(string name, bool transaction)
+        {
+            var connection = await CreateConnection(name);
+            if (connection == null) { return null; }
+            if (transaction == true)
+            {
+                connection.BeginTransaction();
+            }
             return connection;
         }
 
@@ -166,7 +177,7 @@ namespace Caspar.Database
                 Logger.Error($"Session is null Session UID: {session.UID} ThreadId: {Thread.CurrentThread.ManagedThreadId}");
                 return null;
             }
-            var connection = await session.GetConnection(name);
+            var connection = await session.CreateConnection(name);
             if (connection == null)
             {
                 Logger.Error($"Connection is null Session UID: {session.UID} ThreadId: {Thread.CurrentThread.ManagedThreadId}");
@@ -179,7 +190,7 @@ namespace Caspar.Database
         public static async ValueTask<Session> Create(string name, bool transaction = true)
         {
             var session = new Session();
-            var connection = await session.GetConnection(name);
+            var connection = await session.CreateConnection(name);
             if (connection == null)
             {
                 Logger.Error($"Connection2 is null Session UID: {session.UID} ThreadId: {Thread.CurrentThread.ManagedThreadId}");
@@ -440,7 +451,7 @@ namespace Caspar.Database
         public static ConcurrentQueue<Session> Timeouts = new();
         private Dictionary<string, IConnection> _connections = new();
 
-        public async ValueTask<IConnection> GetConnection(string name, bool open = true)
+        public async ValueTask<IConnection> CreateConnection(string name)
         {
             try
             {

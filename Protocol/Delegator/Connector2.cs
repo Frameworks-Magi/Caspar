@@ -217,7 +217,7 @@ namespace Caspar
                     using var session = new Caspar.Database.Session();
 
 
-                    var connection = await session.GetConnection(DB);
+                    var connection = await session.CreateConnection(DB);
                     var command = connection.CreateCommand();
                     //Api.Region;
                     //Api.Country;

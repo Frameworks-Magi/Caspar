@@ -72,7 +72,7 @@ namespace Caspar
 
                 if (key == null)
                 {
-                    var connection = await session.GetConnection(DB);
+                    var connection = await session.CreateConnection(DB);
                     var command = connection.CreateCommand();
                     command.CommandText = $"SELECT * FROM `caspar`.`CouponInfo` WHERE Prefix = {prefix.ToCouponPrefixCode()} LIMIT 1";
                     var result = command.ExecuteReader().ToResultSet();
@@ -101,7 +101,7 @@ namespace Caspar
                 using var session = new global::Caspar.Database.Session();
 
                 //session.Command = async () =>
-                var connection = await session.GetConnection(DB);
+                var connection = await session.CreateConnection(DB);
                 var command = connection.CreateCommand();
                 command.CommandText = $"SELECT * FROM `caspar`.`CouponInfo` WHERE Prefix = {prefix.ToCouponPrefixCode()} AND Key = {key};";
                 var result = command.ExecuteReader().ToResultSet();
@@ -132,7 +132,7 @@ namespace Caspar
 
                 using var session = new global::Caspar.Database.Session();
 
-                var connection = await session.GetConnection(DB);
+                var connection = await session.CreateConnection(DB);
                 var command = connection.CreateCommand();
                 command.CommandText = $"SELECT * FROM `caspar`.`CouponInfo` WHERE Prefix = {prefix.ToCouponPrefixCode()} AND Id = {id};";
                 var result = command.ExecuteReader().ToResultSet();
@@ -169,7 +169,7 @@ namespace Caspar
 
                 var key = await getKey(prefix);
 
-                var connection = await session.GetConnection(DB);
+                var connection = await session.CreateConnection(DB);
                 var command = connection.CreateCommand();
                 command.CommandText = $"SELECT * FROM `caspar`.`CouponInfo` WHERE Prefix = {prefix.ToCouponPrefixCode()} AND Id = {index};";
                 var result = command.ExecuteReader().ToResultSet();
@@ -338,7 +338,7 @@ namespace Caspar
                 using var session = new Database.Session();
 
 
-                var connection = await session.GetConnection(DB);
+                var connection = await session.CreateConnection(DB);
                 var command = connection.CreateCommand();
 
                 command.CommandText = $"INSERT INTO `caspar`.`CouponInfo` (Prefix, `Key`, `Id`, `Limit`, `Category`, `Type`, `Consume`, `Reward`, `Version`, `Expire`, `Timestamp`, `Remark`) VALUES ";
