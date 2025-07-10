@@ -26,7 +26,7 @@ namespace Caspar
                 {
                     if (uid == value) { return; }
                     uid = value;
-                    Strand = (int)(uid % global::Caspar.Api.ThreadCount);
+                    Strand = (int)(uid % Layer.TotalWorkers);
                 }
             }
 
@@ -35,7 +35,6 @@ namespace Caspar
             {
                 get;
                 private set;
-
             }
             public Frame(Layer layer)
             {
@@ -72,8 +71,6 @@ namespace Caspar
             protected internal int post = 0;
             protected int state = (int)State.IDLE;
             internal bool interrupted = false;
-            //internal bool locked = false;
-            //public bool IsLocked { get { return locked; } }
             internal Layer layer;
 
             public Layer Layer { get { return layer; } }

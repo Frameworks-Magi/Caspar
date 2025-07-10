@@ -28,6 +28,7 @@ using Amazon.DynamoDBv2.DocumentModel;
 using Caspar.Container;
 using Amazon.S3;
 using System.Net.Http;
+using Org.BouncyCastle.Asn1.Cms;
 
 namespace Caspar
 {
@@ -46,7 +47,7 @@ namespace Caspar
                 }
             }
         }
-        public static uint MaxSession = (uint)global::Caspar.Api.ThreadCount;
+        public static int MaxSession = (int)Math.Ceiling((global::Caspar.Api.ThreadCount * 1.5));
         // public static async Task QueryAsync(Func<global::Caspar.Database.Session, Task> func)
         // {
         //     var session = new global::Caspar.Database.Session();
@@ -108,24 +109,17 @@ namespace Caspar
                 global::Caspar.Api.Config.Databases.MaxSession = global::Caspar.Api.ThreadCount;
             }
 
-            Api.MaxSession = (uint)global::Caspar.Api.Config.Databases.MaxSession;
-
-            if (Api.MaxSession < 16)
+            if (global::Caspar.Api.Config.Databases.MaxSession > global::Caspar.Api.ThreadCount * 2)
             {
-                global::Caspar.Api.Config.Databases.MaxSession = 16;
-            }
-
-            if (global::Caspar.Api.Config.Deploy == "QA")
-            {
-                global::Caspar.Api.Config.Databases.MaxSession = 8;
+                global::Caspar.Api.Config.Databases.MaxSession = global::Caspar.Api.ThreadCount * 2;
             }
 
             if (global::Caspar.Api.OnLambda == true)
             {
-                global::Caspar.Api.Config.Databases.MaxSession = 3;
+                global::Caspar.Api.Config.Databases.MaxSession = 1;
             }
 
-            Api.MaxSession = (uint)global::Caspar.Api.Config.Databases.MaxSession;
+            Api.MaxSession = global::Caspar.Api.Config.Databases.MaxSession;
 
 
             dynamic config = global::Caspar.Api.Config;
@@ -151,7 +145,7 @@ namespace Caspar
                         driver.Pw = json.Pw;
                         driver.Db = json.Db;
                         driver.Name = e.Name;
-                        driver.MaxSession = 32;
+                        driver.MaxSession = Api.MaxSession;
                         try
                         {
                             driver.MaxSession = json.MaxSession;
@@ -166,7 +160,7 @@ namespace Caspar
 
                         if (driver.MaxSession > Api.MaxSession)
                         {
-                            driver.MaxSession = (int)Api.MaxSession;
+                            driver.MaxSession = Api.MaxSession;
                         }
 
                         if (json.Crypt == true)
@@ -838,7 +832,7 @@ namespace Caspar
             get { return StandAlone == true ? PrivateIp : PublicIp; }
         }
 
-        static public int ThreadCount { get; set; } = Math.Min(16, Math.Max(4, Convert.ToInt32(Math.Ceiling((Environment.ProcessorCount * 0.75) * 1.0))));
+        static internal int ThreadCount { get; set; } = Math.Min(16, Math.Max(2, Convert.ToInt32(Math.Ceiling(Environment.ProcessorCount * 0.75) * 2.0)));
 
         internal class Notifier : global::Caspar.INotifier
         {
@@ -865,182 +859,182 @@ namespace Caspar
         }
         private static List<global::Caspar.Layer> layers = new List<Caspar.Layer>();
         private static List<global::Caspar.Layer> waitLayers = new List<Caspar.Layer>();
-        public class Watcher
-        {
-            private FileSystemWatcher watcher;
-            protected Queue<string> changed = new Queue<string>();
-            protected Queue<string> deleted = new Queue<string>();
-            protected Queue<string> errors = new Queue<string>();
-            protected bool forceUpdate = false;
-            public string Path { get; set; }
-            public string Filter { get; set; }
-            protected Dictionary<string, DateTime> deletedLastWriteTime = new Dictionary<string, DateTime>();
-            protected Dictionary<string, DateTime> changedLastWriteTime = new Dictionary<string, DateTime>();
+        // public class Watcher
+        // {
+        //     private FileSystemWatcher watcher;
+        //     protected Queue<string> changed = new Queue<string>();
+        //     protected Queue<string> deleted = new Queue<string>();
+        //     protected Queue<string> errors = new Queue<string>();
+        //     protected bool forceUpdate = false;
+        //     public string Path { get; set; }
+        //     public string Filter { get; set; }
+        //     protected Dictionary<string, DateTime> deletedLastWriteTime = new Dictionary<string, DateTime>();
+        //     protected Dictionary<string, DateTime> changedLastWriteTime = new Dictionary<string, DateTime>();
 
 
-            protected void AddCreateOrChange(string path)
-            {
-                lock (this)
-                {
-                    if (changedLastWriteTime.ContainsKey(path) == true)
-                    {
-                        changedLastWriteTime[path] = DateTime.UtcNow;
-                    }
-                    else
-                    {
-                        changedLastWriteTime.Add(path, DateTime.UtcNow);
-                    }
-                }
-            }
+        //     protected void AddCreateOrChange(string path)
+        //     {
+        //         lock (this)
+        //         {
+        //             if (changedLastWriteTime.ContainsKey(path) == true)
+        //             {
+        //                 changedLastWriteTime[path] = DateTime.UtcNow;
+        //             }
+        //             else
+        //             {
+        //                 changedLastWriteTime.Add(path, DateTime.UtcNow);
+        //             }
+        //         }
+        //     }
 
-            protected void AddDeleteOrRename(string path)
-            {
-            }
-            protected virtual void OnCallback(string path, bool ret) { }
-            protected virtual void OnDeleted(object sender, FileSystemEventArgs e)
-            {
+        //     protected void AddDeleteOrRename(string path)
+        //     {
+        //     }
+        //     protected virtual void OnCallback(string path, bool ret) { }
+        //     protected virtual void OnDeleted(object sender, FileSystemEventArgs e)
+        //     {
 
-                lock (this)
-                {
-                    FileInfo fi = new FileInfo(e.FullPath);
-                    if (fi == null) { return; }
+        //         lock (this)
+        //         {
+        //             FileInfo fi = new FileInfo(e.FullPath);
+        //             if (fi == null) { return; }
 
-                    Logger.Error("Deleted : " + e.FullPath + " - " + DateTime.UtcNow);
+        //             Logger.Error("Deleted : " + e.FullPath + " - " + DateTime.UtcNow);
 
-                    lock (deletedLastWriteTime)
-                    {
-                        if (deletedLastWriteTime.ContainsKey(e.FullPath) == true)
-                        {
-                            deletedLastWriteTime[e.FullPath] = DateTime.UtcNow;
-                        }
-                        else
-                        {
-                            deletedLastWriteTime.Add(e.FullPath, DateTime.UtcNow);
-                        }
-                    }
-                }
+        //             lock (deletedLastWriteTime)
+        //             {
+        //                 if (deletedLastWriteTime.ContainsKey(e.FullPath) == true)
+        //                 {
+        //                     deletedLastWriteTime[e.FullPath] = DateTime.UtcNow;
+        //                 }
+        //                 else
+        //                 {
+        //                     deletedLastWriteTime.Add(e.FullPath, DateTime.UtcNow);
+        //                 }
+        //             }
+        //         }
 
-            }
-            protected virtual void OnCreated(object sender, FileSystemEventArgs e)
-            {
-                FileInfo fi = new FileInfo(e.FullPath);
-                if (fi == null) { return; }
-                AddCreateOrChange(e.FullPath);
-            }
-            protected virtual void OnRenamed(object sender, RenamedEventArgs e)
-            {
-                lock (this)
-                {
-                    FileInfo fi = new FileInfo(e.FullPath);
-                    if (fi == null) { return; }
+        //     }
+        //     protected virtual void OnCreated(object sender, FileSystemEventArgs e)
+        //     {
+        //         FileInfo fi = new FileInfo(e.FullPath);
+        //         if (fi == null) { return; }
+        //         AddCreateOrChange(e.FullPath);
+        //     }
+        //     protected virtual void OnRenamed(object sender, RenamedEventArgs e)
+        //     {
+        //         lock (this)
+        //         {
+        //             FileInfo fi = new FileInfo(e.FullPath);
+        //             if (fi == null) { return; }
 
-                    Logger.Error("Renamed : " + e.FullPath + " - " + DateTime.UtcNow);
+        //             Logger.Error("Renamed : " + e.FullPath + " - " + DateTime.UtcNow);
 
-                }
-            }
-            protected virtual void OnChanged(object sender, FileSystemEventArgs e)
-            {
-                FileInfo fi = new FileInfo(e.FullPath);
-                if (fi == null) { return; }
-                AddCreateOrChange(e.FullPath);
-            }
-            internal void Run()
-            {
-                if (watcher != null) { return; }
-                watcher = new FileSystemWatcher();
+        //         }
+        //     }
+        //     protected virtual void OnChanged(object sender, FileSystemEventArgs e)
+        //     {
+        //         FileInfo fi = new FileInfo(e.FullPath);
+        //         if (fi == null) { return; }
+        //         AddCreateOrChange(e.FullPath);
+        //     }
+        //     internal void Run()
+        //     {
+        //         if (watcher != null) { return; }
+        //         watcher = new FileSystemWatcher();
 
-                Directory.CreateDirectory(Path);
-                watcher.Path = Path;
-                /* Watch for changes in LastAccess and LastWrite times, and
-                   the renaming of files or directories. */
-                watcher.NotifyFilter = NotifyFilters.LastWrite;
-                // Only watch text files.
-                watcher.Filter = Filter;
+        //         Directory.CreateDirectory(Path);
+        //         watcher.Path = Path;
+        //         /* Watch for changes in LastAccess and LastWrite times, and
+        //            the renaming of files or directories. */
+        //         watcher.NotifyFilter = NotifyFilters.LastWrite;
+        //         // Only watch text files.
+        //         watcher.Filter = Filter;
 
-                // Add event handlers.
-                watcher.Changed += new FileSystemEventHandler(OnChanged);
-                watcher.Created += new FileSystemEventHandler(OnCreated);
-                watcher.Deleted += new FileSystemEventHandler(OnDeleted);
-                watcher.Renamed += new RenamedEventHandler(OnRenamed);
+        //         // Add event handlers.
+        //         watcher.Changed += new FileSystemEventHandler(OnChanged);
+        //         watcher.Created += new FileSystemEventHandler(OnCreated);
+        //         watcher.Deleted += new FileSystemEventHandler(OnDeleted);
+        //         watcher.Renamed += new RenamedEventHandler(OnRenamed);
 
-                // Begin watching.
-                watcher.EnableRaisingEvents = true;
-                watcher.IncludeSubdirectories = true;
-            }
-            public virtual void Update()
-            {
-            }
+        //         // Begin watching.
+        //         watcher.EnableRaisingEvents = true;
+        //         watcher.IncludeSubdirectories = true;
+        //     }
+        //     public virtual void Update()
+        //     {
+        //     }
 
-            internal void Refresh()
-            {
+        //     internal void Refresh()
+        //     {
 
-                DateTime now = DateTime.UtcNow;
-                lock (this)
-                {
+        //         DateTime now = DateTime.UtcNow;
+        //         lock (this)
+        //         {
 
-                    foreach (var e in changedLastWriteTime)
-                    {
-                        var diff = now.Subtract(e.Value).TotalMilliseconds;
-                        if (diff >= 5000)
-                        {
-                            changed.Enqueue(e.Key);
-                        }
-                    }
+        //             foreach (var e in changedLastWriteTime)
+        //             {
+        //                 var diff = now.Subtract(e.Value).TotalMilliseconds;
+        //                 if (diff >= 5000)
+        //                 {
+        //                     changed.Enqueue(e.Key);
+        //                 }
+        //             }
 
-                    foreach (var e in changed)
-                    {
-                        changedLastWriteTime.Remove(e);
-                    }
+        //             foreach (var e in changed)
+        //             {
+        //                 changedLastWriteTime.Remove(e);
+        //             }
 
-                    foreach (var e in deletedLastWriteTime)
-                    {
-                        var diff = now.Subtract(e.Value).TotalMilliseconds;
-                        if (diff >= 5000)
-                        {
-                            deleted.Enqueue(e.Key);
-                        }
-                    }
+        //             foreach (var e in deletedLastWriteTime)
+        //             {
+        //                 var diff = now.Subtract(e.Value).TotalMilliseconds;
+        //                 if (diff >= 5000)
+        //                 {
+        //                     deleted.Enqueue(e.Key);
+        //                 }
+        //             }
 
-                    foreach (var e in deleted)
-                    {
-                        deletedLastWriteTime.Remove(e);
-                    }
+        //             foreach (var e in deleted)
+        //             {
+        //                 deletedLastWriteTime.Remove(e);
+        //             }
 
-                    if (changed.Count > 0 || deleted.Count > 0)
-                    {
-                        Update();
-                    }
+        //             if (changed.Count > 0 || deleted.Count > 0)
+        //             {
+        //                 Update();
+        //             }
 
-                }
+        //         }
 
-            }
+        //     }
 
 
-            public bool IsError()
-            {
-                return errors.Count > 0;
-            }
+        //     public bool IsError()
+        //     {
+        //         return errors.Count > 0;
+        //     }
 
-            public bool IsClear()
-            {
-                if (changed.Count > 0 || deleted.Count > 0)
-                {
-                    return false;
-                }
-                return true;
-            }
-        }
+        //     public bool IsClear()
+        //     {
+        //         if (changed.Count > 0 || deleted.Count > 0)
+        //         {
+        //             return false;
+        //         }
+        //         return true;
+        //     }
+        // }
 
-        static public void AddWatcher(Watcher watcher)
-        {
+        // static public void AddWatcher(Watcher watcher)
+        // {
 
-            lock (Api.watchers)
-            {
-                if (Api.watchers.ContainsKey(watcher.Path) == true) { return; }
-                Api.watchers.Add(watcher.Path, watcher);
-                watcher.Run();
-            }
-        }
+        //     lock (Api.watchers)
+        //     {
+        //         if (Api.watchers.ContainsKey(watcher.Path) == true) { return; }
+        //         Api.watchers.Add(watcher.Path, watcher);
+        //         watcher.Run();
+        //     }
+        // }
 
         public static string Nonce
         {
@@ -1241,20 +1235,15 @@ namespace Caspar
         static private HashSet<string> needAssemblies = new HashSet<string>();
         static private HashSet<string> ignoreAssemblies = new HashSet<string>();
         static private Dictionary<Type, Tuple<Type, Assembly>> assemblies = new Dictionary<Type, Tuple<Type, Assembly>>();
-        static internal Dictionary<string, Api.Watcher> watchers = new Dictionary<string, Api.Watcher>();
+        //static internal Dictionary<string, Api.Watcher> watchers = new Dictionary<string, Api.Watcher>();
 
 
         protected delegate void OverrideCallback();
         private static OverrideCallback OnOverride = null;
+        private static DateTime lastGCTime = DateTime.UtcNow;
+        private readonly static TimeSpan forcGC = TimeSpan.FromMinutes(1);
         private static async Task LayerUpdate()
         {
-
-            //Caspar.Layers.Action actionLayer = new Caspar.Layers.Action();
-            //Caspar.Layers.Entity entityLayer = new Caspar.Layers.Entity();
-            //Caspar.Layers.Mediator mediatorLayer = new Caspar.Layers.Mediator();
-            //Caspar.Layers.Job jobLayer = new Caspar.Layers.Job();
-            //Caspar.Layers.Rpc rpcLayer = new Caspar.Layers.Rpc();
-
             var sw = Stopwatch.StartNew();
             while (isOpen)
             {
@@ -1319,9 +1308,42 @@ namespace Caspar
                     {
                         Logger.Error(e);
                     }
+
+                    try
+                    {
+                        if (DateTime.UtcNow - lastGCTime > forcGC)
+                        {
+                            lastGCTime = DateTime.UtcNow;
+                            await PerformGarbageCollection();
+                        }
+                    }
+                    catch (Exception e)
+                    {
+                        Logger.Error(e);
+                    }
                 }
             }
             return;
+        }
+
+        private static async Task PerformGarbageCollection()
+        {
+            long memoryBefore = GC.GetTotalMemory(false);
+
+            // Generation 0, 1, 2 순차적으로 정리
+            GC.Collect(0, GCCollectionMode.Optimized);
+            await Task.Delay(10);
+
+            GC.Collect(1, GCCollectionMode.Optimized);
+            await Task.Delay(10);
+
+            GC.Collect(2, GCCollectionMode.Forced);
+            GC.WaitForPendingFinalizers();
+
+            long memoryAfter = GC.GetTotalMemory(true);
+            long freed = memoryBefore - memoryAfter;
+
+            Logger.Info($"GC: Freed {freed / (1024 * 1024)}MB (Before: {memoryBefore / (1024 * 1024)}MB, After: {memoryAfter / (1024 * 1024)}MB)");
         }
 
 
@@ -1468,428 +1490,428 @@ namespace Caspar
 
         }
 
-        public class OverrideWatcher : Api.Watcher
-        {
-            protected DateTime configLastWriteTime = DateTime.UtcNow;
-            protected bool configChanged = false;
-            protected string configPath = "";
-
-            protected override void OnCreated(object sender, FileSystemEventArgs e)
-            {
-
-                FileInfo fi = new FileInfo(e.FullPath);
-                if (fi == null) { return; }
-
-                if (System.IO.Path.GetFileName(e.FullPath).ToLower() == "config.xml")
-                {
-                    lock (this)
-                    {
-                        configPath = e.FullPath;
-                        configChanged = true;
-                        configLastWriteTime = DateTime.UtcNow;
-                    }
-                }
-                else
-                {
-                    base.OnCreated(sender, e);
-                }
-            }
-            protected override void OnChanged(object sender, FileSystemEventArgs e)
-            {
-
-                FileInfo fi = new FileInfo(e.FullPath);
-                if (fi == null) { return; }
-
-                if (System.IO.Path.GetFileName(e.FullPath).ToLower() == "config.xml")
-                {
-                    lock (this)
-                    {
-                        configPath = e.FullPath;
-                        configChanged = true;
-                        configLastWriteTime = DateTime.UtcNow;
-                    }
-                }
-                else
-                {
-                    base.OnChanged(sender, e);
-                }
-
-            }
-
-            static HashSet<string> buildedAssemblies = new HashSet<string>();
-            private void Update(Queue<string> data)
-            {
-
-                lock (data)
-                {
-
-                    if (data.Count == 0) { return; }
-
-                    CompilerParameters parameters = new CompilerParameters();
-                    parameters.GenerateInMemory = true;
-                    parameters.GenerateExecutable = false;
-                    parameters.IncludeDebugInformation = true;
-
-
-                    parameters.ReferencedAssemblies.Add("Microsoft.CSharp.dll");
-
-                    foreach (var e in buildedAssemblies)
-                    {
-                        parameters.ReferencedAssemblies.Add(e);
-                    }
-
-                    foreach (global::System.Reflection.Assembly b in AppDomain.CurrentDomain.GetAssemblies())
-                    {
-
-                        foreach (var m in b.Modules)
-                        {
-
-                            try
-                            {
-                                var dll = global::System.IO.Path.GetExtension(m.Name);
-                                if (dll == null) { continue; }
-                                if (dll.ToLower() != ".dll" && dll.ToLower() != ".exe") { continue; }
-
-                                if (global::Caspar.Attributes.Override.IsContain(m.Name.ToLower()) == true) { continue; }
-
-                            }
-                            catch (ArgumentException)
-                            {
-                            }
-                            catch (Exception e)
-                            {
-
-                                Logger.Error("Override Exception " + e);
-                                //Error(e.ToString());
-                                errors.Enqueue(e.ToString());
-                                continue;
-                            }
-
-                            if (m.Name == "Microsoft.VisualStudio.HostingProcess.Utilities.dll" ||
-                                m.Name == "Microsoft.VisualStudio.HostingProcess.Utilities.Sync.dll" ||
-                                m.Name == "Microsoft.VisualStudio.Debugger.Runtime.dll" ||
-                                m.Name == "mscorlib.resources.dll" ||
-                                m.Name == "System.EnterpriseServices.Wrapper.dll" ||
-                                m.Name == "(알 수 없음)" ||
-                                m.Name == "<알 수 없음>" ||
-                                m.Name == "<Unknown>" ||
-                                m.Name == "<In Memory Module>" ||
-                                m.Name == "<메모리 모듈>")
-                            {
-                                continue;
-                            }
-                            parameters.ReferencedAssemblies.Add(m.Name);
-                        }
+        // public class OverrideWatcher : Api.Watcher
+        // {
+        //     protected DateTime configLastWriteTime = DateTime.UtcNow;
+        //     protected bool configChanged = false;
+        //     protected string configPath = "";
+
+        //     protected override void OnCreated(object sender, FileSystemEventArgs e)
+        //     {
+
+        //         FileInfo fi = new FileInfo(e.FullPath);
+        //         if (fi == null) { return; }
+
+        //         if (System.IO.Path.GetFileName(e.FullPath).ToLower() == "config.xml")
+        //         {
+        //             lock (this)
+        //             {
+        //                 configPath = e.FullPath;
+        //                 configChanged = true;
+        //                 configLastWriteTime = DateTime.UtcNow;
+        //             }
+        //         }
+        //         else
+        //         {
+        //             base.OnCreated(sender, e);
+        //         }
+        //     }
+        //     protected override void OnChanged(object sender, FileSystemEventArgs e)
+        //     {
+
+        //         FileInfo fi = new FileInfo(e.FullPath);
+        //         if (fi == null) { return; }
+
+        //         if (System.IO.Path.GetFileName(e.FullPath).ToLower() == "config.xml")
+        //         {
+        //             lock (this)
+        //             {
+        //                 configPath = e.FullPath;
+        //                 configChanged = true;
+        //                 configLastWriteTime = DateTime.UtcNow;
+        //             }
+        //         }
+        //         else
+        //         {
+        //             base.OnChanged(sender, e);
+        //         }
+
+        //     }
+
+        //     static HashSet<string> buildedAssemblies = new HashSet<string>();
+        //     private void Update(Queue<string> data)
+        //     {
+
+        //         lock (data)
+        //         {
+
+        //             if (data.Count == 0) { return; }
+
+        //             CompilerParameters parameters = new CompilerParameters();
+        //             parameters.GenerateInMemory = true;
+        //             parameters.GenerateExecutable = false;
+        //             parameters.IncludeDebugInformation = true;
+
+
+        //             parameters.ReferencedAssemblies.Add("Microsoft.CSharp.dll");
+
+        //             foreach (var e in buildedAssemblies)
+        //             {
+        //                 parameters.ReferencedAssemblies.Add(e);
+        //             }
+
+        //             foreach (global::System.Reflection.Assembly b in AppDomain.CurrentDomain.GetAssemblies())
+        //             {
+
+        //                 foreach (var m in b.Modules)
+        //                 {
+
+        //                     try
+        //                     {
+        //                         var dll = global::System.IO.Path.GetExtension(m.Name);
+        //                         if (dll == null) { continue; }
+        //                         if (dll.ToLower() != ".dll" && dll.ToLower() != ".exe") { continue; }
+
+        //                         if (global::Caspar.Attributes.Override.IsContain(m.Name.ToLower()) == true) { continue; }
+
+        //                     }
+        //                     catch (ArgumentException)
+        //                     {
+        //                     }
+        //                     catch (Exception e)
+        //                     {
+
+        //                         Logger.Error("Override Exception " + e);
+        //                         //Error(e.ToString());
+        //                         errors.Enqueue(e.ToString());
+        //                         continue;
+        //                     }
+
+        //                     if (m.Name == "Microsoft.VisualStudio.HostingProcess.Utilities.dll" ||
+        //                         m.Name == "Microsoft.VisualStudio.HostingProcess.Utilities.Sync.dll" ||
+        //                         m.Name == "Microsoft.VisualStudio.Debugger.Runtime.dll" ||
+        //                         m.Name == "mscorlib.resources.dll" ||
+        //                         m.Name == "System.EnterpriseServices.Wrapper.dll" ||
+        //                         m.Name == "(알 수 없음)" ||
+        //                         m.Name == "<알 수 없음>" ||
+        //                         m.Name == "<Unknown>" ||
+        //                         m.Name == "<In Memory Module>" ||
+        //                         m.Name == "<메모리 모듈>")
+        //                     {
+        //                         continue;
+        //                     }
+        //                     parameters.ReferencedAssemblies.Add(m.Name);
+        //                 }
 
-                    }
+        //             }
 
 
-                    global::Caspar.Attributes.Override.AddReference(parameters);
-                    string overrideAssemblePath = System.IO.Path.Combine(Directory.GetCurrentDirectory());
-                    var files = Directory.GetFiles(System.IO.Path.Combine(overrideAssemblePath, "Override"), "*.cs", SearchOption.AllDirectories);
+        //             global::Caspar.Attributes.Override.AddReference(parameters);
+        //             string overrideAssemblePath = System.IO.Path.Combine(Directory.GetCurrentDirectory());
+        //             var files = Directory.GetFiles(System.IO.Path.Combine(overrideAssemblePath, "Override"), "*.cs", SearchOption.AllDirectories);
 
 
-                    try
-                    {
-                        CSharpCodeProvider codeProvider = new CSharpCodeProvider();
+        //             try
+        //             {
+        //                 CSharpCodeProvider codeProvider = new CSharpCodeProvider();
 
-                        parameters.OutputAssembly = string.Format($"{overrideAssemblePath}/{"test"}.dll");
+        //                 parameters.OutputAssembly = string.Format($"{overrideAssemblePath}/{"test"}.dll");
 
-                        CompilerResults results = codeProvider.CompileAssemblyFromFile(parameters, files.ToArray());
-                        Assembly assembly = null;
+        //                 CompilerResults results = codeProvider.CompileAssemblyFromFile(parameters, files.ToArray());
+        //                 Assembly assembly = null;
 
-                        codeProvider.Dispose();
+        //                 codeProvider.Dispose();
 
 
-                        if (!results.Errors.HasErrors)
-                        {
-                            assembly = results.CompiledAssembly;
-                            Logger.Info("Success");
+        //                 if (!results.Errors.HasErrors)
+        //                 {
+        //                     assembly = results.CompiledAssembly;
+        //                     Logger.Info("Success");
 
-                            buildedAssemblies.Remove(parameters.OutputAssembly);
-                            buildedAssemblies.Add(parameters.OutputAssembly);
-                        }
-                        else
-                        {
+        //                     buildedAssemblies.Remove(parameters.OutputAssembly);
+        //                     buildedAssemblies.Add(parameters.OutputAssembly);
+        //                 }
+        //                 else
+        //                 {
 
-                            Logger.Info("Override Compile Error - ");
-                            string error = "";
-                            for (int i = 0; i < results.Output.Count; i++)
-                            {
-                                error += results.Output[i];
-                                error += "\r\n";
-                                Logger.Info(results.Output[i]);
-                            }
+        //                     Logger.Info("Override Compile Error - ");
+        //                     string error = "";
+        //                     for (int i = 0; i < results.Output.Count; i++)
+        //                     {
+        //                         error += results.Output[i];
+        //                         error += "\r\n";
+        //                         Logger.Info(results.Output[i]);
+        //                     }
 
-                            //Error(error);
-                        }
+        //                     //Error(error);
+        //                 }
 
-                        var classes = (from type in assembly.GetTypes() where type.IsClass select type);
+        //                 var classes = (from type in assembly.GetTypes() where type.IsClass select type);
 
-                        foreach (var c in classes)
-                        {
+        //                 foreach (var c in classes)
+        //                 {
 
-                            var attribute = c.GetCustomAttribute(typeof(global::Caspar.Attributes.Override), false);
-                            if (attribute == null) { continue; }
+        //                     var attribute = c.GetCustomAttribute(typeof(global::Caspar.Attributes.Override), false);
+        //                     if (attribute == null) { continue; }
 
 
 
-                            {
-                                var method = c.GetMethod("Override");
-                                method?.Invoke(null, new object[] { });
-                            }
+        //                     {
+        //                         var method = c.GetMethod("Override");
+        //                         method?.Invoke(null, new object[] { });
+        //                     }
 
 
 
-                        }
+        //                 }
 
-                    }
-                    catch (Exception e)
-                    {
-                        Logger.Error("Override Exception " + e);
-                        // Error(e.ToString());
-                    }
-                    data.Clear();
-                }
+        //             }
+        //             catch (Exception e)
+        //             {
+        //                 Logger.Error("Override Exception " + e);
+        //                 // Error(e.ToString());
+        //             }
+        //             data.Clear();
+        //         }
 
-            }
+        //     }
 
 
-            public override void Update()
-            {
+        //     public override void Update()
+        //     {
 
-                lock (this)
-                {
-                    if (configChanged == true)
-                    {
+        //         lock (this)
+        //         {
+        //             if (configChanged == true)
+        //             {
 
-                        if (DateTime.UtcNow.Subtract(configLastWriteTime).TotalMilliseconds >= 5000)
-                        {
-                            configChanged = false;
-                            Update(configPath);
-                        }
+        //                 if (DateTime.UtcNow.Subtract(configLastWriteTime).TotalMilliseconds >= 5000)
+        //                 {
+        //                     configChanged = false;
+        //                     Update(configPath);
+        //                 }
 
-                    }
-                }
+        //             }
+        //         }
 
-                Update(changed);
-            }
+        //         Update(changed);
+        //     }
 
-            private void Update(string configPath)
-            {
+        //     private void Update(string configPath)
+        //     {
 
-                try
-                {
+        //         try
+        //         {
 
-                    XmlDocument doc = new XmlDocument();
-                    doc.Load(configPath);
+        //             XmlDocument doc = new XmlDocument();
+        //             doc.Load(configPath);
 
-                    global::Caspar.Attributes.Override.Clear();
+        //             global::Caspar.Attributes.Override.Clear();
 
-                    var root = doc.DocumentElement;
-                    foreach (XmlElement e in root["Need"].ChildNodes)
-                    {
-                        global::Caspar.Attributes.Override.AddReference(e.Attributes["Name"].Value);
-                    }
-                    foreach (XmlElement e in root["Ignore"].ChildNodes)
-                    {
-                        global::Caspar.Attributes.Override.RemoveReference(e.Attributes["Name"].Value);
-                    }
-
-                }
-                catch (Exception e)
-                {
-                    Logger.Error(e);
-                }
-
-            }
-        };
-        internal class OverrideConfigWatcher : Api.Watcher
-        {
-            private void Update(Queue<string> data)
-            {
-
-                lock (data)
-                {
-
-                    if (data.Count == 0) { return; }
-
-                    foreach (var fullPath in data)
-                    {
-                        if (global::System.IO.Path.GetFileName(fullPath) == String.Empty)
-                        {
-                            continue;
-                        }
-
-                        Update(fullPath);
-                    }
-                    data.Clear();
-                }
-
-            }
-            public override void Update()
-            {
-
-                Update(changed);
-            }
-
-            internal static void Update(string configPath)
-            {
-
-
-                try
-                {
-
-                    XmlDocument doc = new XmlDocument();
-                    doc.Load(configPath);
-
-                    global::Caspar.Attributes.Override.Clear();
-
-                    var root = doc.DocumentElement;
-                    foreach (XmlElement e in root["Need"].ChildNodes)
-                    {
-                        global::Caspar.Attributes.Override.AddReference(e.Attributes["Name"].Value);
-                    }
-                    foreach (XmlElement e in root["Ignore"].ChildNodes)
-                    {
-                        global::Caspar.Attributes.Override.RemoveReference(e.Attributes["Name"].Value);
-                    }
-
-                }
-                catch (Exception e)
-                {
-                    Logger.Error(e);
-                }
-
-            }
-        };
-        public class MetadataWatcher : global::Caspar.Api.Watcher
-        {
-            public delegate void ReloadCallback(string path);
-
-            static private Dictionary<string, ReloadCallback> WatchFiles = new Dictionary<string, ReloadCallback>();
-            static private Dictionary<string, System.Type> WatchFilesByType = new Dictionary<string, System.Type>();
-            static public void AddWatchFile(string path, ReloadCallback callback)
-            {
-
-                try
-                {
-                    WatchFiles.Add(global::System.IO.Path.GetFileName(path).ToLower(), callback);
-                }
-                catch (Exception e)
-                {
-                    Logger.Error(path + " " + e);
-                }
-
-            }
-            protected void Update(Queue<string> data)
-            {
-
-                lock (data)
-                {
-                    if (data.Count == 0) { return; }
-
-                    ReloadCallback callback = null;
-                    System.Type type = null;
-                    int count = data.Count;
-                    for (int i = 0; i < count; ++i)
-                    {
-                        var path = data.Dequeue();
-
-                        var filename = global::System.IO.Path.GetFileName(path);
-                        if (WatchFiles.TryGetValue(filename, out callback) == true)
-                        {
-                            try
-                            {
-                                callback(path);
-                                OnCallback(path, true);
-                                Logger.Info(path + " - Success");
-                            }
-                            catch (IOException e)
-                            {
-                                global::Caspar.Api.Logger.Debug(e);
-                                data.Enqueue(path);
-                            }
-                            catch (Exception e)
-                            {
-                                global::Caspar.Api.Logger.Debug(e);
-                                OnCallback(path, false);
-                            }
-                        }
-                        else if (WatchFilesByType.TryGetValue(filename, out type) == true)
-                        {
-
-                            try
-                            {
-                                foreach (var attribute in type.GetCustomAttributes(false))
-                                {
-
-                                    var metadata = attribute as global::Caspar.Attributes.Metadata;
-                                    if (metadata != null)
-                                    {
-
-                                        string loader = "LoadXml";
-
-                                        if (metadata.type == global::Caspar.Attributes.Metadata.Type.Json)
-                                        {
-                                            loader = "LoadJson";
-                                        }
-
-                                        var method = typeof(Metadata).GetMethod(loader, new System.Type[] { typeof(string) });
-                                        if (method.IsGenericMethod == true)
-                                        {
-                                            method = method.MakeGenericMethod(type);
-
-                                        }
-                                        Logger.Info("Load Metadata " + filename);
-
-                                        method.Invoke(null, new object[] { System.IO.Path.Combine(this.Path, filename) });
-
-                                        if (string.IsNullOrEmpty(metadata.Builder) == false)
-                                        {
-                                            method = type.GetMethod(metadata.Builder, System.Reflection.BindingFlags.Static | System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.NonPublic);
-                                            if (method != null)
-                                            {
-                                                method.Invoke(null, null);
-                                            }
-                                        }
-
-                                    }
-
-                                }
-                            }
-                            catch (IOException e)
-                            {
-                                global::Caspar.Api.Logger.Debug(e);
-                                data.Enqueue(path);
-                            }
-                            catch (Exception e)
-                            {
-                                global::Caspar.Api.Logger.Debug(e);
-                                OnCallback(path, false);
-                            }
-
-                        }
-                        else
-                        {
-                            Logger.Error(path + " - Fail");
-                        }
-                    }
-                }
-            }
-
-            public override void Update()
-            {
-                //Update(created);
-                Update(changed);
-            }
-
-
-            internal static void AddWatchFile(string path, Type c)
-            {
-                WatchFilesByType.Add(global::System.IO.Path.GetFileName(path), c);
-            }
-        };
+        //             var root = doc.DocumentElement;
+        //             foreach (XmlElement e in root["Need"].ChildNodes)
+        //             {
+        //                 global::Caspar.Attributes.Override.AddReference(e.Attributes["Name"].Value);
+        //             }
+        //             foreach (XmlElement e in root["Ignore"].ChildNodes)
+        //             {
+        //                 global::Caspar.Attributes.Override.RemoveReference(e.Attributes["Name"].Value);
+        //             }
+
+        //         }
+        //         catch (Exception e)
+        //         {
+        //             Logger.Error(e);
+        //         }
+
+        //     }
+        // };
+        // internal class OverrideConfigWatcher : Api.Watcher
+        // {
+        //     private void Update(Queue<string> data)
+        //     {
+
+        //         lock (data)
+        //         {
+
+        //             if (data.Count == 0) { return; }
+
+        //             foreach (var fullPath in data)
+        //             {
+        //                 if (global::System.IO.Path.GetFileName(fullPath) == String.Empty)
+        //                 {
+        //                     continue;
+        //                 }
+
+        //                 Update(fullPath);
+        //             }
+        //             data.Clear();
+        //         }
+
+        //     }
+        //     public override void Update()
+        //     {
+
+        //         Update(changed);
+        //     }
+
+        //     internal static void Update(string configPath)
+        //     {
+
+
+        //         try
+        //         {
+
+        //             XmlDocument doc = new XmlDocument();
+        //             doc.Load(configPath);
+
+        //             global::Caspar.Attributes.Override.Clear();
+
+        //             var root = doc.DocumentElement;
+        //             foreach (XmlElement e in root["Need"].ChildNodes)
+        //             {
+        //                 global::Caspar.Attributes.Override.AddReference(e.Attributes["Name"].Value);
+        //             }
+        //             foreach (XmlElement e in root["Ignore"].ChildNodes)
+        //             {
+        //                 global::Caspar.Attributes.Override.RemoveReference(e.Attributes["Name"].Value);
+        //             }
+
+        //         }
+        //         catch (Exception e)
+        //         {
+        //             Logger.Error(e);
+        //         }
+
+        //     }
+        // };
+        // public class MetadataWatcher : global::Caspar.Api.Watcher
+        // {
+        //     public delegate void ReloadCallback(string path);
+
+        //     static private Dictionary<string, ReloadCallback> WatchFiles = new Dictionary<string, ReloadCallback>();
+        //     static private Dictionary<string, System.Type> WatchFilesByType = new Dictionary<string, System.Type>();
+        //     static public void AddWatchFile(string path, ReloadCallback callback)
+        //     {
+
+        //         try
+        //         {
+        //             WatchFiles.Add(global::System.IO.Path.GetFileName(path).ToLower(), callback);
+        //         }
+        //         catch (Exception e)
+        //         {
+        //             Logger.Error(path + " " + e);
+        //         }
+
+        //     }
+        //     protected void Update(Queue<string> data)
+        //     {
+
+        //         lock (data)
+        //         {
+        //             if (data.Count == 0) { return; }
+
+        //             ReloadCallback callback = null;
+        //             System.Type type = null;
+        //             int count = data.Count;
+        //             for (int i = 0; i < count; ++i)
+        //             {
+        //                 var path = data.Dequeue();
+
+        //                 var filename = global::System.IO.Path.GetFileName(path);
+        //                 if (WatchFiles.TryGetValue(filename, out callback) == true)
+        //                 {
+        //                     try
+        //                     {
+        //                         callback(path);
+        //                         OnCallback(path, true);
+        //                         Logger.Info(path + " - Success");
+        //                     }
+        //                     catch (IOException e)
+        //                     {
+        //                         global::Caspar.Api.Logger.Debug(e);
+        //                         data.Enqueue(path);
+        //                     }
+        //                     catch (Exception e)
+        //                     {
+        //                         global::Caspar.Api.Logger.Debug(e);
+        //                         OnCallback(path, false);
+        //                     }
+        //                 }
+        //                 else if (WatchFilesByType.TryGetValue(filename, out type) == true)
+        //                 {
+
+        //                     try
+        //                     {
+        //                         foreach (var attribute in type.GetCustomAttributes(false))
+        //                         {
+
+        //                             var metadata = attribute as global::Caspar.Attributes.Metadata;
+        //                             if (metadata != null)
+        //                             {
+
+        //                                 string loader = "LoadXml";
+
+        //                                 if (metadata.type == global::Caspar.Attributes.Metadata.Type.Json)
+        //                                 {
+        //                                     loader = "LoadJson";
+        //                                 }
+
+        //                                 var method = typeof(Metadata).GetMethod(loader, new System.Type[] { typeof(string) });
+        //                                 if (method.IsGenericMethod == true)
+        //                                 {
+        //                                     method = method.MakeGenericMethod(type);
+
+        //                                 }
+        //                                 Logger.Info("Load Metadata " + filename);
+
+        //                                 method.Invoke(null, new object[] { System.IO.Path.Combine(this.Path, filename) });
+
+        //                                 if (string.IsNullOrEmpty(metadata.Builder) == false)
+        //                                 {
+        //                                     method = type.GetMethod(metadata.Builder, System.Reflection.BindingFlags.Static | System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.NonPublic);
+        //                                     if (method != null)
+        //                                     {
+        //                                         method.Invoke(null, null);
+        //                                     }
+        //                                 }
+
+        //                             }
+
+        //                         }
+        //                     }
+        //                     catch (IOException e)
+        //                     {
+        //                         global::Caspar.Api.Logger.Debug(e);
+        //                         data.Enqueue(path);
+        //                     }
+        //                     catch (Exception e)
+        //                     {
+        //                         global::Caspar.Api.Logger.Debug(e);
+        //                         OnCallback(path, false);
+        //                     }
+
+        //                 }
+        //                 else
+        //                 {
+        //                     Logger.Error(path + " - Fail");
+        //                 }
+        //             }
+        //         }
+        //     }
+
+        //     public override void Update()
+        //     {
+        //         //Update(created);
+        //         Update(changed);
+        //     }
+
+
+        //     internal static void AddWatchFile(string path, Type c)
+        //     {
+        //         WatchFilesByType.Add(global::System.IO.Path.GetFileName(path), c);
+        //     }
+        // };
 
         public static string BuildVersion4Digit(string before)
         {
@@ -2198,6 +2220,7 @@ namespace Caspar
                     }
                     catch (Exception e)
                     {
+                        fs?.Dispose();
                         Error(e);
                         return;
                     }
@@ -2218,8 +2241,8 @@ namespace Caspar
                 //}
 
                 bsw?.Flush();
-                //   bsw?.Close();
-                //   bsw?.Dispose();
+                bsw?.Close();
+                bsw?.Dispose();
 
                 if (bfn.IsNullOrEmpty() == false)
                 {
@@ -2497,6 +2520,13 @@ namespace Caspar
 
             if (isOpen == true)
                 return;
+
+            if (ServerType == "Agent")
+            {
+                Caspar.Api.ThreadCount = 1;
+                Caspar.Api.MaxSession = 2;
+            }
+
 
             var setting = new global::Google.Protobuf.JsonFormatter.Settings(true);
             setting = setting.WithFormatEnumsAsIntegers(true);
@@ -2807,28 +2837,77 @@ namespace Caspar
 
         }
 
+        private static void CreateLayerWorker(int index)
+        {
+            var t = new Thread(() =>
+            {
+                while (true)
+                {
+                    try
+                    {
+                        var p = Layer.Queued[index].Take();
+                        p.process(index);
+                    }
+                    catch (Exception e)
+                    {
+                        Logger.Error(e);
+                        Logger.Error(e);
+                        Logger.Error(e);
+                        Logger.Error(e);
+                        Logger.Error(e);
+                        Logger.Error(e);
+                        Logger.Error(e);
+                        Logger.Error(e);
+                        Logger.Error(e);
+                    }
+
+                }
+            });
+            t.Name = $"Layer Worker {index + 1}";
+            t.IsBackground = true;
+            t.Start();
+        }
+
         public static void StartUpLayer(string[] args)
         {
-            bool layer = true;
+
+
+
+            ThreadPool.SetMaxThreads(ThreadCount * 2, ThreadCount * 2);
+            ThreadPool.SetMinThreads(ThreadCount, ThreadCount);
+
+            global::Caspar.Attributes.Override.StartUp();
+            AppDomain.CurrentDomain.UnhandledException += App_UnhandledException;
+            TaskScheduler.UnobservedTaskException += OnUnobservedTaskException;
+            isOpen = true;
 
             foreach (var e in args)
             {
                 if (e.StartsWith("NoLayer") == true)
                 {
-                    layer = false;
                     return;
                 }
             }
-            ThreadPool.SetMaxThreads(64, 64);
-            ThreadPool.SetMinThreads(8, 8);
 
-            global::Caspar.Attributes.Override.StartUp();
-            AppDomain.CurrentDomain.UnhandledException += App_UnhandledException;
+            Layer.TotalWorkers = global::Caspar.Api.ThreadCount;
+            Layer.Queued = new BlockingCollection<Layer>[Layer.TotalWorkers];
+            for (int i = 0; i < Layer.TotalWorkers; ++i)
+            {
+                Layer.Queued[i] = new BlockingCollection<Layer>();
+            }
+            Layer.options = new ParallelOptions()
+            {
+                MaxDegreeOfParallelism = Layer.TotalWorkers
+            };
 
-            TaskScheduler.UnobservedTaskException += OnUnobservedTaskException;
-            isOpen = true;
+            for (int i = 0; i < Layer.TotalWorkers; ++i)
+            {
+                CreateLayerWorker(i);
+            }
+
             thread = new Thread(new ThreadStart(() => { _ = LayerUpdate(); }));
-            thread.IsBackground = false;
+            thread.Name = "Layer Updator";
+            thread.IsBackground = true;
             thread.Start();
         }
 
