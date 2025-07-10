@@ -1328,8 +1328,6 @@ namespace Caspar
 
         private static async Task PerformGarbageCollection()
         {
-            long memoryBefore = GC.GetTotalMemory(false);
-
             // Generation 0, 1, 2 순차적으로 정리
             GC.Collect(0, GCCollectionMode.Optimized);
             await Task.Delay(10);
@@ -1340,10 +1338,7 @@ namespace Caspar
             GC.Collect(2, GCCollectionMode.Forced);
             GC.WaitForPendingFinalizers();
 
-            long memoryAfter = GC.GetTotalMemory(true);
-            long freed = memoryBefore - memoryAfter;
 
-            Logger.Info($"GC: Freed {freed / (1024 * 1024)}MB (Before: {memoryBefore / (1024 * 1024)}MB, After: {memoryAfter / (1024 * 1024)}MB)");
         }
 
 
@@ -2876,9 +2871,7 @@ namespace Caspar
         public static void StartUpLayer(string[] args)
         {
 
-
-
-            ThreadPool.SetMaxThreads(ThreadCount * 2, ThreadCount * 2);
+            ThreadPool.SetMaxThreads(ThreadCount * 4, ThreadCount * 4);
             ThreadPool.SetMinThreads(ThreadCount, ThreadCount);
 
             global::Caspar.Attributes.Override.StartUp();
