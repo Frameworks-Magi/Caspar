@@ -24,14 +24,7 @@ namespace Caspar.Database.Management.Relational
             public bool IsTransaction { get { return Command.Transaction != null; } }
             public int ExecuteNonQuery()
             {
-
-                var sw = System.Diagnostics.Stopwatch.StartNew();
                 var ret = Command.ExecuteNonQuery();
-                long ms = sw.ElapsedMilliseconds;
-                if (ms > global::Caspar.Extensions.Database.SlowQueryMilliseconds)
-                {
-                    Logger.Info($"{Command.CommandText} - {ms}ms");
-                }
                 return ret;
             }
             public System.Data.Common.DbDataReader ExecuteReader()

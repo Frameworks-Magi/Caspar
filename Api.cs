@@ -2228,9 +2228,15 @@ namespace Caspar
                     var sw = new StreamWriter(fs);
                     sw.AutoFlush = true;
                     tw = TextWriter.Synchronized(sw);
-
+                    bsw?.Flush();
+                    bsw?.Close();
+                    bsw?.Dispose();
                     //System.Console.SetOut(sw);
                     //System.Console.SetError(sw);
+                }
+                else
+                {
+                    bsw?.Flush();
                 }
                 //else
                 //{
@@ -2240,9 +2246,8 @@ namespace Caspar
                 //    System.Console.SetError(sop);
                 //}
 
-                bsw?.Flush();
-                bsw?.Close();
-                bsw?.Dispose();
+
+
 
                 if (bfn.IsNullOrEmpty() == false)
                 {
@@ -2523,8 +2528,8 @@ namespace Caspar
 
             if (ServerType == "Agent")
             {
-                Caspar.Api.ThreadCount = 1;
-                Caspar.Api.MaxSession = 2;
+                Caspar.Api.ThreadCount = 2;
+                Caspar.Api.MaxSession = 3;
             }
 
 
