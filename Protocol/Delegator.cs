@@ -186,6 +186,7 @@ namespace Caspar.Protocol
                 {
                     try
                     {
+                        Logger.Error($"Wait Timeouted Delegator<{typeof(D).FullName}> waitResponse TryRemove {wait.Item2} {wait.Item1} {now}");
                         responder.Item2?.Invoke();
                     }
                     catch (Exception ex)
@@ -816,6 +817,7 @@ namespace Caspar.Protocol
                         responder.Item1?.Invoke(code, stream);
                         if (code == int.MaxValue || code == 0)
                         {
+                            Logger.Error($"Delegator<{this.GetType().FullName}> OnDelegate Fail, Code : {code}, Stream Length : {stream.Length}");
                             responder.Item2?.Invoke();
                         }
                     }
