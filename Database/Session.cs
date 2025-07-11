@@ -244,10 +244,8 @@ namespace Caspar.Database
             }
             else
             {
-                Logger.Info($"Post Message from Session but frame is null");
                 ThreadPool.QueueUserWorkItem(static s =>
                 {
-                    Logger.Info($"Post Message processing from Session but frame is null");
                     var tuple = s as Tuple<Session, SendOrPostCallback, object>;
                     var context = tuple.Item1;
                     SynchronizationContext.SetSynchronizationContext(context);

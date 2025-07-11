@@ -362,7 +362,6 @@ namespace Caspar.Platform
                         userInfo = Newtonsoft.Json.JsonConvert.DeserializeAnonymousType(responseContent, userInfo);
                         if (userInfo.response.result == "Failure")
                         {
-                            Logger.Info($"GetUserInfo({steamId}, {ip}) errorcode = {userInfo.response.error.errorcode} errordesc = {userInfo.response.error.errordesc}");
                             return null;
                         }
                     }
