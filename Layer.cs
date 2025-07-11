@@ -23,53 +23,28 @@ namespace Caspar
         public static int MaxLoop { get; set; } = 100000;
         public static long CurrentStrand { get => CurrentEntity.Value.UID; }
 
-        internal ConcurrentDictionary<int, ConcurrentQueue<Frame>> waitProcessEntities = new ConcurrentDictionary<int, ConcurrentQueue<Frame>>();
+        //internal ConcurrentDictionary<int, ConcurrentQueue<Frame>> waitProcessEntities = new ConcurrentDictionary<int, ConcurrentQueue<Frame>>();
+        internal ConcurrentQueue<Frame>[] waitProcessEntities = new ConcurrentQueue<Frame>[0];
         internal ConcurrentQueue<Frame> waitEntities = new ConcurrentQueue<Frame>();
         internal ConcurrentDictionary<int, ConcurrentQueue<Frame>> waitCloseEntities = new ConcurrentDictionary<int, ConcurrentQueue<Frame>>();
         internal static System.Threading.Tasks.ParallelOptions options = new System.Threading.Tasks.ParallelOptions() { MaxDegreeOfParallelism = global::Caspar.Api.ThreadCount };
-
+        internal int[] maxs = new int[0];
         internal static BlockingCollection<Layer> Layers = new();
-        internal BlockingCollection<(ConcurrentQueue<Frame>, int, DateTime)> Queued = new();
+        internal static BlockingCollection<Layer>[] Queued = new BlockingCollection<Layer>[TotalWorkers];
         internal BlockingCollection<bool> Releaser = new();
+        static internal int TotalWorkers { get; set; } = 1;
 
-        public static int TotalHandled = 0;
-        internal int TotalQueued = 0;
         public Layer()
         {
-            global::Caspar.Api.ThreadCount = 2;
-
-            if (Api.OnLambda == false)
+            waitProcessEntities = new ConcurrentQueue<Frame>[TotalWorkers];
+            for (int i = 0; i < TotalWorkers; ++i)
             {
-                global::Caspar.Api.ThreadCount = Math.Min(16, Math.Max(4, Convert.ToInt32(Math.Ceiling((Environment.ProcessorCount * 0.75) * 1.0))));
-            }
-
-
-            if (options.MaxDegreeOfParallelism != global::Caspar.Api.ThreadCount)
-            {
-                options = new System.Threading.Tasks.ParallelOptions() { MaxDegreeOfParallelism = global::Caspar.Api.ThreadCount };
-            }
-
-            for (int i = 0; i < global::Caspar.Api.ThreadCount; ++i)
-            {
-                waitProcessEntities.TryAdd(i, new ConcurrentQueue<Frame>());
+                //waitProcessEntities.TryAdd(i, new ConcurrentQueue<Frame>());
+                waitProcessEntities[i] = new ConcurrentQueue<Frame>();
                 waitCloseEntities.TryAdd(i, new ConcurrentQueue<Frame>());
             }
 
-            for (int i = 0; i < global::Caspar.Api.ThreadCount; ++i)
-            {
-                var t = new Thread(() =>
-                {
-
-                    while (true)
-                    {
-                        var p = Queued.Take();
-                        process(p.Item1, p.Item2);
-                    }
-
-
-                });
-                t.Start();
-            }
+            maxs = new int[TotalWorkers];
             global::Caspar.Api.Add(this);
         }
 
@@ -110,8 +85,16 @@ namespace Caspar
             return flag;
         }
 
-        private void process(ConcurrentQueue<Frame> container, int max)
+        internal void process(int index)
         {
+            var container = waitProcessEntities[index];
+            var max = maxs[index];
+
+            if (container.Count < max)
+            {
+                Logger.Error($"container count {container.Count} < max {max}, index:{index}");
+            }
+
             for (int i = 0; i < max; ++i)
             {
                 if (container.TryDequeue(out var entity) == false)
@@ -194,76 +177,52 @@ namespace Caspar
                         }
                     }
                 }
-
-                if (Interlocked.Decrement(ref TotalQueued) == 0)
-                {
-
-                    Releaser.Add(true);
-                }
             }
+            Releaser.Add(true);
         }
 
 
         private bool ProcessEntityMessage()
         {
-            int totalHandled = 0;
-            int remainTask = 0;
+            int totalMessage = 0;
+            int totalQueued = 0;
 
-            TotalQueued = 0;
-            bool flags = false;
-
-
-            int[] maxs = new int[global::Caspar.Api.ThreadCount];
-
-            //-------------------------------------
-            for (int i = 0; i < global::Caspar.Api.ThreadCount; ++i)
+            for (int i = 0; i < Layer.TotalWorkers; ++i)
             {
-                int max = waitProcessEntities[i].Count;
-                TotalQueued += max;
-                maxs[i] = max;
+                maxs[i] = waitProcessEntities[i].Count;
+                if (maxs[i] > 0)
+                {
+                    totalQueued += 1;
+                }
+                totalMessage += maxs[i];
             }
 
-            totalHandled = TotalQueued;
-
-            if (TotalQueued > 0)
+            if (totalMessage == 0)
             {
-                flags = true;
+                foreach (var kv in waitProcessEntities)
+                {
+                    if (kv.Count > 0) { return true; }
+                }
+                return false;
             }
 
-            for (int i = 0; i < global::Caspar.Api.ThreadCount; ++i)
+
+            for (int i = 0; i < Layer.TotalWorkers; ++i)
             {
-                Queued.Add((waitProcessEntities[i], maxs[i], DateTime.UtcNow));
+                if (maxs[i] == 0) { continue; }
+                Queued[i].Add(this);  // 🔥 여러 워커에게 동일한 Layer 전달
             }
 
-            // foreach (var kv in waitProcessEntities)
-            // {
-            //     int max = kv.Value.Count;
 
-            //     if (max > 0)
-            //     {
-            //         Interlocked.Add(ref TotalQueued, max);
-            //         flags = true;
-            //         Queued.Add((kv.Value, max, DateTime.UtcNow));
-            //     }
-            // }
-
-            if (flags == true)
+            for (int i = 0; i < totalQueued; ++i)
             {
                 Releaser.Take();
             }
 
-            //   Logger.Info($"TotalHandled {totalHandled}");
-
-
             foreach (var kv in waitProcessEntities)
             {
-                int max = kv.Value.Count;
-                if (max > 0)
-                {
-                    return true;
-                }
+                if (kv.Count > 0) { return true; }
             }
-
             return false;
         }
 
@@ -389,16 +348,11 @@ namespace Caspar
         }
         internal void Post(Frame e)
         {
-            ConcurrentQueue<Frame> tasks = null;
-            if (waitProcessEntities.TryGetValue(e.Strand, out tasks) == false)
-            {
-                return;
-            }
+            var tasks = waitProcessEntities[e.Strand];
             tasks.Enqueue(e);
             if (ToWait())
             {
                 e.PostAt = DateTime.UtcNow;
-                // WaitLayers.Add(this);
                 Layers.Add(this);
             }
         }
