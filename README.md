@@ -66,3 +66,105 @@ ALTER TABLE logs REORGANIZE PARTITION pMAX INTO (
 ALTER TABLE logs DROP PARTITION 
 p202401, p202402, p202403, p202404, p202405, p202406, 
 p202407, p202408, p202409, p202410, p202411, p202412;
+
+
+
+CREATE DATABASE `caspar` /*!40100 DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci */ /*!80016 DEFAULT ENCRYPTION='N' */;
+
+CREATE TABLE caspar.`delegator` (
+  `provider` varchar(64) NOT NULL,
+  `publish` varchar(45) NOT NULL,
+  `region` varchar(45) NOT NULL,
+  `type` varchar(45) NOT NULL,
+  `public_ip` varchar(45) NOT NULL,
+  `private_ip` varchar(45) NOT NULL,
+  `platform` varchar(45) DEFAULT NULL,
+  `state` int DEFAULT NULL,
+  `heartbeat` datetime DEFAULT CURRENT_TIMESTAMP,
+  `latitude` double DEFAULT NULL,
+  `longitude` double DEFAULT NULL,
+  PRIMARY KEY (`provider`,`publish`,`region`,`type`,`public_ip`,`private_ip`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+
+CREATE TABLE caspar.`deploy` (
+  `id` int NOT NULL AUTO_INCREMENT,
+  `provider` varchar(128) NOT NULL,
+  `publish` varchar(128) NOT NULL,
+  `region` varchar(45) NOT NULL,
+  `type` varchar(45) NOT NULL,
+  `ip` varchar(45) NOT NULL,
+  `created_at` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `UNQ_ID` (`provider`,`publish`,`region`,`type`)
+) ENGINE=InnoDB AUTO_INCREMENT=0 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+
+CREATE TABLE caspar.`seed` (
+  `id` int NOT NULL AUTO_INCREMENT,
+  `value` int NOT NULL,
+  PRIMARY KEY (`id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+
+
+CREATE TABLE caspar.`logs` (
+  `ai` bigint NOT NULL AUTO_INCREMENT,
+  `pprt` int DEFAULT NULL,
+  `ip` int DEFAULT NULL,
+  `timestamp` datetime NOT NULL,
+  `sequence` int DEFAULT NULL,
+  `type` int DEFAULT NULL,
+  `idx` bigint DEFAULT NULL,
+  `message` varchar(512) DEFAULT NULL,
+  `tags` json DEFAULT NULL,
+  PRIMARY KEY (`ai`,`timestamp`),
+  KEY `IDX_Timestamp` (`pprt`,`timestamp`,`sequence`)
+) ENGINE=InnoDB AUTO_INCREMENT=50 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci
+/*!50100 PARTITION BY RANGE (((year(`timestamp`) * 100) + month(`timestamp`)))
+(PARTITION p202505 VALUES LESS THAN (202506) ENGINE = InnoDB,
+ PARTITION p202506 VALUES LESS THAN (202507) ENGINE = InnoDB,
+ PARTITION p202507 VALUES LESS THAN (202508) ENGINE = InnoDB,
+ PARTITION p202508 VALUES LESS THAN (202509) ENGINE = InnoDB,
+ PARTITION p202509 VALUES LESS THAN (202510) ENGINE = InnoDB,
+ PARTITION p202510 VALUES LESS THAN (202511) ENGINE = InnoDB,
+ PARTITION p202511 VALUES LESS THAN (202512) ENGINE = InnoDB,
+ PARTITION p202512 VALUES LESS THAN (202601) ENGINE = InnoDB,
+ PARTITION p202601 VALUES LESS THAN (202602) ENGINE = InnoDB,
+ PARTITION p202602 VALUES LESS THAN (202603) ENGINE = InnoDB,
+ PARTITION p202603 VALUES LESS THAN (202604) ENGINE = InnoDB,
+ PARTITION p202604 VALUES LESS THAN (202605) ENGINE = InnoDB,
+ PARTITION p202605 VALUES LESS THAN (202606) ENGINE = InnoDB,
+ PARTITION p202606 VALUES LESS THAN (202607) ENGINE = InnoDB,
+ PARTITION p202607 VALUES LESS THAN (202608) ENGINE = InnoDB,
+ PARTITION p202608 VALUES LESS THAN (202609) ENGINE = InnoDB,
+ PARTITION p202609 VALUES LESS THAN (202610) ENGINE = InnoDB,
+ PARTITION p202610 VALUES LESS THAN (202611) ENGINE = InnoDB,
+ PARTITION p202611 VALUES LESS THAN (202612) ENGINE = InnoDB,
+ PARTITION p202612 VALUES LESS THAN (202701) ENGINE = InnoDB,
+ PARTITION pMAX VALUES LESS THAN MAXVALUE ENGINE = InnoDB) */;
+
+
+sudo nano /etc/systemd/system/agentserver.service
+
+
+
+[Unit]
+Description=Agent Client Service
+After=network.target
+
+[Service]
+Type=simple
+User=ec2-user
+WorkingDirectory=/home/ec2-user/AgentClient
+ExecStart=/usr/bin/dotnet /home/ec2-user/AgentClient/Agent.Client.dll file=../Caspar.json platform=Amazon
+Restart=always
+RestartSec=5
+
+[Install]
+WantedBy=multi-user.target
+
+
+
+sudo systemctl daemon-reload
+sudo systemctl stop agentserver.service
+sudo systemctl enable agentserver.service
+sudo systemctl start agentserver.service
+sudo systemctl status agentserver.service
