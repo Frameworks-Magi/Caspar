@@ -547,6 +547,7 @@ namespace Caspar
 
 
         public static long Idx { get; set; }
+        public static string ServerId { get; set; }
 
         static public void StartUpNetwork()
         {
@@ -2749,6 +2750,7 @@ namespace Caspar
             Logger.Info($"ServiceIp Ip : {ServiceIp}");
 
             Idx = (long)IPAddressToUInt32(PublicIp) << 32 | IPAddressToUInt32(PrivateIp);
+            ServerId = Idx.ToString();
             Logger.Debug($"Idx: {Idx}");
         }
 
