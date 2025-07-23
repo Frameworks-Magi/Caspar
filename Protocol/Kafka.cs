@@ -176,23 +176,28 @@ namespace Caspar.Protocol
 
             _consumer = new ConsumerBuilder<string, byte[]>(consumerConfig).Build();
 
-            var topic = topics.Find(t => t.StartsWith(ServerId));
-            if (topic == null) { topics.Add(ServerId); }
+            if (topics == null || topics.Count == 0)
+            {
+                topics = new List<string>();
+            }
 
-            topic = topics.Find(t => t.StartsWith("broadcast"));
-            if (topic == null) { topics.Add("broadcast"); }
+            if (topics.Contains(ServerId) == false)
+            {
+                topics.Add(ServerId);
+            }
+            if (topics.Contains($"{Caspar.Api.Config.Deploy}") == false)
+            {
+                topics.Add($"{Caspar.Api.Config.Deploy}");
+            }
 
             _consumer.Subscribe(topics.ToArray());
-
-            // 메시지 수신 시작
             Task.Run(StartConsuming);
-
-            Logger.Info($"KafkaDelegator<{typeof(D).FullName}> Connected to {bootstrapServers}");
         }
 
         // 메시지 수신 처리
         private void StartConsuming()
         {
+            string deploy = Caspar.Api.Config.Deploy;
             while (!IsClosed())
             {
                 try
@@ -200,27 +205,33 @@ namespace Caspar.Protocol
                     var result = _consumer.Consume(1000);
                     if (result != null)
                     {
-                        var notifier = new IKafka.Notifier();
-
-                        using var reader = new BinaryReader(new MemoryStream(result.Message.Value));
-                        notifier.ServerId = reader.ReadInt64();
-                        notifier.From = reader.ReadInt64();
-                        notifier.To = reader.ReadInt64();
-                        notifier.Code = reader.ReadInt32();
-                        notifier.Responsable = reader.ReadInt64();
-                        notifier.Message = reader.ReadBytes((int)(reader.BaseStream.Length - reader.BaseStream.Position));
-                        notifier.Relation = result.Message.Key;
-                        notifier.Delegator = this;
-
-                        if (notifier.ServerId == 0 && notifier.Responsable > 0)
+                        if (result.Topic == deploy)
                         {
-                            OnResponse(notifier.Responsable, notifier.Code, notifier.Message);
-                        }
-                        else
-                        {
-                            dispatcher.OnDelegate(notifier, result);
-                        }
 
+
+                        }
+                        else if (result.Topic == ServerId)
+                        {
+                            var notifier = new IKafka.Notifier();
+                            using var reader = new BinaryReader(new MemoryStream(result.Message.Value));
+                            notifier.ServerId = reader.ReadInt64();
+                            notifier.From = reader.ReadInt64();
+                            notifier.To = reader.ReadInt64();
+                            notifier.Code = reader.ReadInt32();
+                            notifier.Responsable = reader.ReadInt64();
+                            notifier.Message = reader.ReadBytes((int)(reader.BaseStream.Length - reader.BaseStream.Position));
+                            notifier.Relation = result.Message.Key;
+                            notifier.Delegator = this;
+
+                            if (notifier.ServerId == 0 && notifier.Responsable > 0)
+                            {
+                                OnResponse(notifier.Responsable, notifier.Code, notifier.Message);
+                            }
+                            else
+                            {
+                                dispatcher.OnDelegate(notifier, result);
+                            }
+                        }
                     }
                 }
                 catch (Exception ex)
